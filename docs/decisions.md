@@ -8,3 +8,5 @@
 | 2026-09-25 | データベース | MySQL        | MySQL 8.4（Sail コンテナ内）、DB 名 fishing_log        | Sail の標準                                                      |
 | 2026-09-25 | Node.js      | v24.15.0     | v24 系（コンテナ内は v24.21.0）                        | 同じメジャーバージョンで互換性があり、固定の手間に見合わないため |
 | 2026-09-25 | GitHub 接続  | Git / GitHub | gh CLI・HTTPS                                          | gh がすでに導入済みで、設定が少なく済むため                      |
+| 2026-09-25 | 認証 | Laravel Breeze | Breeze 2.x（Blade with Alpine / PHPUnit） | Laravel 12 以降は公式の案内から外れ保守のみの扱いだが、認証コードが手元にコピーされ学習しやすく、定義書の技術スタック（Blade・Tailwind）と一致するため |
+| 2026-09-25 | Tailwind CSS | 記載なし | v3（Breeze の方式） | Laravel 13 の雛形は v4 だが、Breeze の画面が v3 の書き方で作られているため、そのまま使う |
