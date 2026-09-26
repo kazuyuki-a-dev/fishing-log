@@ -14,7 +14,7 @@
         <div class="mt-4">
             <x-input-label for="home_prefecture" value="メインフィールド（よく行く都道府県）" />
             <select id="home_prefecture" name="home_prefecture" required
-                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                class="block mt-1 w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
                 <option value="">選択してください</option>
                 @foreach (config('prefectures') as $prefecture)
                 <option value="{{ $prefecture }}" @selected(old('home_prefecture')===$prefecture)>{{ $prefecture }}</option>
@@ -57,7 +57,7 @@
         <div class="mt-4">
             <label for="terms" class="inline-flex items-start">
                 <input id="terms" type="checkbox" name="terms" value="1" required @checked(old('terms'))
-                    class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                    class="mt-1 rounded border-gray-300 text-sea-600 shadow-sm focus:ring-sea-500">
                 <span class="ms-2 text-sm text-gray-600">
                     <a href="{{ route('terms') }}" target="_blank" class="underline hover:text-gray-900">利用規約</a>と<a href="{{ route('privacy') }}" target="_blank" class="underline hover:text-gray-900">プライバシーポリシー</a>に同意します
                 </span>
@@ -66,7 +66,7 @@
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
+            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sea-500" href="{{ route('login') }}">
                 {{ __('Already registered?') }}
             </a>
 
