@@ -24,6 +24,7 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'terms' => '1',
         ]);
 
         $this->assertAuthenticated();
@@ -55,6 +56,20 @@ class RegistrationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('home_prefecture');
+        $this->assertGuest();
+    }
+
+    public function test_terms_must_be_accepted(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'home_prefecture' => '秋田県',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('terms');
         $this->assertGuest();
     }
 }
