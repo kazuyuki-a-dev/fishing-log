@@ -18,6 +18,7 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'home_prefecture' => ['required', 'string', Rule::in(config('prefectures'))],
             'email' => [
                 'required',
                 'string',

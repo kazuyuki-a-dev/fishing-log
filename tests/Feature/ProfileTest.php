@@ -29,6 +29,7 @@ class ProfileTest extends TestCase
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
+                'home_prefecture' => '青森県',
                 'email' => 'test@example.com',
             ]);
 
@@ -39,6 +40,7 @@ class ProfileTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
+        $this->assertSame('青森県', $user->home_prefecture);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
     }
@@ -51,6 +53,7 @@ class ProfileTest extends TestCase
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
+                'home_prefecture' => $user->home_prefecture,
                 'email' => $user->email,
             ]);
 
@@ -95,5 +98,22 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_home_prefecture_must_be_one_of_47_prefectures_on_update(): void
+    {
+        $user = User::factory()->create(['home_prefecture' => '秋田県']);
+
+        $response = $this
+            ->actingAs($user)
+            ->from('/profile')
+            ->patch('/profile', [
+                'name' => $user->name,
+                'home_prefecture' => '竜宮城',
+                'email' => $user->email,
+            ]);
+
+        $response->assertSessionHasErrors('home_prefecture')->assertRedirect('/profile');
+        $this->assertSame('秋田県', $user->refresh()->home_prefecture);
     }
 }

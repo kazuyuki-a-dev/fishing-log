@@ -18,9 +18,21 @@
         @method('patch')
 
         <div>
-            <x-input-label for="name" :value="__('Name')" />
+            <x-input-label for="name" value="ニックネーム" />
             <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
+            <p class="mt-1 text-sm text-gray-600">ほかのユーザーに表示されます。本名は入れないでください。</p>
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
+        </div>
+
+        <div>
+            <x-input-label for="home_prefecture" value="メインフィールド（よく行く都道府県）" />
+            <select id="home_prefecture" name="home_prefecture" required
+                class="mt-1 block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
+                @foreach (config('prefectures') as $prefecture)
+                <option value="{{ $prefecture }}" @selected(old('home_prefecture', $user->home_prefecture) === $prefecture)>{{ $prefecture }}</option>
+                @endforeach
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('home_prefecture')" />
         </div>
 
         <div>
