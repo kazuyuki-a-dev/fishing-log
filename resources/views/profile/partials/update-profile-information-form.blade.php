@@ -26,12 +26,8 @@
 
         <div>
             <x-input-label for="home_prefecture" value="メインフィールド（よく行く都道府県）" />
-            <select id="home_prefecture" name="home_prefecture" required
-                class="mt-1 block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
-                @foreach (config('prefectures') as $prefecture)
-                <option value="{{ $prefecture }}" @selected(old('home_prefecture', $user->home_prefecture) === $prefecture)>{{ $prefecture }}</option>
-                @endforeach
-            </select>
+            <x-prefecture-select id="home_prefecture" name="home_prefecture" class="mt-1 block w-full"
+                :selected="old('home_prefecture', $user->home_prefecture)" required />
             <x-input-error class="mt-2" :messages="$errors->get('home_prefecture')" />
         </div>
 

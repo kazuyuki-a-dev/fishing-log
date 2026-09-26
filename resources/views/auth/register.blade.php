@@ -13,13 +13,8 @@
         <!-- Main Field (Prefecture) -->
         <div class="mt-4">
             <x-input-label for="home_prefecture" value="メインフィールド（よく行く都道府県）" />
-            <select id="home_prefecture" name="home_prefecture" required
-                class="block mt-1 w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
-                <option value="">選択してください</option>
-                @foreach (config('prefectures') as $prefecture)
-                <option value="{{ $prefecture }}" @selected(old('home_prefecture')===$prefecture)>{{ $prefecture }}</option>
-                @endforeach
-            </select>
+            <x-prefecture-select id="home_prefecture" name="home_prefecture" class="block mt-1 w-full"
+                :selected="old('home_prefecture')" :placeholder="true" required />
             <x-input-error :messages="$errors->get('home_prefecture')" class="mt-2" />
         </div>
 
