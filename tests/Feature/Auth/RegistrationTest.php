@@ -20,12 +20,56 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
+            'home_prefecture' => '秋田県',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'terms' => '1',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertDatabaseHas('users', ['email' => 'test@example.com', 'home_prefecture' => '秋田県']);
+    }
+
+    public function test_home_prefecture_is_required(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertSessionHasErrors('home_prefecture');
+        $this->assertGuest();
+    }
+
+    public function test_home_prefecture_must_be_one_of_47_prefectures(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'home_prefecture' => '竜宮城',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('home_prefecture');
+        $this->assertGuest();
+    }
+
+    public function test_terms_must_be_accepted(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'home_prefecture' => '秋田県',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('terms');
+        $this->assertGuest();
     }
 }
