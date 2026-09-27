@@ -5,6 +5,9 @@
 
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+            @if (session('status'))
+            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
+            @endif
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <form method="GET" action="{{ route('spots.index') }}">
                     <x-prefecture-select name="prefecture" :selected="$prefecture" :with-all="true"
