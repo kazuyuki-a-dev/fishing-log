@@ -11,6 +11,20 @@ class Spot extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'prefecture',
+        'visibility',
+        'caution_type',
+        'parking_type',
+        'parking_note',
+        'toilet_available',
+        'toilet_note',
+        'convenience_distance_m',
+        'facility_note',
+        'notes',
+    ];
+
     // 最初に登録したユーザー
     public function creator(): BelongsTo
     {

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Spot;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Http\Requests\StoreSpotRequest;
+use Illuminate\Http\RedirectResponse;
 
 class SpotController extends Controller
 {
@@ -36,5 +38,24 @@ class SpotController extends Controller
             'spots' => $spots,
             'prefecture' => $prefecture,
         ]);
+    }
+
+    public function create(Request $request): View
+    {
+        return view('spots.create', [
+            'defaultPrefecture' => $request->user()->home_prefecture,
+        ]);
+    }
+
+    public function store(StoreSpotRequest $request): RedirectResponse
+    {
+        $spot = new Spot($request->validated());
+        $spot->created_by = $request->user()->id;
+        $spot->updated_by = $request->user()->id;
+        $spot->save();
+
+        return redirect()
+            ->route('spots.index', ['prefecture' => $spot->prefecture])
+            ->with('status', "釣り場「{$spot->name}」を登録しました。");
     }
 }
