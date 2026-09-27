@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Spot;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class SpotController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $user = $request->user();
+
+        // 県の選択。指定がない・おかしい値なら、メインフィールドの県
+        $prefecture = $request->query('prefecture');
+        if ($prefecture !== 'all' && ! in_array($prefecture, config('prefectures'), true)) {
+            $prefecture = $user->home_prefecture;
+        }
+
+        $spots = Spot::query()
+            // 公開の釣り場か、自分が登録した釣り場だけ（NF-01）
+            ->where(function ($query) use ($user) {
+                $query->where('visibility', 'public')
+                    ->orWhere('created_by', $user->id);
+            })
+            // 県で絞る（全国なら絞らない）（FN-17）
+            ->when($prefecture !== 'all', fn($query) => $query->where('prefecture', $prefecture))
+            // 自分の釣行回数と、最後に行った日（FN-09）
+            ->withCount(['trips as my_trips_count' => fn($query) => $query->where('user_id', $user->id)])
+            ->withMax(['trips as my_last_went_at' => fn($query) => $query->where('user_id', $user->id)], 'went_at')
+            ->orderBy('name')
+            ->get();
+
+        return view('spots.index', [
+            'spots' => $spots,
+            'prefecture' => $prefecture,
+        ]);
+    }
+}
