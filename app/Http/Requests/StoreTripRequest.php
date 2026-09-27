@@ -54,13 +54,13 @@ class StoreTripRequest extends FormRequest
             'tide' => '潮',
             'weather' => '天候',
             'notes' => 'メモ',
-            'catches.*.fish_species' => '魚種',
-            'catches.*.fish_species_other' => '魚種（その他）',
-            'catches.*.method' => '釣り方',
-            'catches.*.method_detail' => '仕掛け・ルアーなど',
-            'catches.*.length_cm' => 'サイズ',
-            'catches.*.weight_g' => '重さ',
-            'catches.*.notes' => '釣果のメモ',
+            'catches.*.fish_species' => ':position匹目の魚種',
+            'catches.*.fish_species_other' => ':position匹目の魚種（その他）',
+            'catches.*.method' => ':position匹目の釣り方',
+            'catches.*.method_detail' => ':position匹目の仕掛け・ルアーなど',
+            'catches.*.length_cm' => ':position匹目のサイズ',
+            'catches.*.weight_g' => ':position匹目の重さ',
+            'catches.*.notes' => ':position匹目のメモ',
         ];
     }
 }
