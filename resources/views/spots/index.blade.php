@@ -32,7 +32,9 @@
                 @foreach ($spots as $spot)
                 <li class="p-4 flex items-start justify-between gap-4">
                     <div>
-                        <p class="font-bold">{{ $spot->name }}</p>
+                        <p class="font-bold">
+                            <a href="{{ route('spots.show', $spot) }}" class="hover:underline">{{ $spot->name }}</a>
+                        </p>
                         <p class="text-sm text-sand">
                             {{ $spot->prefecture }}
                             @if ($spot->visibility === 'private')

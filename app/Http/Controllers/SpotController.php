@@ -58,4 +58,42 @@ class SpotController extends Controller
             ->route('spots.index', ['prefecture' => $spot->prefecture])
             ->with('status', "釣り場「{$spot->name}」を登録しました。");
     }
+
+    public function show(Request $request, Spot $spot): View
+    {
+        $user = $request->user();
+
+        // 見てよい釣り場か（公開か、自分が登録したもの）（NF-01）
+        abort_unless($spot->visibility === 'public' || $spot->created_by === $user->id, 404);
+
+        // カルテに出す釣行：自分のもの ＋ （釣り場が公開なら）ほかの人の全体公開のもの（FN-12）
+        $trips = $spot->trips()
+            ->where(function ($query) use ($user, $spot) {
+                $query->where('user_id', $user->id);
+                if ($spot->visibility === 'public') {
+                    $query->orWhere('visibility', 'public');
+                }
+            })
+            ->with(['catches', 'user:id,name'])
+            ->orderByDesc('went_at')
+            ->get();
+
+        $mine = $trips->where('user_id', $user->id);
+        $others = $trips->where('user_id', '!=', $user->id);
+
+        return view('spots.show', [
+            'spot' => $spot->load('editor:id,name'),
+            'trips' => $trips,
+            'mine' => [
+                'visits' => $mine->count(),
+                'caught' => $mine->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
+                'maxSize' => $mine->flatMap->catches->max('length_cm'),
+                'lastWentAt' => $mine->first()?->went_at,
+            ],
+            'others' => [
+                'visits' => $others->count(),
+                'caught' => $others->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
+            ],
+        ]);
+    }
 }
