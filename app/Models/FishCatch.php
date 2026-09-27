@@ -12,6 +12,15 @@ class FishCatch extends Model
 
     protected $table = 'catches';
 
+    protected $fillable = [
+        'fish_species',
+        'method',
+        'method_detail',
+        'length_cm',
+        'weight_g',
+        'notes',
+    ];
+
     public function trip(): BelongsTo
     {
         return $this->belongsTo(Trip::class);
