@@ -45,6 +45,7 @@
                         <p class="text-sand">
                             最後に行った日：{{ $spot->my_last_went_at ? \Illuminate\Support\Carbon::parse($spot->my_last_went_at)->format('Y/m/d') : 'まだありません' }}
                         </p>
+                        <a href="{{ route('trips.create', ['spot' => $spot->id]) }}" class="mt-2 inline-block text-sm underline text-sea">ここで釣行を記録</a>
                     </div>
                 </li>
                 @endforeach

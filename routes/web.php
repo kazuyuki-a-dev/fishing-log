@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\SpotController;
+use App\Http\Controllers\TripController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -18,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('spots', SpotController::class)->only(['index', 'create', 'store']);
+    Route::resource('trips', TripController::class)->only(['create', 'store']);
 });
 
 Route::get('/terms', [StaticPageController::class, 'terms'])->name('terms');

@@ -11,6 +11,23 @@ class Trip extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'spot_id',
+        'went_at',
+        'time_of_day',
+        'visibility',
+        'tide',
+        'weather',
+        'notes',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'went_at' => 'datetime',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
