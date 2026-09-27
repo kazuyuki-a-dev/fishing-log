@@ -37,4 +37,10 @@ return [
         'マダコ',
     ],
     'methods' => ['エサ', 'ルアー'],
+    // 公開範囲の表示名
+    'visibility_labels' => [
+        'public' => '全体公開',
+        'spot_hidden' => '釣り場だけ隠す',
+        'private' => '非公開',
+    ],
 ];
