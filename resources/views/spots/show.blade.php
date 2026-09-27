@@ -1,0 +1,124 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 class="text-xl font-bold text-sea">{{ $spot->name }}</h2>
+            <p class="text-sm text-sand">
+                {{ $spot->prefecture }}
+                @if ($spot->visibility === 'private')
+                ・非公開
+                @endif
+            </p>
+        </div>
+    </x-slot>
+
+    <div class="py-8">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+            {{-- 注意区分の警告（FN-14・NF-04） --}}
+            @if ($spot->caution_type && $spot->caution_type !== 'なし')
+            <div class="rounded-md border-l-4 border-float bg-white p-4 shadow-sm">
+                <p class="font-bold text-float">注意：{{ $spot->caution_type }}</p>
+                <p class="text-sm">現地の表示や決まりを守ってください。安全と法律を守る責任は、利用する人自身にあります。</p>
+            </div>
+            @endif
+
+            {{-- 実績（FN-09） --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white rounded-md shadow-sm p-5">
+                    <h3 class="text-sm text-sand">自分の実績</h3>
+                    @if ($mine['visits'] > 0)
+                    <p class="mt-2 text-2xl font-bold">
+                        {{ $mine['visits'] }}回行って {{ $mine['caught'] }}回釣れた
+                    </p>
+                    <dl class="mt-3 grid grid-cols-2 gap-2 text-sm">
+                        <dt class="text-sand">最大サイズ</dt>
+                        <dd>{{ $mine['maxSize'] ? $mine['maxSize'] . ' cm' : '記録なし' }}</dd>
+                        <dt class="text-sand">最後に行った日</dt>
+                        <dd>{{ $mine['lastWentAt']->format('Y/m/d') }}</dd>
+                    </dl>
+                    @else
+                    <p class="mt-2">まだ記録がありません。</p>
+                    @endif
+                </div>
+
+                <div class="bg-white rounded-md shadow-sm p-5">
+                    <h3 class="text-sm text-sand">ほかの人の公開実績</h3>
+                    @if ($others['visits'] > 0)
+                    <p class="mt-2 text-2xl font-bold">
+                        {{ $others['visits'] }}回行って {{ $others['caught'] }}回釣れた
+                    </p>
+                    @else
+                    <p class="mt-2">公開されている記録はまだありません。</p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <a href="{{ route('trips.create', ['spot' => $spot->id]) }}"
+                    class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    この釣り場で釣行を記録
+                </a>
+            </div>
+
+            {{-- 釣行の履歴（FN-09） --}}
+            <section class="space-y-3">
+                <h3 class="font-bold">釣行の履歴</h3>
+                @forelse ($trips as $trip)
+                <article class="bg-white rounded-md shadow-sm p-4">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                        <p class="font-bold">
+                            {{ $trip->went_at->format('Y/m/d') }}
+                            <span class="ml-2 text-sm font-normal">{{ $trip->time_of_day }}</span>
+                        </p>
+                        <p class="text-sm text-sand">
+                            {{ $trip->user_id === auth()->id() ? '自分' : $trip->user->name }}
+                        </p>
+                    </div>
+                    <p class="mt-1 text-sm text-sand">
+                        潮：{{ $trip->tide ?? '不明' }}　天候：{{ $trip->weather ?? '不明' }}
+                    </p>
+
+                    @if ($trip->catches->isEmpty())
+                    <p class="mt-2 text-sm">坊主</p>
+                    @else
+                    <ul class="mt-2 space-y-1 text-sm">
+                        @foreach ($trip->catches as $catch)
+                        <li>
+                            {{ $catch->fish_species }}
+                            @if ($catch->length_cm)
+                            {{ $catch->length_cm }} cm
+                            @endif
+                            <span class="text-sand">（{{ $catch->method }}{{ $catch->method_detail ? '・' . $catch->method_detail : '' }}）</span>
+                        </li>
+                        @endforeach
+                    </ul>
+                    @endif
+                </article>
+                @empty
+                <p class="bg-white rounded-md shadow-sm p-4 text-sm">
+                    まだこの釣り場の記録はありません。最初の釣行を記録しましょう。
+                </p>
+                @endforelse
+            </section>
+
+            {{-- 現地の情報（FN-14） --}}
+            <section class="bg-white rounded-md shadow-sm p-5">
+                <h3 class="font-bold">現地の情報</h3>
+                <dl class="mt-3 grid grid-cols-[8rem_1fr] gap-y-2 text-sm">
+                    <dt class="text-sand">駐車場</dt>
+                    <dd>{{ $spot->parking_type ?? '未入力' }}{{ $spot->parking_note ? '（' . $spot->parking_note . '）' : '' }}</dd>
+                    <dt class="text-sand">トイレ</dt>
+                    <dd>{{ $spot->toilet_available ?? '未入力' }}{{ $spot->toilet_note ? '（' . $spot->toilet_note . '）' : '' }}</dd>
+                    <dt class="text-sand">コンビニまで</dt>
+                    <dd>{{ $spot->convenience_distance_m !== null ? $spot->convenience_distance_m . ' m' : '未入力' }}</dd>
+                    <dt class="text-sand">現地のメモ</dt>
+                    <dd class="whitespace-pre-line">{{ $spot->facility_note ?? '未入力' }}</dd>
+                </dl>
+                <p class="mt-4 text-xs text-sand">
+                    最終更新：{{ $spot->editor?->name ?? '退会したユーザー' }}（{{ $spot->updated_at->format('Y/m/d') }}）
+                    ・現地の情報は参考情報です。
+                </p>
+            </section>
+        </div>
+    </div>
+</x-app-layout>
