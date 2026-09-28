@@ -50,6 +50,19 @@ class Trip extends Model
             && ($timeOfDay === null || $this->time_of_day === $timeOfDay);
     }
 
+    /**
+     * 実際に使う公開範囲（FN-12）
+     * 釣り場が非公開なら、釣行が全体公開でも「釣り場だけ隠す」として扱う（閉じているほうを優先）
+     */
+    public function effectiveVisibility(): string
+    {
+        if ($this->visibility === 'public' && $this->spot->visibility === 'private') {
+            return 'spot_hidden';
+        }
+
+        return $this->visibility;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

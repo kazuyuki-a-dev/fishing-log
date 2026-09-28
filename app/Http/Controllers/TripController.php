@@ -10,9 +10,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Services\TideCalculator;
 use Illuminate\Support\Carbon;
+use App\Models\Trip;
+use Illuminate\Support\Facades\Gate;
 
 class TripController extends Controller
 {
+    public function index(Request $request): View
+    {
+        // 自分の釣行を新しい順に（PG10）
+        $trips = $request->user()->trips()
+            ->with(['spot:id,name,prefecture', 'catches:id,trip_id,fish_species'])
+            ->orderByDesc('went_at')
+            ->paginate(20);
+
+        return view('trips.index', ['trips' => $trips]);
+    }
+
     public function create(Request $request): View
     {
         $user = $request->user();
@@ -66,7 +79,25 @@ class TripController extends Controller
             : "釣行を記録しました（坊主）。";
 
         return redirect()
-            ->route('spots.index', ['prefecture' => $trip->spot->prefecture])
+            ->route('trips.show', $trip)
             ->with('status', $message);
+    }
+
+    public function show(Request $request, Trip $trip): View
+    {
+        // 見てよい釣行か（本人か、全体公開・釣り場だけ隠すの釣行）
+        Gate::authorize('view', $trip);
+
+        $trip->load(['spot', 'catches', 'user:id,name']);
+        $isOwner = $trip->user_id === $request->user()->id;
+
+        return view('trips.show', [
+            'trip' => $trip,
+            'isOwner' => $isOwner,
+            // 本人には保存した公開範囲、ほかの人には実際に使う公開範囲
+            'visibility' => $trip->effectiveVisibility(),
+            // ほかの人が見ていて「釣り場だけ隠す」なら、釣り場名を出さない（FN-12）
+            'hideSpot' => ! $isOwner && $trip->effectiveVisibility() === 'spot_hidden',
+        ]);
     }
 }
