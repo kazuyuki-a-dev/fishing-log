@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
+use App\Services\CatchHighlighter;
 
 class TripController extends Controller
 {
@@ -37,7 +38,7 @@ class TripController extends Controller
         ]);
     }
 
-    public function store(TripRequest $request, TideCalculator $tides): RedirectResponse
+    public function store(TripRequest $request, TideCalculator $tides, CatchHighlighter $highlighter): RedirectResponse
     {
         $trip = DB::transaction(function () use ($request, $tides) {
             // 釣行を保存（持ち主はログイン中の本人）
@@ -49,7 +50,8 @@ class TripController extends Controller
 
         return redirect()
             ->route('trips.show', $trip)
-            ->with('status', $this->savedMessage('記録', $trip));
+            ->with('status', $this->savedMessage('記録', $trip))
+            ->with('highlights', $highlighter->for($trip));
     }
 
     public function show(Request $request, Trip $trip): View
