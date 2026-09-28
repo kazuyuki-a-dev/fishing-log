@@ -14,6 +14,10 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
+            @if (session('status'))
+            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
+            @endif
+
             {{-- 注意区分の警告（FN-14・NF-04） --}}
             @if ($spot->caution_type && $spot->caution_type !== 'なし')
             <div class="rounded-md border-l-4 border-float bg-white p-4 shadow-sm">
@@ -170,6 +174,15 @@
                     最終更新：{{ $spot->editor?->name ?? '退会したユーザー' }}（{{ $spot->updated_at->format('Y/m/d') }}）
                     ・現地の情報は参考情報です。
                 </p>
+                <div class="mt-4 text-right">
+                    <a href="{{ route('spots.edit', $spot) }}" class="text-sm underline text-sea">
+                        @can('updateBasic', $spot)
+                        釣り場を編集する
+                        @else
+                        現地の情報を更新する
+                        @endcan
+                    </a>
+                </div>
             </section>
         </div>
     </div>
