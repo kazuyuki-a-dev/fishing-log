@@ -23,11 +23,7 @@ class SpotController extends Controller
         }
 
         $spots = Spot::query()
-            // 公開の釣り場か、自分が登録した釣り場だけ（NF-01）
-            ->where(function ($query) use ($user) {
-                $query->where('visibility', 'public')
-                    ->orWhere('created_by', $user->id);
-            })
+            ->visibleTo($user) // 公開の釣り場か、自分が登録した釣り場だけ（NF-01）
             // 県で絞る（全国なら絞らない）（FN-17）
             ->when($prefecture !== 'all', fn($query) => $query->where('prefecture', $prefecture))
             // 自分の釣行回数と、最後に行った日（FN-09）
@@ -68,14 +64,8 @@ class SpotController extends Controller
         // 見てよい釣り場か（公開か、自分が登録したもの）（NF-01）
         abort_unless($spot->visibility === 'public' || $spot->created_by === $user->id, 404);
 
-        // カルテに出す釣行：自分のもの ＋ （釣り場が公開なら）ほかの人の全体公開のもの（FN-12）
         $trips = $spot->trips()
-            ->where(function ($query) use ($user, $spot) {
-                $query->where('user_id', $user->id);
-                if ($spot->visibility === 'public') {
-                    $query->orWhere('visibility', 'public');
-                }
-            })
+            ->visibleWithSpotTo($user) // 自分のもの ＋ ほかの人の「全体公開かつ釣り場も公開」のもの（FN-12）
             ->with(['catches', 'user:id,name'])
             ->orderByDesc('went_at')
             ->get();
@@ -85,11 +75,7 @@ class SpotController extends Controller
 
         // ---- 釣行判断（FN-11） ----
         // 日付：指定がない・おかしい値なら今日
-        try {
-            $date = Carbon::createFromFormat('Y-m-d', (string) $request->query('date'), 'Asia/Tokyo')->startOfDay();
-        } catch (\Throwable) {
-            $date = Carbon::today('Asia/Tokyo');
-        }
+        $date = $this->dateFromQuery($request->query('date'));
 
         // 時間帯：選ばれていなければ「指定なし」
         $timeOfDay = in_array($request->query('time_of_day'), config('fishing.times_of_day'), true)
