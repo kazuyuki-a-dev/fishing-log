@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Spot;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
 use App\Http\Requests\StoreSpotRequest;
+use App\Models\Spot;
+use App\Services\TideCalculator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\View\View;
 
 class SpotController extends Controller
 {
@@ -59,7 +61,7 @@ class SpotController extends Controller
             ->with('status', "釣り場「{$spot->name}」を登録しました。");
     }
 
-    public function show(Request $request, Spot $spot): View
+    public function show(Request $request, Spot $spot, TideCalculator $tides): View
     {
         $user = $request->user();
 
@@ -81,6 +83,40 @@ class SpotController extends Controller
         $mine = $trips->where('user_id', $user->id);
         $others = $trips->where('user_id', '!=', $user->id);
 
+        // ---- 釣行判断（FN-11） ----
+        // 日付：指定がない・おかしい値なら今日
+        try {
+            $date = Carbon::createFromFormat('Y-m-d', (string) $request->query('date'), 'Asia/Tokyo')->startOfDay();
+        } catch (\Throwable) {
+            $date = Carbon::today('Asia/Tokyo');
+        }
+
+        // 時間帯：選ばれていなければ「指定なし」
+        $timeOfDay = in_array($request->query('time_of_day'), config('fishing.times_of_day'), true)
+            ? $request->query('time_of_day')
+            : null;
+
+        $tide = $tides->tideFor($date);
+
+        // 同じ条件の釣行：潮が同じ（時間帯を選んだら、時間帯も同じ）
+        $matched = $trips->filter(fn($trip) => $trip->tide === $tide
+            && ($timeOfDay === null || $trip->time_of_day === $timeOfDay));
+
+        $matchedCatches = $matched->flatMap->catches;
+
+        $judge = [
+            'date' => $date,
+            'timeOfDay' => $timeOfDay,
+            'tide' => $tide,
+            'lunarDay' => $tides->lunarDay($date),
+            'visits' => $matched->count(),
+            'caught' => $matched->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
+            'methods' => $matchedCatches->countBy('method'),
+            'species' => $matchedCatches->countBy('fish_species')->sortDesc()->take(3),
+            'nextBigTide' => $tides->nextDateWithTide($date->copy()->addDay(), '大潮'),
+            'matchedIds' => $matched->pluck('id'),
+        ];
+
         return view('spots.show', [
             'spot' => $spot->load('editor:id,name'),
             'trips' => $trips,
@@ -94,6 +130,7 @@ class SpotController extends Controller
                 'visits' => $others->count(),
                 'caught' => $others->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
             ],
+            'judge' => $judge,
         ]);
     }
 }

@@ -78,4 +78,22 @@ class TideCalculator
     {
         return self::TIDE_BY_LUNAR_DAY[$this->lunarDay($date)];
     }
+
+    /**
+     * 指定した日から数えて、最初にその潮になる日を返す（その日も含む）
+     */
+    public function nextDateWithTide(CarbonInterface $from, string $tide): CarbonInterface
+    {
+        $date = $from->copy()->startOfDay();
+
+        // 潮は約30日でひと回りするので、31日以内に必ず見つかる
+        for ($i = 0; $i <= 31; $i++) {
+            if ($this->tideFor($date) === $tide) {
+                return $date;
+            }
+            $date = $date->addDay();
+        }
+
+        throw new \InvalidArgumentException("潮「{$tide}」が見つかりません");
+    }
 }

@@ -22,6 +22,55 @@
             </div>
             @endif
 
+            {{-- 釣行判断（FN-11） --}}
+            <section class="bg-sea text-white rounded-md shadow-sm p-5 space-y-4">
+                <form method="GET" action="{{ route('spots.show', $spot) }}" class="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label for="date" class="block text-xs text-sea-100">行く日</label>
+                        <input id="date" type="date" name="date" value="{{ $judge['date']->format('Y-m-d') }}"
+                            onchange="this.form.submit()" class="mt-1 rounded-md border-0 text-ink">
+                    </div>
+                    <div>
+                        <label for="time_of_day" class="block text-xs text-sea-100">時間帯</label>
+                        <x-option-select id="time_of_day" name="time_of_day" class="mt-1 border-0 text-ink"
+                            :options="config('fishing.times_of_day')" :selected="$judge['timeOfDay']"
+                            placeholder="指定なし" onchange="this.form.submit()" />
+                    </div>
+                </form>
+
+                <div>
+                    <p class="text-sm text-sea-100">{{ $judge['date']->format('Y年n月j日') }}（旧暦{{ $judge['lunarDay'] }}日）</p>
+                    <p class="text-3xl font-bold">{{ $judge['tide'] }}</p>
+                </div>
+
+                <div class="border-t border-sea-400 pt-4 space-y-2">
+                    <p class="text-sm text-sea-100">
+                        この釣り場で「{{ $judge['tide'] }}{{ $judge['timeOfDay'] ? '・' . $judge['timeOfDay'] : '' }}」だった日
+                    </p>
+                    @if ($judge['visits'] > 0)
+                    <p class="text-2xl font-bold">{{ $judge['visits'] }}回行って {{ $judge['caught'] }}回釣れた</p>
+                    @if ($judge['methods']->isNotEmpty())
+                    <p class="text-sm">
+                        釣れたときの釣り方：
+                        @foreach ($judge['methods'] as $method => $count)
+                        {{ $method }} {{ $count }}匹{{ ! $loop->last ? '・' : '' }}
+                        @endforeach
+                    </p>
+                    <p class="text-sm">
+                        よく釣れた魚：
+                        @foreach ($judge['species'] as $species => $count)
+                        {{ $species }} {{ $count }}匹{{ ! $loop->last ? '・' : '' }}
+                        @endforeach
+                    </p>
+                    @endif
+                    @else
+                    <p>この条件で釣れた記録はまだありません。</p>
+                    @endif
+                </div>
+
+                <p class="text-sm text-sea-100">次の大潮：{{ $judge['nextBigTide']->format('n月j日') }}</p>
+            </section>
+
             {{-- 実績（FN-09） --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="bg-white rounded-md shadow-sm p-5">
@@ -64,11 +113,14 @@
             <section class="space-y-3">
                 <h3 class="font-bold">釣行の履歴</h3>
                 @forelse ($trips as $trip)
-                <article class="bg-white rounded-md shadow-sm p-4">
+                <article class="bg-white rounded-md shadow-sm p-4 {{ $judge['matchedIds']->contains($trip->id) ? 'ring-2 ring-float' : '' }}">
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                         <p class="font-bold">
                             {{ $trip->went_at->format('Y/m/d') }}
                             <span class="ml-2 text-sm font-normal">{{ $trip->time_of_day }}</span>
+                            @if ($judge['matchedIds']->contains($trip->id))
+                            <span class="ml-2 rounded bg-float px-2 py-0.5 text-xs font-bold text-white">条件一致</span>
+                            @endif
                         </p>
                         <p class="text-sm text-sand">
                             {{ $trip->user_id === auth()->id() ? '自分' : $trip->user->name }}
