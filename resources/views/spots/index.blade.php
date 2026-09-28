@@ -11,13 +11,20 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <form method="GET" action="{{ route('spots.index') }}">
                     <x-prefecture-select name="prefecture" :selected="$prefecture" :with-all="true"
-                        onchange="this.form.submit()" />
+                        :placeholder="$prefecture === null" onchange="this.form.submit()" />
                 </form>
+                @auth
                 <a href="{{ route('spots.create') }}"
                     class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                     釣り場を登録
                 </a>
+                @endauth
             </div>
+            @if ($prefecture === null)
+            <div class="bg-white rounded-md shadow-sm p-6 text-center">
+                <p>見たい都道府県を選んでください。</p>
+            </div>
+            @else
 
             @if ($spots->isEmpty())
             <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
@@ -43,15 +50,18 @@
                         </p>
                     </div>
                     <div class="text-sm text-right">
+                        @auth
                         <p>自分の釣行 {{ $spot->my_trips_count }} 回</p>
                         <p class="text-sand">
                             最後に行った日：{{ $spot->my_last_went_at ? \Illuminate\Support\Carbon::parse($spot->my_last_went_at)->format('Y/m/d') : 'まだありません' }}
                         </p>
                         <a href="{{ route('trips.create', ['spot' => $spot->id]) }}" class="mt-2 inline-block text-sm underline text-sea">ここで釣行を記録</a>
+                        @endauth
                     </div>
                 </li>
                 @endforeach
             </ul>
+            @endif
             @endif
         </div>
     </div>

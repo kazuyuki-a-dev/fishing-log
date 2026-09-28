@@ -22,9 +22,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('spots', SpotController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::resource('trips', TripController::class);
     Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
+    Route::resource('spots', SpotController::class)->only(['create', 'store', 'edit', 'update']);
 });
 
 Route::get('/terms', [StaticPageController::class, 'terms'])->name('terms');
 Route::get('/privacy', [StaticPageController::class, 'privacy'])->name('privacy');
+Route::resource('spots', SpotController::class)->only(['index', 'show']);
 
 require __DIR__ . '/auth.php';
