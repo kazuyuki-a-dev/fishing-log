@@ -22,4 +22,22 @@ class TripPolicy
             ? Response::allow()
             : Response::denyAsNotFound();
     }
+
+    /**
+     * 釣行を編集してよいか（PG13・NF-01）：本人だけ
+     */
+    public function update(User $user, Trip $trip): Response
+    {
+        return $trip->user_id === $user->id
+            ? Response::allow()
+            : Response::denyAsNotFound();
+    }
+
+    /**
+     * 釣行を削除してよいか（PG14・NF-01）：本人だけ
+     */
+    public function delete(User $user, Trip $trip): Response
+    {
+        return $this->update($user, $trip);
+    }
 }

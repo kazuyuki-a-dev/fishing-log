@@ -78,7 +78,38 @@
             </section>
 
             @if ($isOwner)
-            <a href="{{ route('trips.index') }}" class="text-sm underline text-sand">釣行の記録に戻る</a>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <a href="{{ route('trips.index') }}" class="text-sm underline text-sand">釣行の記録に戻る</a>
+
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('trips.edit', $trip) }}"
+                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-bold text-sm text-ink shadow-sm hover:bg-tide">
+                        編集する
+                    </a>
+                    <x-danger-button x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-trip-deletion')">
+                        削除する
+                    </x-danger-button>
+                </div>
+            </div>
+
+            {{-- 削除の確認（PG14） --}}
+            <x-modal name="confirm-trip-deletion" focusable>
+                <form method="POST" action="{{ route('trips.destroy', $trip) }}" class="p-6">
+                    @csrf
+                    @method('DELETE')
+
+                    <h2 class="text-lg font-bold">この釣行を削除しますか？</h2>
+                    <p class="mt-2 text-sm text-sand">
+                        {{ $trip->went_at->format('Y年n月j日') }}の釣行と、
+                        {{ $trip->catches->isEmpty() ? '坊主の記録' : '釣果 ' . $trip->catches->count() . ' 匹' }}が削除されます。元には戻せません。
+                    </p>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <x-secondary-button x-on:click="$dispatch('close')">キャンセル</x-secondary-button>
+                        <x-danger-button>削除する</x-danger-button>
+                    </div>
+                </form>
+            </x-modal>
             @endif
         </div>
     </div>
