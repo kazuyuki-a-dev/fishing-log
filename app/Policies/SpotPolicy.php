@@ -9,11 +9,13 @@ use Illuminate\Auth\Access\Response;
 class SpotPolicy
 {
     /**
-     * 釣り場（カルテ）を見てよいか（NF-01）：公開か、自分が登録したもの
+     * 釣り場（カルテ）を見てよいか（NF-01）
+     * - ログインしている人：公開か、自分が登録したもの
+     * - ゲスト：公開のものだけ
      */
-    public function view(User $user, Spot $spot): Response
+    public function view(?User $user, Spot $spot): Response
     {
-        return $spot->visibility === 'public' || $spot->created_by === $user->id
+        return $spot->visibility === 'public' || ($user && $spot->created_by === $user->id)
             ? Response::allow()
             : Response::denyAsNotFound();
     }

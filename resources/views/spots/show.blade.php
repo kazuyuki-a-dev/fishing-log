@@ -77,6 +77,7 @@
 
             {{-- 実績（FN-09） --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                @auth
                 <div class="bg-white rounded-md shadow-sm p-5">
                     <h3 class="text-sm text-sand">自分の実績</h3>
                     @if ($mine['visits'] > 0)
@@ -93,6 +94,7 @@
                     <p class="mt-2">まだ記録がありません。</p>
                     @endif
                 </div>
+                @endauth
 
                 <div class="bg-white rounded-md shadow-sm p-5">
                     <h3 class="text-sm text-sand">ほかの人の公開実績</h3>
@@ -106,12 +108,19 @@
                 </div>
             </div>
 
+            @auth
             <div class="flex justify-end">
                 <a href="{{ route('trips.create', ['spot' => $spot->id]) }}"
                     class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                     この釣り場で釣行を記録
                 </a>
             </div>
+            @else
+            <div class="bg-white rounded-md shadow-sm p-4 text-sm text-center">
+                自分の釣行を記録して、釣れる条件を貯めていきませんか？
+                <a href="{{ route('register') }}" class="ml-2 font-bold underline text-sea">会員登録する</a>
+            </div>
+            @endauth
 
             {{-- 釣行の履歴（FN-09） --}}
             <section class="space-y-3">
@@ -174,6 +183,7 @@
                     最終更新：{{ $spot->editor?->name ?? '退会したユーザー' }}（{{ $spot->updated_at->format('Y/m/d') }}）
                     ・現地の情報は参考情報です。
                 </p>
+                @auth
                 <div class="mt-4 text-right">
                     <a href="{{ route('spots.edit', $spot) }}" class="text-sm underline text-sea">
                         @can('updateBasic', $spot)
@@ -183,6 +193,7 @@
                         @endcan
                     </a>
                 </div>
+                @endauth
             </section>
         </div>
     </div>

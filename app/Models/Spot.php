@@ -27,11 +27,18 @@ class Spot extends Model
         'notes',
     ];
 
-    public function scopeVisibleTo(Builder $query, User $user): void
+    /**
+     * この人が見てよい釣り場だけに絞る（NF-01）
+     * - ログインしている人：公開か、自分が登録したもの
+     * - ゲスト（$user が null）：公開のものだけ
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): void
     {
         $query->where(function ($query) use ($user) {
-            $query->where('visibility', 'public')
-                ->orWhere('created_by', $user->id);
+            $query->where('visibility', 'public');
+            if ($user) {
+                $query->orWhere('created_by', $user->id);
+            }
         });
     }
     // 最初に登録したユーザー

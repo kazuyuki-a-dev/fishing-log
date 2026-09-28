@@ -17,19 +17,26 @@ class SpotController extends Controller
     {
         $user = $request->user();
 
-        // 県の選択。指定がない・おかしい値なら、メインフィールドの県
+        // 県：ログインしている人は、指定がなければメインフィールド
+        //     ゲストは、指定がなければ「まだ選んでいない」（FN-17）
         $prefecture = $request->query('prefecture');
         if ($prefecture !== 'all' && ! in_array($prefecture, config('prefectures'), true)) {
-            $prefecture = $user->home_prefecture;
+            $prefecture = $user?->home_prefecture;
+        }
+
+        // ゲストがまだ県を選んでいなければ、一覧は出さずに県を選んでもらう
+        if ($prefecture === null) {
+            return view('spots.index', ['spots' => collect(), 'prefecture' => null]);
         }
 
         $spots = Spot::query()
-            ->visibleTo($user) // 公開の釣り場か、自分が登録した釣り場だけ（NF-01）
+            ->visibleTo($user) // 見てよい釣り場だけ（NF-01）
             // 県で絞る（全国なら絞らない）（FN-17）
             ->when($prefecture !== 'all', fn($query) => $query->where('prefecture', $prefecture))
-            // 自分の釣行回数と、最後に行った日（FN-09）
-            ->withCount(['trips as my_trips_count' => fn($query) => $query->where('user_id', $user->id)])
-            ->withMax(['trips as my_last_went_at' => fn($query) => $query->where('user_id', $user->id)], 'went_at')
+            // 自分の釣行回数と、最後に行った日（ログインしている人だけ）（FN-09）
+            ->when($user, fn($query) => $query
+                ->withCount(['trips as my_trips_count' => fn($query) => $query->where('user_id', $user->id)])
+                ->withMax(['trips as my_last_went_at' => fn($query) => $query->where('user_id', $user->id)], 'went_at'))
             ->orderBy('name')
             ->get();
 
@@ -70,8 +77,9 @@ class SpotController extends Controller
             ->orderByDesc('went_at')
             ->get();
 
-        $mine = $trips->where('user_id', $user->id);
-        $others = $trips->where('user_id', '!=', $user->id);
+        // ゲストには「自分の実績」はなく、見える釣行はすべて「ほかの人の公開実績」
+        $mine = $user ? $trips->where('user_id', $user->id) : collect();
+        $others = $user ? $trips->where('user_id', '!=', $user->id) : $trips;
 
         // ---- 釣行判断（FN-11） ----
         // 日付：指定がない・おかしい値なら今日

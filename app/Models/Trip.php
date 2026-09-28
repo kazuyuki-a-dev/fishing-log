@@ -29,14 +29,21 @@ class Trip extends Model
         ];
     }
 
-    public function scopeVisibleWithSpotTo(Builder $query, User $user): void
+    /**
+     * 釣り場ごとの画面（カルテ・プランナー）に出してよい釣行だけに絞る（FN-12）
+     * - 自分の釣行は、いつでも出す（ゲストには「自分」はいない）
+     * - ほかの人の釣行は、釣行が全体公開で、かつ釣り場も公開のものだけ出す
+     */
+    public function scopeVisibleWithSpotTo(Builder $query, ?User $user): void
     {
         $query->where(function ($query) use ($user) {
-            $query->where('user_id', $user->id)
-                ->orWhere(function ($query) {
-                    $query->where('visibility', 'public')
-                        ->whereHas('spot', fn($spot) => $spot->where('visibility', 'public'));
-                });
+            if ($user) {
+                $query->where('user_id', $user->id);
+            }
+            $query->orWhere(function ($query) {
+                $query->where('visibility', 'public')
+                    ->whereHas('spot', fn($spot) => $spot->where('visibility', 'public'));
+            });
         });
     }
 
