@@ -40,4 +40,18 @@ class TideCalculatorTest extends TestCase
         $this->assertSame(1, $calculator->lunarDay(Carbon::parse('2024-01-11', 'Asia/Tokyo')));
         $this->assertSame(1, $calculator->lunarDay(Carbon::parse('2024-09-03', 'Asia/Tokyo')));
     }
+
+    public function test_next_date_with_tide(): void
+    {
+        $calculator = new TideCalculator();
+
+        // 2024年1月17日（小潮）から探すと、次の大潮は1月24日（旧暦14日）
+        $this->assertSame('2024-01-24', $calculator->nextDateWithTide(Carbon::parse('2024-01-17', 'Asia/Tokyo'), '大潮')->format('Y-m-d'));
+
+        // 探し始めの日がすでに大潮なら、その日を返す
+        $this->assertSame('2024-01-11', $calculator->nextDateWithTide(Carbon::parse('2024-01-11', 'Asia/Tokyo'), '大潮')->format('Y-m-d'));
+
+        // 大潮以外でも探せる
+        $this->assertSame('2024-01-21', $calculator->nextDateWithTide(Carbon::parse('2024-01-17', 'Asia/Tokyo'), '若潮')->format('Y-m-d'));
+    }
 }
