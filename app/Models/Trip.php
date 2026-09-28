@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 
 class Trip extends Model
 {
@@ -26,6 +27,27 @@ class Trip extends Model
         return [
             'went_at' => 'datetime',
         ];
+    }
+
+    public function scopeVisibleWithSpotTo(Builder $query, User $user): void
+    {
+        $query->where(function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                ->orWhere(function ($query) {
+                    $query->where('visibility', 'public')
+                        ->whereHas('spot', fn($spot) => $spot->where('visibility', 'public'));
+                });
+        });
+    }
+
+    /**
+     * この釣行が、選んだ条件（潮・時間帯）と同じか（FN-11・FN-16）
+     * 時間帯が null（指定なし）なら、潮だけで判断する
+     */
+    public function matchesCondition(string $tide, ?string $timeOfDay): bool
+    {
+        return $this->tide === $tide
+            && ($timeOfDay === null || $this->time_of_day === $timeOfDay);
     }
 
     public function user(): BelongsTo

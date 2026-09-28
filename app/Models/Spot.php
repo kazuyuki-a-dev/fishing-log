@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class Spot extends Model
 {
@@ -25,6 +27,13 @@ class Spot extends Model
         'notes',
     ];
 
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        $query->where(function ($query) use ($user) {
+            $query->where('visibility', 'public')
+                ->orWhere('created_by', $user->id);
+        });
+    }
     // 最初に登録したユーザー
     public function creator(): BelongsTo
     {
