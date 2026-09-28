@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreTripRequest extends FormRequest
+class TripRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,14 +15,19 @@ class StoreTripRequest extends FormRequest
     public function rules(): array
     {
         $userId = $this->user()->id;
+        // 編集のときは、今その釣行に付いている釣り場（登録のときは null）
+        $currentSpotId = $this->route('trip')?->spot_id;
 
         return [
             // 釣行
             'spot_id' => [
                 'required',
-                // 公開の釣り場か、自分が登録した釣り場だけ選べる（NF-01）
-                Rule::exists('spots', 'id')->where(function ($query) use ($userId) {
+                // 公開の釣り場か、自分が登録した釣り場。編集のときは今の釣り場も（NF-01）
+                Rule::exists('spots', 'id')->where(function ($query) use ($userId, $currentSpotId) {
                     $query->where('visibility', 'public')->orWhere('created_by', $userId);
+                    if ($currentSpotId) {
+                        $query->orWhere('id', $currentSpotId);
+                    }
                 }),
             ],
             'went_at' => ['required', 'date'],
