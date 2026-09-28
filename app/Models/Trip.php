@@ -47,6 +47,12 @@ class Trip extends Model
         });
     }
 
+    /** 釣果フィードやトップページの新着に出してよい釣行（FN-13） */
+    public function scopeForFeed(Builder $query): void
+    {
+        $query->whereIn('visibility', ['public', 'spot_hidden']);
+    }
+
     /**
      * この釣行が、選んだ条件（潮・時間帯）と同じか（FN-11・FN-16）
      * 時間帯が null（指定なし）なら、潮だけで判断する
