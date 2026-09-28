@@ -20,7 +20,6 @@ class TripStoreTest extends TestCase
             'went_at' => '2026-09-20 06:00',
             'time_of_day' => '朝マズメ',
             'visibility' => 'private',
-            'tide' => '大潮',
             'weather' => '曇り',
         ], $overrides);
     }
@@ -42,6 +41,7 @@ class TripStoreTest extends TestCase
         $this->assertSame(2, $trip->catches()->count());
         $this->assertDatabaseHas('catches', ['trip_id' => $trip->id, 'fish_species' => 'アジ', 'length_cm' => 21.5]);
         $this->assertDatabaseHas('catches', ['trip_id' => $trip->id, 'fish_species' => 'ハゼ', 'method' => 'ルアー']);
+        $this->assertSame('小潮', $trip->tide);
     }
 
     public function test_trip_without_catches_is_recorded_as_bozu(): void
