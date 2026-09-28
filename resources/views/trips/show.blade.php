@@ -12,6 +12,15 @@
             <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
             @endif
 
+            {{-- 釣果ハイライト（FN-07）。登録した直後だけ出る --}}
+            @if (session('highlights'))
+            <div class="rounded-md bg-float text-white p-4 shadow-sm space-y-1">
+                @foreach (session('highlights') as $highlight)
+                <p class="font-bold">{{ $highlight }}</p>
+                @endforeach
+            </div>
+            @endif
+
             <section class="bg-white rounded-md shadow-sm p-5 space-y-3">
                 <dl class="grid grid-cols-[6rem_1fr] gap-y-2 text-sm">
                     <dt class="text-sand">釣り場</dt>
