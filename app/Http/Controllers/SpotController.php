@@ -123,6 +123,7 @@ class SpotController extends Controller
                 'caught' => $others->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
             ],
             'judge' => $judge,
+            'location' => $spot->locationFor($request->user()),
         ]);
     }
 

@@ -179,6 +179,14 @@
                     <dt class="text-sand">現地のメモ</dt>
                     <dd class="whitespace-pre-line">{{ $spot->facility_note ?? '未入力' }}</dd>
                 </dl>
+                @if ($location)
+                <div x-data="spotMapView(@js($location))" class="mt-4">
+                    <div x-ref="map" class="h-56 rounded-md border border-gray-200"></div>
+                    <p class="mt-1 text-xs text-sand">
+                        {{ $location['exact'] ? '登録した位置です（正確な位置は、あなたにだけ表示しています）。' : 'だいたいの位置です（約1km四方）。' }}
+                    </p>
+                </div>
+                @endif
                 <p class="mt-4 text-xs text-sand">
                     最終更新：{{ $spot->editor?->name ?? '退会したユーザー' }}（{{ $spot->updated_at->format('Y/m/d') }}）
                     ・現地の情報は参考情報です。

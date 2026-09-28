@@ -26,6 +26,24 @@ $spot = $spot ?? null;
     <x-input-error :messages="$errors->get('prefecture')" class="mt-2" />
 </div>
 
+<div x-data="spotMapInput(@js(old('latitude', $spot?->latitude)), @js(old('longitude', $spot?->longitude)))">
+    <x-input-label value="位置（任意）" />
+    <p class="mt-1 text-xs text-sand">地図をタップして、釣り場の位置にピンを置いてください。公開するときは、ほかの人には約1km四方の「このあたり」としてだけ表示されます。</p>
+    <div x-ref="map" class="mt-2 h-72 rounded-md border border-gray-200"></div>
+
+    <input type="hidden" name="latitude" :value="lat">
+    <input type="hidden" name="longitude" :value="lng">
+
+    <div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
+        <button type="button" @click="useCurrentLocation()" class="underline text-sea">現在地を使う</button>
+        <button type="button" @click="clear()" class="underline text-sand">位置を消す</button>
+        <span class="text-sand" x-text="lat ? `緯度 ${lat} / 経度 ${lng}` : 'まだ位置は決まっていません'"></span>
+    </div>
+    <p class="mt-1 text-sm text-sea" x-text="message"></p>
+    <x-input-error class="mt-2" :messages="$errors->get('latitude')" />
+    <x-input-error class="mt-2" :messages="$errors->get('longitude')" />
+</div>
+
 <div>
     <x-input-label for="visibility" value="公開設定" />
     <x-option-select id="visibility" name="visibility" class="mt-1 block w-full"
@@ -45,7 +63,7 @@ $spot = $spot ?? null;
 {{-- 本人でなければ、基本の情報は見せるだけ（入力欄は出さない） --}}
 <div class="rounded-md bg-tide p-4 text-sm space-y-1">
     <p class="font-bold">{{ $spot->name }}（{{ $spot->prefecture }}）</p>
-    <p class="text-sand">釣り場名・都道府県・公開設定は、登録した人だけが変更できます。</p>
+    <p class="text-sand">釣り場名・都道府県・位置・公開設定は、登録した人だけが変更できます。</p>
 </div>
 @endif
 
