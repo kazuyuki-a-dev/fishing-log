@@ -21,6 +21,9 @@
                     <x-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')">
                         釣り場
                     </x-nav-link>
+                    <x-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
+                        釣行
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -81,6 +84,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')">
                 釣り場
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
+                釣行
             </x-responsive-nav-link>
         </div>
 
