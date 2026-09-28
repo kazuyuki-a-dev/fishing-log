@@ -25,6 +25,8 @@ class Spot extends Model
         'convenience_distance_m',
         'facility_note',
         'notes',
+        'latitude',
+        'longitude'
     ];
 
     /**
@@ -40,6 +42,27 @@ class Spot extends Model
                 $query->orWhere('created_by', $user->id);
             }
         });
+    }
+
+    /**
+     * 見る人に合わせた位置（FN-12・NF-01）
+     * 本人には正確な位置、ほかの人には小数第2位で切り捨てた位置（約1km四方）
+     */
+    public function locationFor(?User $user): ?array
+    {
+        if ($this->latitude === null || $this->longitude === null) {
+            return null;
+        }
+
+        if ($user && $this->created_by === $user->id) {
+            return ['lat' => (float) $this->latitude, 'lng' => (float) $this->longitude, 'exact' => true];
+        }
+
+        return [
+            'lat' => floor(round($this->latitude * 100, 6)) / 100,
+            'lng' => floor(round($this->longitude * 100, 6)) / 100,
+            'exact' => false,
+        ];
     }
     // 最初に登録したユーザー
     public function creator(): BelongsTo

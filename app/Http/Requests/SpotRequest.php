@@ -32,6 +32,8 @@ class SpotRequest extends FormRequest
                 'prefecture' => ['required', Rule::in(config('prefectures'))],
                 'visibility' => ['required', Rule::in(config('fishing.spot_visibility'))],
                 'notes' => ['nullable', 'string', 'max:2000'],
+                'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+                'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
             ];
         }
 
@@ -63,6 +65,8 @@ class SpotRequest extends FormRequest
             'convenience_distance_m' => 'コンビニまでの距離',
             'facility_note' => '現地情報のメモ',
             'notes' => 'メモ',
+            'latitude' => '緯度',
+            'longitude' => '経度',
         ];
     }
 }
