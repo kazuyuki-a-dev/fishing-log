@@ -47,10 +47,8 @@
                         <x-input-error :messages="$errors->get('time_of_day')" class="mt-2" />
                     </div>
                     <div>
-                        <x-input-label for="tide" value="潮" />
-                        <x-option-select id="tide" name="tide" class="mt-1 block w-full"
-                            :options="config('fishing.tides')" :selected="old('tide')" placeholder="分からない" />
-                        <x-input-error :messages="$errors->get('tide')" class="mt-2" />
+                        <x-input-label value="潮" />
+                        <p class="mt-2 text-sm text-sand">釣行日時から自動で決まります。</p>
                     </div>
                     <div>
                         <x-input-label for="weather" value="天候" />

@@ -8,6 +8,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Services\TideCalculator;
+use Illuminate\Support\Carbon;
 
 class TripController extends Controller
 {
@@ -31,15 +33,16 @@ class TripController extends Controller
         ]);
     }
 
-    public function store(StoreTripRequest $request): RedirectResponse
+    public function store(StoreTripRequest $request, TideCalculator $tides): RedirectResponse
     {
         $catches = $request->validated('catches') ?? [];
 
-        $trip = DB::transaction(function () use ($request, $catches) {
-            // 釣行を保存（持ち主はログイン中の本人）
-            $trip = $request->user()->trips()->create(
-                $request->safe()->except('catches')
-            );
+        // 釣行のデータに、日時から計算した潮を足す（FN-08）
+        $tripData = $request->safe()->except('catches');
+        $tripData['tide'] = $tides->tideFor(Carbon::parse($tripData['went_at'], 'Asia/Tokyo'));
+
+        $trip = DB::transaction(function () use ($request, $tripData, $catches) {
+            $trip = $request->user()->trips()->create($tripData);
 
             // 釣果を1匹ずつ保存
             foreach ($catches as $catch) {

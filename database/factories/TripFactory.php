@@ -6,6 +6,8 @@ use App\Models\Trip;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\User;
 use App\Models\Spot;
+use App\Services\TideCalculator;
+use Illuminate\Support\Carbon;
 
 /**
  * @extends Factory<Trip>
@@ -25,7 +27,7 @@ class TripFactory extends Factory
             'went_at' => fake()->dateTimeBetween('-1 year', 'now'),
             'time_of_day' => fake()->randomElement(config('fishing.times_of_day')),
             'visibility' => fake()->randomElement(config('fishing.trip_visibility')),
-            'tide' => fake()->randomElement(config('fishing.tides')),
+            'tide' => fn(array $attributes) => (new TideCalculator())->tideFor(Carbon::parse($attributes['went_at'])),
             'weather' => fake()->randomElement(config('fishing.weathers')),
         ];
     }

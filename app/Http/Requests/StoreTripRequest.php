@@ -28,7 +28,6 @@ class StoreTripRequest extends FormRequest
             'went_at' => ['required', 'date'],
             'time_of_day' => ['required', Rule::in(config('fishing.times_of_day'))],
             'visibility' => ['required', Rule::in(config('fishing.trip_visibility'))],
-            'tide' => ['nullable', Rule::in(config('fishing.tides'))],
             'weather' => ['nullable', Rule::in(config('fishing.weathers'))],
             'notes' => ['nullable', 'string', 'max:2000'],
 
@@ -51,7 +50,6 @@ class StoreTripRequest extends FormRequest
             'went_at' => '釣行日時',
             'time_of_day' => '時間帯',
             'visibility' => '公開範囲',
-            'tide' => '潮',
             'weather' => '天候',
             'notes' => 'メモ',
             'catches.*.fish_species' => ':position匹目の魚種',
