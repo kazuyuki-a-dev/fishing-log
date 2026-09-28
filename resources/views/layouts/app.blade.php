@@ -33,6 +33,10 @@
         <main>
             {{ $slot }}
         </main>
+        <footer class="py-6 text-center text-xs text-sand space-x-4">
+            <a href="{{ route('terms') }}" class="hover:underline">利用規約</a>
+            <a href="{{ route('privacy') }}" class="hover:underline">プライバシーポリシー</a>
+        </footer>
     </div>
 </body>
 

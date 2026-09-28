@@ -35,7 +35,7 @@ class FeedController extends Controller
         }
 
         $trips = Trip::query()
-            ->whereIn('visibility', ['public', 'spot_hidden'])
+            ->forFeed()
             ->when($prefecture !== 'all', fn($query) => $query->whereHas(
                 'spot',
                 fn($spot) => $spot->where('prefecture', $prefecture)
