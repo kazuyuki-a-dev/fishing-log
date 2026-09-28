@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\SpotController;
 use App\Http\Controllers\TripController;
+use App\Http\Controllers\PlannerController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -20,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('spots', SpotController::class)->only(['index', 'create', 'store', 'show']);
     Route::resource('trips', TripController::class)->only(['create', 'store']);
+    Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
 });
 
 Route::get('/terms', [StaticPageController::class, 'terms'])->name('terms');

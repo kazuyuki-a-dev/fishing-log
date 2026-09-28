@@ -40,6 +40,16 @@ class Trip extends Model
         });
     }
 
+    /**
+     * この釣行が、選んだ条件（潮・時間帯）と同じか（FN-11・FN-16）
+     * 時間帯が null（指定なし）なら、潮だけで判断する
+     */
+    public function matchesCondition(string $tide, ?string $timeOfDay): bool
+    {
+        return $this->tide === $tide
+            && ($timeOfDay === null || $this->time_of_day === $timeOfDay);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

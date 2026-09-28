@@ -84,9 +84,7 @@ class SpotController extends Controller
 
         $tide = $tides->tideFor($date);
 
-        // 同じ条件の釣行：潮が同じ（時間帯を選んだら、時間帯も同じ）
-        $matched = $trips->filter(fn($trip) => $trip->tide === $tide
-            && ($timeOfDay === null || $trip->time_of_day === $timeOfDay));
+        $matched = $trips->filter(fn($trip) => $trip->matchesCondition($tide, $timeOfDay));
 
         $matchedCatches = $matched->flatMap->catches;
 
