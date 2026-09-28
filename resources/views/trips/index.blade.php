@@ -11,6 +11,9 @@
 
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+            @if (session('status'))
+            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
+            @endif
             @if ($trips->isEmpty())
             <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
                 <p>まだ釣行の記録がありません。</p>
