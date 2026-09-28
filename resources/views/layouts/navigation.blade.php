@@ -28,6 +28,9 @@
                         釣行
                     </x-nav-link>
                     @endauth
+                    <x-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
+                        釣果フィード
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -106,6 +109,9 @@
                 釣行
             </x-responsive-nav-link>
             @endauth
+            <x-responsive-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
+                釣果フィード
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->

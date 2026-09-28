@@ -6,6 +6,7 @@ use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\SpotController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\PlannerController;
+use App\Http\Controllers\FeedController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -25,6 +26,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('spots', SpotController::class)->only(['create', 'store', 'edit', 'update']);
 });
 
+Route::resource('spots', SpotController::class)->only(['index', 'show']);
+Route::get('/feed', [FeedController::class, 'index'])->name('feed');
 Route::get('/terms', [StaticPageController::class, 'terms'])->name('terms');
 Route::get('/privacy', [StaticPageController::class, 'privacy'])->name('privacy');
 Route::resource('spots', SpotController::class)->only(['index', 'show']);
