@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSpotRequest;
+use App\Http\Requests\SpotRequest;
 use App\Models\Spot;
 use App\Services\TideCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Gate;
 
 class SpotController extends Controller
 {
@@ -45,7 +46,7 @@ class SpotController extends Controller
         ]);
     }
 
-    public function store(StoreSpotRequest $request): RedirectResponse
+    public function store(SpotRequest $request): RedirectResponse
     {
         $spot = new Spot($request->validated());
         $spot->created_by = $request->user()->id;
@@ -61,8 +62,7 @@ class SpotController extends Controller
     {
         $user = $request->user();
 
-        // 見てよい釣り場か（公開か、自分が登録したもの）（NF-01）
-        abort_unless($spot->visibility === 'public' || $spot->created_by === $user->id, 404);
+        Gate::authorize('view', $spot);
 
         $trips = $spot->trips()
             ->visibleWithSpotTo($user) // 自分のもの ＋ ほかの人の「全体公開かつ釣り場も公開」のもの（FN-12）
@@ -116,5 +116,32 @@ class SpotController extends Controller
             ],
             'judge' => $judge,
         ]);
+    }
+
+    public function edit(Request $request, Spot $spot): View
+    {
+        // 見られる人はみんな、編集画面を開ける（FN-14）
+        Gate::authorize('update', $spot);
+
+        return view('spots.edit', [
+            'spot' => $spot,
+            // 釣り場名などを直せるのは、登録した本人だけ（PG09）
+            'canEditBasic' => $request->user()->can('updateBasic', $spot),
+        ]);
+    }
+
+    public function update(SpotRequest $request, Spot $spot): RedirectResponse
+    {
+        Gate::authorize('update', $spot);
+
+        // 入力チェックを通った項目だけ書き換える（本人でなければ、釣り場名などは入っていない）
+        $spot->fill($request->validated());
+        // 最後に更新した人を記録する（FN-14）
+        $spot->updated_by = $request->user()->id;
+        $spot->save();
+
+        return redirect()
+            ->route('spots.show', $spot)
+            ->with('status', '釣り場の情報を更新しました。');
     }
 }
