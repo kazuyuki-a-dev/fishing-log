@@ -45,6 +45,8 @@ class TripRequest extends FormRequest
             'catches.*.length_cm' => ['nullable', 'numeric', 'min:0', 'max:9999.9'],
             'catches.*.weight_g' => ['nullable', 'integer', 'min:0'],
             'catches.*.notes' => ['nullable', 'string', 'max:2000'],
+            'catches.*.photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'catches.*.keep_photo' => ['nullable', 'string'],
         ];
     }
 
@@ -64,6 +66,7 @@ class TripRequest extends FormRequest
             'catches.*.length_cm' => ':position匹目のサイズ',
             'catches.*.weight_g' => ':position匹目の重さ',
             'catches.*.notes' => ':position匹目のメモ',
+            'catches.*.photo' => ':position匹目の写真',
         ];
     }
 }

@@ -165,6 +165,10 @@
                             {{ $catch->length_cm }} cm
                             @endif
                             <span class="text-sand">（{{ $catch->method }}{{ $catch->method_detail ? '・' . $catch->method_detail : '' }}）</span>
+                            @if ($catch->photoUrl())
+                            <img src="{{ $catch->photoUrl() }}" alt="{{ $catch->fish_species }}の写真" loading="lazy"
+                                class="mt-2 max-h-48 rounded-md object-cover">
+                            @endif
                         </li>
                         @endforeach
                     </ul>

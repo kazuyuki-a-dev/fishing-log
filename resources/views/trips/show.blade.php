@@ -124,6 +124,10 @@
                     @if ($isOwner && $catch->notes)
                     <p class="whitespace-pre-line">{{ $catch->notes }}</p>
                     @endif
+                    @if ($catch->photoUrl())
+                    <img src="{{ $catch->photoUrl() }}" alt="{{ $catch->fish_species }}の写真" loading="lazy"
+                        class="mt-2 max-h-80 w-full rounded-md object-cover">
+                    @endif
                 </article>
                 @empty
                 <p class="bg-white rounded-md shadow-sm p-4 text-sm">坊主</p>

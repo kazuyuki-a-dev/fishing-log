@@ -13,6 +13,7 @@ return [
 'method_detail' => $catch->method_detail,
 'length_cm' => $catch->length_cm,
 'weight_g' => $catch->weight_g,
+'keep_photo' => $catch->image_path,
 ];
 })->all() ?? []);
 @endphp
@@ -87,6 +88,10 @@ return [
     }">
     <h3 class="font-bold">釣果</h3>
 
+    @if ($errors->any())
+    <p class="text-sm text-sand">入力エラーで戻ったときは、写真をもう一度選んでください。</p>
+    @endif
+
     @if ($errors->has('catches.*'))
     <ul class="text-sm text-red-600 space-y-1">
         @foreach ($errors->get('catches.*') as $messages)
@@ -141,6 +146,22 @@ return [
             <input type="text" :name="`catches[${i}][method_detail]`" x-model="row.method_detail"
                 placeholder="仕掛け・ヒットしたルアー・エサの種類など"
                 class="block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
+            {{-- 写真（任意）。編集のときは今の写真を引き継げる --}}
+            <div class="space-y-2">
+                <template x-if="row.keep_photo">
+                    <div class="flex items-center gap-3">
+                        <img :src="`{{ asset('storage') }}/${row.keep_photo}`" alt="今の写真"
+                            class="h-20 w-20 rounded-md object-cover">
+                        <button type="button" @click="row.keep_photo = ''" class="text-sm underline text-sand">この写真を外す</button>
+                    </div>
+                </template>
+                <input type="hidden" :name="`catches[${i}][keep_photo]`" :value="row.keep_photo ?? ''">
+                <label class="block text-sm text-sand">
+                    <span x-text="row.keep_photo ? '写真を入れ替える（任意）' : '写真（任意）'"></span>
+                    <input type="file" :name="`catches[${i}][photo]`" accept="image/jpeg,image/png,image/webp"
+                        class="mt-1 block w-full text-sm text-ink">
+                </label>
+            </div>
         </div>
     </template>
 
