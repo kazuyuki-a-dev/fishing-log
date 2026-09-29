@@ -20,7 +20,7 @@ const pinStyle = {
 };
 
 // 釣り場の登録・編集画面：タップでピンを置く
-Alpine.data("spotMapInput", (lat, lng, nearbyUrl = null) => {
+Alpine.data("spotMapInput", (lat, lng, nearbyUrl = null, center = null) => {
     // Leaflet の地図は Alpine の外（ふつうの変数）で持つ。Alpine に入れると動かなくなるため
     let map = null;
     let pin = null;
@@ -35,8 +35,8 @@ Alpine.data("spotMapInput", (lat, lng, nearbyUrl = null) => {
             const hasLocation = this.lat !== null && this.lat !== "";
             map = baseMap(
                 this.$refs.map,
-                hasLocation ? [this.lat, this.lng] : [36.5, 138.0],
-                hasLocation ? 15 : 5,
+                hasLocation ? [this.lat, this.lng] : (center ?? [36.5, 138.0]),
+                hasLocation ? 15 : center ? 11 : 5,
             );
             if (hasLocation) {
                 this.place(Number(this.lat), Number(this.lng));

@@ -61,9 +61,11 @@ class SpotController extends Controller
         $spot->updated_by = $request->user()->id;
         $spot->save();
 
+        // 登録したら、その釣り場のカルテへ。釣行の登録へ進むボタンを出す（PG08）
         return redirect()
-            ->route('spots.index', ['prefecture' => $spot->prefecture])
-            ->with('status', "釣り場「{$spot->name}」を登録しました。");
+            ->route('spots.show', $spot)
+            ->with('status', '釣り場を登録しました。')
+            ->with('registered', true);
     }
 
     public function show(Request $request, Spot $spot, TideCalculator $tides): View

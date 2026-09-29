@@ -26,7 +26,7 @@ $spot = $spot ?? null;
     <x-input-error :messages="$errors->get('prefecture')" class="mt-2" />
 </div>
 
-<div x-data="spotMapInput(@js(old('latitude', $spot?->latitude)), @js(old('longitude', $spot?->longitude)), @js($spot ? null : route('spots.nearby')))">
+<div x-data="spotMapInput(@js(old('latitude', $spot?->latitude)), @js(old('longitude', $spot?->longitude)), @js($spot ? null : route('spots.nearby')), @js(config('prefecture_centers.' . old('prefecture', $spot?->prefecture ?? $defaultPrefecture ?? '')))">
     <x-input-label value="位置（任意）" />
     <p class="mt-1 text-xs text-sand">地図をタップして、釣り場の位置にピンを置いてください。公開するときは、ほかの人には約1km四方の「このあたり」としてだけ表示されます。</p>
     <div x-ref="map" class="mt-2 h-72 rounded-md border border-gray-200"></div>

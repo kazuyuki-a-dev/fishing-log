@@ -18,6 +18,17 @@
             <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
             @endif
 
+            {{-- 釣り場を登録した直後だけ出す（PG08） --}}
+            @if (session('registered'))
+            <div class="bg-white rounded-md shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm">今日ここに行ったなら、続けて釣行を記録しましょう。</p>
+                <a href="{{ route('trips.create', ['spot' => $spot->id]) }}"
+                    class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    この釣り場で釣行を記録する
+                </a>
+            </div>
+            @endif
+
             {{-- 注意区分の警告（FN-14・NF-04） --}}
             @if ($spot->caution_type && $spot->caution_type !== 'なし')
             <div class="rounded-md border-l-4 border-float bg-white p-4 shadow-sm">
