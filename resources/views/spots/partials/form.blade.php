@@ -26,7 +26,7 @@ $spot = $spot ?? null;
     <x-input-error :messages="$errors->get('prefecture')" class="mt-2" />
 </div>
 
-<div x-data="spotMapInput(@js(old('latitude', $spot?->latitude)), @js(old('longitude', $spot?->longitude)))">
+<div x-data="spotMapInput(@js(old('latitude', $spot?->latitude)), @js(old('longitude', $spot?->longitude)), @js($spot ? null : route('spots.nearby')))">
     <x-input-label value="位置（任意）" />
     <p class="mt-1 text-xs text-sand">地図をタップして、釣り場の位置にピンを置いてください。公開するときは、ほかの人には約1km四方の「このあたり」としてだけ表示されます。</p>
     <div x-ref="map" class="mt-2 h-72 rounded-md border border-gray-200"></div>
@@ -40,6 +40,20 @@ $spot = $spot ?? null;
         <span class="text-sand" x-text="lat ? `緯度 ${lat} / 経度 ${lng}` : 'まだ位置は決まっていません'"></span>
     </div>
     <p class="mt-1 text-sm text-sea" x-text="message"></p>
+    <template x-if="nearby.length > 0">
+        <div class="mt-3 rounded-md border-l-4 border-float bg-white p-3 text-sm shadow-sm">
+            <p class="font-bold">この釣り場ですか？</p>
+            <p class="text-xs text-sand">近くに登録済みの釣り場があります。同じ場所なら、新しく登録せずにそちらを使ってください。</p>
+            <ul class="mt-2 space-y-1">
+                <template x-for="spot in nearby" :key="spot.url">
+                    <li>
+                        <a :href="spot.url" target="_blank" class="underline text-sea" x-text="spot.name"></a>
+                        <span class="text-sand" x-text="`（約 ${spot.distance}m）`"></span>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </template>
     <x-input-error class="mt-2" :messages="$errors->get('latitude')" />
     <x-input-error class="mt-2" :messages="$errors->get('longitude')" />
 </div>
