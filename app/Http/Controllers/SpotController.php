@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Http\JsonResponse;
 
 class SpotController extends Controller
 {
@@ -152,5 +153,61 @@ class SpotController extends Controller
         return redirect()
             ->route('spots.show', $spot)
             ->with('status', '釣り場の情報を更新しました。');
+    }
+
+    /**
+     * ピンを置いた位置の近く（300m 以内）にある釣り場を返す（PG08・FN-08）
+     * 対象は公開の釣り場と自分の釣り場だけ。位置は返さない（NF-01・NF-06 ⑦）
+     */
+    public function nearby(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+        ]);
+        $lat = (float) $validated['lat'];
+        $lng = (float) $validated['lng'];
+
+        // まず、四角の範囲でざっくり絞る（緯度 0.003 度 ≒ 330m。経度は北へ行くほど幅が狭くなるので広げる）
+        $latRange = 0.003;
+        $lngRange = 0.003 / max(cos(deg2rad($lat)), 0.01);
+
+        $spots = Spot::visibleTo($request->user())
+            ->whereNotNull('latitude')
+            ->whereBetween('latitude', [$lat - $latRange, $lat + $latRange])
+            ->whereBetween('longitude', [$lng - $lngRange, $lng + $lngRange])
+            ->get(['id', 'name', 'latitude', 'longitude']);
+
+        // 次に、正確な距離を計算して 300m 以内だけを残す
+        $candidates = $spots
+            ->map(fn(Spot $spot) => [
+                'name' => $spot->name,
+                'distance' => $this->distanceInMeters($lat, $lng, (float) $spot->latitude, (float) $spot->longitude),
+                'url' => route('spots.show', $spot),
+            ])
+            ->filter(fn(array $candidate) => $candidate['distance'] <= 300)
+            ->sortBy('distance')
+            ->take(5)
+            // 距離は約 50m 単位に丸めて返す
+            ->map(fn(array $candidate) => [
+                ...$candidate,
+                'distance' => max(50, (int) (round($candidate['distance'] / 50) * 50)),
+            ])
+            ->values();
+
+        return response()->json(['spots' => $candidates]);
+    }
+
+    /**
+     * 2点間の距離（メートル）。地球を球として計算する（ハバーサインの公式）
+     */
+    private function distanceInMeters(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371000;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+
+        return $earthRadius * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 }

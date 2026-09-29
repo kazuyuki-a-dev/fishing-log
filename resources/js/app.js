@@ -1,4 +1,3 @@
-
 import Alpine from "alpinejs";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -21,7 +20,7 @@ const pinStyle = {
 };
 
 // 釣り場の登録・編集画面：タップでピンを置く
-Alpine.data("spotMapInput", (lat, lng) => {
+Alpine.data("spotMapInput", (lat, lng, nearbyUrl = null) => {
     // Leaflet の地図は Alpine の外（ふつうの変数）で持つ。Alpine に入れると動かなくなるため
     let map = null;
     let pin = null;
@@ -30,6 +29,7 @@ Alpine.data("spotMapInput", (lat, lng) => {
         lat: lat,
         lng: lng,
         message: "",
+        nearby: [],
 
         init() {
             const hasLocation = this.lat !== null && this.lat !== "";
@@ -54,6 +54,7 @@ Alpine.data("spotMapInput", (lat, lng) => {
             } else {
                 pin = L.circleMarker([lat, lng], pinStyle).addTo(map);
             }
+            this.findNearby();
         },
 
         useCurrentLocation() {
@@ -85,9 +86,29 @@ Alpine.data("spotMapInput", (lat, lng) => {
         clear() {
             this.lat = "";
             this.lng = "";
+            this.nearby = [];
             if (pin) {
                 pin.remove();
                 pin = null;
+            }
+        },
+
+        async findNearby() {
+            // 編集画面では提案しない（nearbyUrl が渡されない）
+            if (!nearbyUrl) {
+                return;
+            }
+            const params = new URLSearchParams({
+                lat: this.lat,
+                lng: this.lng,
+            });
+            try {
+                const response = await fetch(`${nearbyUrl}?${params}`, {
+                    headers: { Accept: "application/json" },
+                });
+                this.nearby = response.ok ? (await response.json()).spots : [];
+            } catch {
+                this.nearby = [];
             }
         },
     };
