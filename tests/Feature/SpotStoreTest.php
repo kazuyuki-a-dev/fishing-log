@@ -21,7 +21,9 @@ class SpotStoreTest extends TestCase
             'visibility' => 'private',
         ]);
 
-        $response->assertRedirect(route('spots.index', ['prefecture' => '秋田県']));
+        $spot = Spot::where('name', '新しい堤防')->firstOrFail();
+        $response->assertRedirect(route('spots.show', $spot))
+            ->assertSessionHas('registered', true);
         $this->assertDatabaseHas('spots', [
             'name' => '新しい堤防',
             'created_by' => $me->id,
@@ -53,5 +55,31 @@ class SpotStoreTest extends TestCase
         ]);
 
         $this->assertSame($me->id, Spot::where('name', 'なりすましの釣り場')->first()->created_by);
+    }
+
+    public function test_karte_shows_trip_button_right_after_registering(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->followingRedirects()
+            ->post('/spots', ['name' => '新しい堤防', 'prefecture' => '秋田県', 'visibility' => 'private'])
+            ->assertSee('釣り場を登録しました。')
+            ->assertSee('この釣り場で釣行を記録する');
+    }
+
+    public function test_create_form_map_opens_at_home_prefecture(): void
+    {
+        $me = User::factory()->create(['home_prefecture' => '沖縄県']);
+
+        $this->actingAs($me)->get('/spots/create')
+            ->assertSee('[26.21,127.68]', false);
+    }
+
+    public function test_edit_form_map_opens_at_the_spot_prefecture(): void
+    {
+        $me = User::factory()->create(['home_prefecture' => '沖縄県']);
+        $spot = Spot::factory()->create(['created_by' => $me->id, 'prefecture' => '北海道', 'latitude' => null, 'longitude' => null]);
+
+        $this->actingAs($me)->get("/spots/{$spot->id}/edit")
+            ->assertSee('[43.06,141.35]', false);
     }
 }
