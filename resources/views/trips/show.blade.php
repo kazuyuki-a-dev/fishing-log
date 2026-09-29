@@ -21,6 +21,50 @@
             </div>
             @endif
 
+            {{-- 現地の情報の質問（FN-14）。登録した直後だけ出る --}}
+            @if ($localQuestions)
+            @php
+            $questionLabels = [
+            'caution_type' => '注意区分',
+            'parking_type' => '駐車場',
+            'toilet_available' => 'トイレ',
+            'convenience_distance_m' => '最寄りのコンビニまでの距離（メートル）',
+            ];
+            $questionOptions = [
+            'caution_type' => config('fishing.caution_types'),
+            'parking_type' => config('fishing.parking_types'),
+            'toilet_available' => config('fishing.toilet_available'),
+            ];
+            @endphp
+            <form method="POST" action="{{ route('spots.local-info', $trip->spot) }}"
+                class="bg-white rounded-md shadow-sm p-5 space-y-4">
+                @csrf
+                @method('PATCH')
+                <div>
+                    <p class="font-bold">{{ $trip->spot->name }}の現地の情報を教えてください</p>
+                    <p class="text-sm text-sand">まだ誰も入力していない項目です。分かるものだけで大丈夫です。ほかの釣り人の役に立ちます。</p>
+                </div>
+
+                @foreach ($localQuestions as $field)
+                <div>
+                    <x-input-label :for="$field" :value="$questionLabels[$field]" />
+                    @if ($field === 'convenience_distance_m')
+                    <x-text-input :id="$field" :name="$field" type="number" min="0" class="mt-1 block w-full" />
+                    @else
+                    <x-option-select :id="$field" :name="$field" class="mt-1 block w-full"
+                        :options="$questionOptions[$field]" placeholder="分からない" />
+                    @endif
+                    <x-input-error :messages="$errors->get($field)" class="mt-2" />
+                </div>
+                @endforeach
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-primary-button>送る</x-primary-button>
+                    <span class="text-xs text-sand">答えなくても、このまま画面を離れれば大丈夫です。</span>
+                </div>
+            </form>
+            @endif
+
             <section class="bg-white rounded-md shadow-sm p-5 space-y-3">
                 <dl class="grid grid-cols-[6rem_1fr] gap-y-2 text-sm">
                     <dt class="text-sand">釣り場</dt>
