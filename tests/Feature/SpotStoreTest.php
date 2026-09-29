@@ -82,4 +82,19 @@ class SpotStoreTest extends TestCase
         $this->actingAs($me)->get("/spots/{$spot->id}/edit")
             ->assertSee('[43.06,141.35]', false);
     }
+
+    public function test_edit_form_map_receives_a_complete_expression(): void
+    {
+        $me = User::factory()->create();
+        $spot = Spot::factory()->create([
+            'created_by' => $me->id,
+            'prefecture' => '秋田県',
+            'latitude' => 39.7317836,
+            'longitude' => 140.0759288,
+        ]);
+
+        // 4つの値がそろい、最後が「))」で閉じていること（#53 で、閉じカッコが消えて地図が出なくなった）
+        $this->actingAs($me)->get("/spots/{$spot->id}/edit")
+            ->assertSee("spotMapInput('39.7317836', '140.0759288', null, JSON.parse('[39.72,140.1]'))", false);
+    }
 }

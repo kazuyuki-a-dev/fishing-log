@@ -1,5 +1,5 @@
 {{-- 釣り場フォーム（登録 PG08・編集 PG09 で共用）
-     $spot は編集のときだけ入る。$canEditBasic は釣り場名などを直してよいか --}}
+$spot は編集のときだけ入る。$canEditBasic は釣り場名などを直してよいか --}}
 @php
 $spot = $spot ?? null;
 @endphp
@@ -26,7 +26,14 @@ $spot = $spot ?? null;
     <x-input-error :messages="$errors->get('prefecture')" class="mt-2" />
 </div>
 
-<div x-data="spotMapInput(@js(old('latitude', $spot?->latitude)), @js(old('longitude', $spot?->longitude)), @js($spot ? null : route('spots.nearby')), @js(config('prefecture_centers.' . old('prefecture', $spot?->prefecture ?? $defaultPrefecture ?? '')))">
+@php
+// 地図に渡す値。長い式を @js の中に書くと、Blade がカッコの区切りを読み間違えるため、先に変数に入れる
+$mapLat = old('latitude', $spot?->latitude);
+$mapLng = old('longitude', $spot?->longitude);
+$nearbyUrl = $spot ? null : route('spots.nearby');
+$mapCenter = config('prefecture_centers.' . old('prefecture', $spot?->prefecture ?? $defaultPrefecture ?? ''));
+@endphp
+<div x-data="spotMapInput(@js($mapLat), @js($mapLng), @js($nearbyUrl), @js($mapCenter))">
     <x-input-label value="位置（任意）" />
     <p class="mt-1 text-xs text-sand">地図をタップして、釣り場の位置にピンを置いてください。公開するときは、ほかの人には約1km四方の「このあたり」としてだけ表示されます。</p>
     <div x-ref="map" class="mt-2 h-72 rounded-md border border-gray-200"></div>
