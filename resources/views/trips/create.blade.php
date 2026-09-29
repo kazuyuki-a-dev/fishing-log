@@ -11,7 +11,7 @@
                 <a href="{{ route('spots.create') }}" class="underline text-sea">釣り場を登録する</a>
             </div>
             @else
-            <form method="POST" action="{{ route('trips.store') }}" class="bg-white rounded-md shadow-sm p-6 space-y-6">
+            <form method="POST" action="{{ route('trips.store') }}" enctype="multipart/form-data" class="bg-white rounded-md shadow-sm p-6 space-y-6">
                 @csrf
 
                 @include('trips.partials.form')

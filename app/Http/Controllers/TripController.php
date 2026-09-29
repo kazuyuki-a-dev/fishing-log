@@ -15,9 +15,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use App\Services\CatchHighlighter;
+use App\Services\PhotoStorer;
 
 class TripController extends Controller
 {
+    // 写真の係。コントローラが作られるときに、Laravel が用意して渡してくれる
+    public function __construct(private PhotoStorer $photos) {}
+
     public function index(Request $request): View
     {
         // 自分の釣行を新しい順に（PG10）
@@ -92,14 +96,23 @@ class TripController extends Controller
     {
         Gate::authorize('update', $trip);
 
-        DB::transaction(function () use ($request, $trip, $tides) {
+        // 今ついている写真（引き継いでよい写真の一覧）
+        $oldPhotos = $trip->catches()->whereNotNull('image_path')->pluck('image_path')->all();
+
+        DB::transaction(function () use ($request, $trip, $tides, $oldPhotos) {
             // 釣行を書き換える（日時が変わったら潮も計算し直す）
             $trip->update($this->tripData($request, $tides));
 
-            // 釣果は、今あるものを全部消して、送られてきたものを入れ直す
+            // 釣果は、今あるものを全部消して、送られてきたものを入れ直す（写真は引き継げる）
             $trip->catches()->delete();
-            $this->saveCatches($trip, $request->validated('catches') ?? []);
+            $this->saveCatches($trip, $request->validated('catches') ?? [], $oldPhotos);
         });
+
+        // 引き継がれなかった写真のファイルを消す
+        $usedPhotos = $trip->catches()->whereNotNull('image_path')->pluck('image_path')->all();
+        foreach (array_diff($oldPhotos, $usedPhotos) as $path) {
+            $this->photos->delete($path);
+        }
 
         return redirect()
             ->route('trips.show', $trip)
@@ -111,8 +124,14 @@ class TripController extends Controller
         // 削除してよいのは本人だけ（PG14）
         Gate::authorize('delete', $trip);
 
-        // 釣果は、テーブルの設定（ON DELETE CASCADE）で一緒に消える
+        // 釣果はテーブルの設定（ON DELETE CASCADE）で一緒に消えるが、写真のファイルは消えないので先に集めておく
+        $photos = $trip->catches()->whereNotNull('image_path')->pluck('image_path')->all();
+
         $trip->delete();
+
+        foreach ($photos as $path) {
+            $this->photos->delete($path);
+        }
 
         return redirect()
             ->route('trips.index')
@@ -152,9 +171,21 @@ class TripController extends Controller
     /**
      * 釣果を1匹ずつ保存する。「その他」は入力した魚の名前で保存（FN-01）
      */
-    private function saveCatches(Trip $trip, array $catches): void
+    /**
+     * 釣果を1匹ずつ保存する。「その他」は入力した魚の名前で保存（FN-01）
+     * 写真は、新しく選ばれたものを保存するか、今の写真（$keepable の中にあるもの）を引き継ぐ
+     */
+    private function saveCatches(Trip $trip, array $catches, array $keepable = []): void
     {
         foreach ($catches as $catch) {
+            if (isset($catch['photo'])) {
+                $imagePath = $this->photos->store($catch['photo']);
+            } elseif (in_array($catch['keep_photo'] ?? null, $keepable, true)) {
+                $imagePath = $catch['keep_photo'];
+            } else {
+                $imagePath = null;
+            }
+
             $trip->catches()->create([
                 'fish_species' => $catch['fish_species'] === 'その他'
                     ? $catch['fish_species_other']
@@ -164,6 +195,7 @@ class TripController extends Controller
                 'length_cm' => $catch['length_cm'] ?? null,
                 'weight_g' => $catch['weight_g'] ?? null,
                 'notes' => $catch['notes'] ?? null,
+                'image_path' => $imagePath,
             ]);
         }
     }
