@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     // /spots/nearby と /spots/create は、カルテ（/spots/{spot}）より先に書く
     Route::get('/spots/nearby', [SpotController::class, 'nearby'])->name('spots.nearby');
     Route::resource('spots', SpotController::class)->only(['create', 'store', 'edit', 'update']);
+    Route::patch('/spots/{spot}/local-info', [SpotController::class, 'updateLocalInfo'])->name('spots.local-info');
 
     Route::resource('trips', TripController::class);
     Route::get('/planner', [PlannerController::class, 'index'])->name('planner');

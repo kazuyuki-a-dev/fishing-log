@@ -68,6 +68,10 @@ class TripController extends Controller
             'visibility' => $trip->effectiveVisibility(),
             // ほかの人が見ていて「釣り場だけ隠す」なら、釣り場名を出さない（FN-12）
             'hideSpot' => ! $isOwner && $trip->effectiveVisibility() === 'spot_hidden',
+            // 登録した直後だけ、その釣り場の空欄の現地情報を最大2問聞く（FN-14）
+            'localQuestions' => $request->session()->has('highlights') && $request->user()->can('update', $trip->spot)
+                ? array_slice($trip->spot->missingLocalInfo(), 0, 2)
+                : [],
         ]);
     }
 

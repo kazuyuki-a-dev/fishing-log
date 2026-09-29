@@ -64,6 +64,18 @@ class Spot extends Model
             'exact' => false,
         ];
     }
+    /**
+     * 現地の情報で、まだ空欄の項目（聞く順番に並べる）（FN-14）
+     * 安全に関わる注意区分をいちばん先にする
+     */
+    public function missingLocalInfo(): array
+    {
+        return collect(['caution_type', 'parking_type', 'toilet_available', 'convenience_distance_m'])
+            ->filter(fn(string $field) => $this->{$field} === null || $this->{$field} === '')
+            ->values()
+            ->all();
+    }
+
     // 最初に登録したユーザー
     public function creator(): BelongsTo
     {

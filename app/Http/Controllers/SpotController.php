@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\Rule;
 
 class SpotController extends Controller
 {
@@ -155,6 +156,40 @@ class SpotController extends Controller
         return redirect()
             ->route('spots.show', $spot)
             ->with('status', '釣り場の情報を更新しました。');
+    }
+
+    /**
+     * 釣行を登録した直後の質問から、現地の情報だけを保存する（FN-14）
+     * 釣り場名などの基本の情報は受け取らない
+     */
+    public function updateLocalInfo(Request $request, Spot $spot): RedirectResponse
+    {
+        Gate::authorize('update', $spot);
+
+        $validated = $request->validate([
+            'caution_type' => ['nullable', Rule::in(config('fishing.caution_types'))],
+            'parking_type' => ['nullable', Rule::in(config('fishing.parking_types'))],
+            'toilet_available' => ['nullable', Rule::in(config('fishing.toilet_available'))],
+            'convenience_distance_m' => ['nullable', 'integer', 'min:0', 'max:100000'],
+        ], [], [
+            'caution_type' => '注意区分',
+            'parking_type' => '駐車場',
+            'toilet_available' => 'トイレ',
+            'convenience_distance_m' => 'コンビニまでの距離',
+        ]);
+
+        // 空欄のまま送られた項目は外す（今入っている値を消さないため）
+        $answers = array_filter($validated, fn($value) => $value !== null);
+
+        if ($answers === []) {
+            return back();
+        }
+
+        $spot->fill($answers);
+        $spot->updated_by = $request->user()->id;
+        $spot->save();
+
+        return back()->with('status', '現地の情報を追加しました。ありがとうございます！');
     }
 
     /**
