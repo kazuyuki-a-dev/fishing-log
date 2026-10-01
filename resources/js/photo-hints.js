@@ -27,7 +27,8 @@ export async function readPhotoHints(file) {
             lat: hasLocation ? lat : null,
             lng: hasLocation ? lng : null,
         };
-    } catch {
+    } catch (error) {
+        console.error("Exif を読み取れませんでした", error);
         return { takenAt: null, lat: null, lng: null };
     }
 }
