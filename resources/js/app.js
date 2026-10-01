@@ -1,6 +1,12 @@
 import Alpine from "alpinejs";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import {
+    readPhotoHints,
+    isHeicFile,
+    convertHeicToJpeg,
+    findNearbySpots,
+} from "./photo-hints";
 
 // 地図の土台（OpenStreetMap）を置く。右下の「© OpenStreetMap」は使うときの決まり
 function baseMap(element, center, zoom) {
@@ -111,6 +117,26 @@ Alpine.data("spotMapInput", (lat, lng, nearbyUrl = null, center = null) => {
                 this.nearby = [];
             }
         },
+
+        async readLocationFrom(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            const hints = await readPhotoHints(file);
+            // この写真は位置を読むためだけに使う。選んだままにしない
+            event.target.value = "";
+
+            if (hints.lat === null) {
+                this.message =
+                    "この写真には位置が入っていません。地図をタップするか「現在地を使う」で位置を決めてください。";
+                return;
+            }
+            this.place(hints.lat, hints.lng);
+            map.setView([hints.lat, hints.lng], 16);
+            this.message =
+                "写真を撮った場所にピンを置きました。ずれていたら地図をタップして直してください。";
+        },
     };
 });
 
@@ -141,6 +167,79 @@ Alpine.data("spotMapView", (location) => ({
             }).addTo(map);
             map.fitBounds(area, { padding: [20, 20] });
         }
+    },
+}));
+
+// 釣行の登録・編集画面：釣果の行と、写真から読み取った候補
+Alpine.data("catchRows", (initialRows, nearbyUrl) => ({
+    rows: initialRows.map((row, n) => ({ ...row, key: n })),
+    nextKey: 1000,
+    hint: null, // 写真から読み取った候補 { takenAt, spots }
+    photoMessage: "",
+    converting: false,
+
+    add() {
+        this.rows.push({ fish_species: "", method: "", key: this.nextKey++ });
+    },
+
+    remove(i) {
+        this.rows.splice(i, 1);
+    },
+
+    async pickPhoto(event) {
+        const input = event.target;
+        const file = input.files[0];
+        this.photoMessage = "";
+        if (!file) {
+            return;
+        }
+
+        // Exif は、HEIC を変換する前に読む（変換すると消えるため）
+        const hints = await readPhotoHints(file);
+
+        if (isHeicFile(file)) {
+            this.converting = true;
+            try {
+                const jpeg = await convertHeicToJpeg(file);
+                // 選ばれたファイルを、変換した JPEG に差し替える
+                const transfer = new DataTransfer();
+                transfer.items.add(jpeg);
+                input.files = transfer.files;
+            } catch {
+                input.value = "";
+                this.photoMessage =
+                    "この写真は変換できませんでした。JPEG で保存し直すか、別の写真を選んでください。";
+                return;
+            } finally {
+                this.converting = false;
+            }
+        }
+
+        if (!hints.takenAt && hints.lat === null) {
+            this.photoMessage = "この写真には撮影日時や位置が入っていません。";
+            return;
+        }
+
+        // 近くの釣り場のうち、釣り場の選択欄にあるものだけを候補にする
+        let spots = [];
+        if (hints.lat !== null) {
+            spots = (
+                await findNearbySpots(nearbyUrl, hints.lat, hints.lng)
+            ).filter((spot) =>
+                document.querySelector(`#spot_id option[value="${spot.id}"]`),
+            );
+        }
+        this.hint = { takenAt: hints.takenAt, spots };
+    },
+
+    useTakenAt() {
+        document.getElementById("went_at").value = this.hint.takenAt;
+        this.photoMessage = "釣行日時を、写真の撮影日時にしました。";
+    },
+
+    useSpot(id) {
+        document.getElementById("spot_id").value = String(id);
+        this.photoMessage = "釣り場を選びました。";
     },
 }));
 

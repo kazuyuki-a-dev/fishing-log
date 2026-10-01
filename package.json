@@ -20,6 +20,8 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
+        "exifreader": "^4.46.0",
+        "heic-to": "^1.5.2",
         "leaflet": "^1.9.4"
     }
 }

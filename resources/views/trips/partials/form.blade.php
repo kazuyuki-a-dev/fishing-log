@@ -16,6 +16,8 @@ return [
 'keep_photo' => $catch->image_path,
 ];
 })->all() ?? []);
+$catchRows = array_values($initialCatches);
+$nearbyUrl = route('spots.nearby');
 @endphp
 
 <div>
@@ -80,13 +82,28 @@ return [
 
 {{-- 釣果（Alpine.js で行を増やしたり減らしたりする） --}}
 <div class="border-t border-gray-100 pt-6 space-y-4"
-    x-data="{
-        rows: @js(array_values($initialCatches)).map((row, n) => ({ ...row, key: n })),
-        nextKey: 1000,
-        add() { this.rows.push({ fish_species: '', method: '', key: this.nextKey++ }) },
-        remove(i) { this.rows.splice(i, 1) },
-    }">
+    x-data="catchRows(@js($catchRows), @js($nearbyUrl))">
     <h3 class="font-bold">釣果</h3>
+
+    <p x-show="converting" class="text-sm text-sea">写真を変換しています…</p>
+    <p x-show="photoMessage" x-text="photoMessage" class="text-sm text-sea"></p>
+    <template x-if="hint">
+        <div class="rounded-md border-l-4 border-float bg-white p-3 text-sm shadow-sm space-y-2">
+            <p class="font-bold">写真から読み取った候補</p>
+            <template x-if="hint.takenAt">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span x-text="`撮影日時：${hint.takenAt.replace('T', ' ').replaceAll('-', '/')}`"></span>
+                    <button type="button" @click="useTakenAt()" class="underline text-sea">釣行日時に入れる</button>
+                </div>
+            </template>
+            <template x-for="spot in hint.spots" :key="spot.id">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span x-text="`${spot.name}（約 ${spot.distance}m）で釣りましたか？`"></span>
+                    <button type="button" @click="useSpot(spot.id)" class="underline text-sea">この釣り場を選ぶ</button>
+                </div>
+            </template>
+        </div>
+    </template>
 
     @if ($errors->any())
     <p class="text-sm text-sand">入力エラーで戻ったときは、写真をもう一度選んでください。</p>
@@ -158,7 +175,9 @@ return [
                 <input type="hidden" :name="`catches[${i}][keep_photo]`" :value="row.keep_photo ?? ''">
                 <label class="block text-sm text-sand">
                     <span x-text="row.keep_photo ? '写真を入れ替える（任意）' : '写真（任意）'"></span>
-                    <input type="file" :name="`catches[${i}][photo]`" accept="image/jpeg,image/png,image/webp"
+                    <input type="file" :name="`catches[${i}][photo]`"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+                        @change="pickPhoto($event)"
                         class="mt-1 block w-full text-sm text-ink">
                 </label>
             </div>
