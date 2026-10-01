@@ -218,6 +218,7 @@ class SpotController extends Controller
         // 次に、正確な距離を計算して 300m 以内だけを残す
         $candidates = $spots
             ->map(fn(Spot $spot) => [
+                'id' => $spot->id,
                 'name' => $spot->name,
                 'distance' => $this->distanceInMeters($lat, $lng, (float) $spot->latitude, (float) $spot->longitude),
                 'url' => route('spots.show', $spot),

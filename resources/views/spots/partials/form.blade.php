@@ -46,6 +46,11 @@ $mapCenter = config('prefecture_centers.' . old('prefecture', $spot?->prefecture
         <button type="button" @click="clear()" class="underline text-sand">位置を消す</button>
         <span class="text-sand" x-text="lat ? `緯度 ${lat} / 経度 ${lng}` : 'まだ位置は決まっていません'"></span>
     </div>
+    <label class="mt-2 block text-sm text-sand">
+        写真から位置を読み取る（写真は送られません）
+        <input type="file" accept="image/*,.heic,.heif" @change="readLocationFrom($event)"
+            class="mt-1 block w-full text-sm text-ink">
+    </label>
     <p class="mt-1 text-sm text-sea" x-text="message"></p>
     <template x-if="nearby.length > 0">
         <div class="mt-3 rounded-md border-l-4 border-float bg-white p-3 text-sm shadow-sm">
