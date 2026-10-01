@@ -243,5 +243,125 @@ Alpine.data("catchRows", (initialRows, nearbyUrl) => ({
     },
 }));
 
+// 過去の釣行のまとめて登録：写真1枚につき1行（PG15）
+function emptyBulkRow() {
+    return {
+        went_at: "",
+        spot_id: "",
+        time_of_day: "",
+        fish_species: "",
+        fish_species_other: "",
+        method: "",
+        length_cm: "",
+        preview: "",
+        spotNote: "",
+    };
+}
+
+Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
+    // 選んだ写真のファイルは Alpine の外で持つ（Alpine の中に入れると、ファイルとして送れなくなるため）
+    const files = new Map();
+
+    return {
+        rows: initialRows.map((row, n) => ({
+            ...emptyBulkRow(),
+            ...row,
+            key: n,
+        })),
+        nextKey: 1000,
+        message: "",
+        converting: false,
+
+        // 行を足して、足した行を返す（いっぱいなら null）
+        add(values = {}) {
+            if (this.rows.length >= maxRows) {
+                this.message = `1回に登録できるのは${maxRows}行までです。残りは保存したあとにもう一度選んでください。`;
+                return null;
+            }
+            this.rows.push({
+                ...emptyBulkRow(),
+                ...values,
+                key: this.nextKey++,
+            });
+            // push したあとの行を返す（こちらを書き換えると画面に反映される）
+            return this.rows[this.rows.length - 1];
+        },
+
+        remove(i) {
+            const row = this.rows[i];
+            files.delete(row.key);
+            if (row.preview) {
+                URL.revokeObjectURL(row.preview);
+            }
+            this.rows.splice(i, 1);
+        },
+
+        async pickPhotos(event) {
+            const picked = [...event.target.files];
+            // 選んだ写真は各行に移すので、ここには残さない
+            event.target.value = "";
+            this.message = "";
+            let added = 0;
+            let skipped = 0;
+
+            for (const original of picked) {
+                // Exif は、HEIC を変換する前に読む（変換すると消えるため）
+                this.converting = true;
+                const hints = await readPhotoHints(original);
+                let file = original;
+                if (isHeicFile(original)) {
+                    try {
+                        file = await convertHeicToJpeg(original);
+                    } catch {
+                        skipped++;
+                        this.converting = false;
+                        continue;
+                    }
+                }
+                this.converting = false;
+
+                const row = this.add({
+                    went_at: hints.takenAt ?? "",
+                    preview: URL.createObjectURL(file),
+                });
+                if (!row) {
+                    break;
+                }
+                files.set(row.key, file);
+                added++;
+
+                // 写真の位置の近くに、選べる釣り場があれば最初から選んでおく
+                if (hints.lat !== null) {
+                    const spot = (
+                        await findNearbySpots(nearbyUrl, hints.lat, hints.lng)
+                    ).find((candidate) => spotIds.includes(candidate.id));
+                    if (spot) {
+                        row.spot_id = String(spot.id);
+                        row.spotNote = `写真の位置から「${spot.name}」（約 ${spot.distance}m）を選びました。違っていたら選び直してください。`;
+                    }
+                }
+            }
+
+            if (this.message === "") {
+                this.message = `${added}枚の写真から行を作りました。空欄を埋めてください。`;
+                if (skipped > 0) {
+                    this.message += `（${skipped}枚は変換できなかったので飛ばしました）`;
+                }
+            }
+        },
+
+        // 行の写真欄に、選んだ写真を入れる（行が画面に出たときに呼ばれる）
+        attachFile(input, key) {
+            const file = files.get(key);
+            if (!file) {
+                return;
+            }
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            input.files = transfer.files;
+        },
+    };
+});
+
 window.Alpine = Alpine;
 Alpine.start();
