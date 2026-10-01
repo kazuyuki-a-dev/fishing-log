@@ -216,6 +216,17 @@ class BulkTripTest extends TestCase
         $disk->assertExists($catch->image_path);
     }
 
+    public function test_new_user_sees_the_bulk_button_on_the_dashboard(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('昔の釣行をまとめて登録する')
+            ->assertSee(route('trips.create', ['mode' => 'bulk']), false);
+    }
+
     public function test_guest_is_sent_to_login(): void
     {
         $this->post(route('trips.bulk-store'), ['visibility' => 'private', 'rows' => []])
