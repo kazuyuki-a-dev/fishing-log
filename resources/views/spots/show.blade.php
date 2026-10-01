@@ -57,6 +57,17 @@
                     <p class="text-sm text-sea-100">{{ $judge['date']->format('Y年n月j日') }}（旧暦{{ $judge['lunarDay'] }}日）</p>
                     <p class="text-3xl font-bold">{{ $judge['tide'] }}</p>
                 </div>
+                @if ($judge['forecast'])
+                <div>
+                    <p class="text-sm text-sea-100">天気予報</p>
+                    <p class="text-xl font-bold">{{ $judge['forecast'] }}</p>
+                    <p class="text-xs text-sea-100">
+                        天気データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline">Open-Meteo</a>
+                    </p>
+                </div>
+                @elseif ($spot->latitude === null)
+                <p class="text-xs text-sea-100">この釣り場は位置が登録されていないので、天気予報は出せません。</p>
+                @endif
 
                 <div class="border-t border-sea-400 pt-4 space-y-2">
                     <p class="text-sm text-sea-100">

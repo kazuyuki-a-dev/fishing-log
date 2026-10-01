@@ -12,6 +12,7 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
+use App\Services\WeatherService;
 
 class SpotController extends Controller
 {
@@ -69,7 +70,7 @@ class SpotController extends Controller
             ->with('registered', true);
     }
 
-    public function show(Request $request, Spot $spot, TideCalculator $tides): View
+    public function show(Request $request, Spot $spot, TideCalculator $tides, WeatherService $weather): View
     {
         $user = $request->user();
 
@@ -112,6 +113,11 @@ class SpotController extends Controller
             'nextBigTide' => $tides->nextDateWithTide($date->copy()->addDay(), '大潮'),
             'matchedIds' => $matched->pluck('id'),
         ];
+
+        // 天気予報（FN-11）。位置がある釣り場で、今日から 15 日先までだけ
+        $judge['forecast'] = $spot->latitude !== null && $weather->isForecastable($judge['date'])
+            ? ($weather->forecastFor((float) $spot->latitude, (float) $spot->longitude, $judge['date']) ?? '取得できませんでした')
+            : null;
 
         return view('spots.show', [
             'spot' => $spot->load('editor:id,name'),

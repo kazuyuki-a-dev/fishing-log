@@ -16,11 +16,12 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use App\Services\CatchHighlighter;
 use App\Services\PhotoStorer;
+use App\Services\WeatherService;
 
 class TripController extends Controller
 {
     // 写真の係。コントローラが作られるときに、Laravel が用意して渡してくれる
-    public function __construct(private PhotoStorer $photos) {}
+    public function __construct(private PhotoStorer $photos, private WeatherService $weather) {}
 
     public function index(Request $request): View
     {
@@ -164,7 +165,17 @@ class TripController extends Controller
     {
         $data = $request->safe()->except('catches');
         $data['tide'] = $tides->tideFor(Carbon::parse($data['went_at'], 'Asia/Tokyo'));
-
+        // 天候が空で、釣り場に位置があれば、その日時の天候を取ってくる（FN-08）
+        if (empty($data['weather'])) {
+            $spot = Spot::find($data['spot_id']);
+            if ($spot?->latitude !== null && $spot?->longitude !== null) {
+                $data['weather'] = $this->weather->weatherAt(
+                    (float) $spot->latitude,
+                    (float) $spot->longitude,
+                    Carbon::parse($data['went_at'], 'Asia/Tokyo'),
+                );
+            }
+        }
         return $data;
     }
 
