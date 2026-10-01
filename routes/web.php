@@ -27,6 +27,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('spots', SpotController::class)->only(['create', 'store', 'edit', 'update']);
     Route::patch('/spots/{spot}/local-info', [SpotController::class, 'updateLocalInfo'])->name('spots.local-info');
 
+    // 過去の釣行のまとめて登録の保存（PG15）
+    Route::post('/trips/bulk', [TripController::class, 'storeBulk'])->name('trips.bulk-store');
     Route::resource('trips', TripController::class);
     Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
 });

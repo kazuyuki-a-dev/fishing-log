@@ -43,9 +43,16 @@
             <section class="space-y-3">
                 <h3 class="font-bold">直近の釣行</h3>
                 @if ($recentTrips->isEmpty())
-                <div class="bg-white rounded-md shadow-sm p-4 text-sm space-y-2">
+                <div class="bg-white rounded-md shadow-sm p-4 text-sm space-y-3">
                     <p>まだ釣行の記録がありません。1件目を記録すると、ここに並びます。</p>
-                    <a href="{{ route('trips.create') }}" class="underline text-sea">釣行を記録する</a>
+                    <p>前に行った釣行を覚えていたら、まとめて入れておくと、プランナーやカルテがすぐ役に立ちます。釣った魚の写真があれば、日時と釣り場を写真から読み取ります。</p>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <a href="{{ route('trips.create', ['mode' => 'bulk']) }}"
+                            class="inline-flex items-center px-5 py-2.5 bg-sea rounded-md font-bold text-sm text-white hover:opacity-90">
+                            昔の釣行をまとめて登録する
+                        </a>
+                        <a href="{{ route('trips.create') }}" class="underline text-sea">1件ずつ記録する</a>
+                    </div>
                 </div>
                 @else
                 <ul class="bg-white rounded-md shadow-sm divide-y divide-gray-100">
@@ -61,8 +68,9 @@
                     </li>
                     @endforeach
                 </ul>
-                <div class="text-right">
-                    <a href="{{ route('trips.index') }}" class="text-sm underline text-sea">釣行をすべて見る</a>
+                <div class="flex flex-wrap justify-end gap-4 text-sm">
+                    <a href="{{ route('trips.create', ['mode' => 'bulk']) }}" class="underline text-sand">昔の釣行をまとめて登録</a>
+                    <a href="{{ route('trips.index') }}" class="underline text-sea">釣行をすべて見る</a>
                 </div>
                 @endif
             </section>

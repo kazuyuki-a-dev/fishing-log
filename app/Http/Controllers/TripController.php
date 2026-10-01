@@ -17,6 +17,7 @@ use Illuminate\View\View;
 use App\Services\CatchHighlighter;
 use App\Services\PhotoStorer;
 use App\Services\WeatherService;
+use App\Http\Requests\BulkTripRequest;
 
 class TripController extends Controller
 {
@@ -40,6 +41,8 @@ class TripController extends Controller
             'spots' => $this->selectableSpots($request->user()),
             // 釣り場の画面から来たときは、その釣り場を最初から選んでおく
             'selectedSpotId' => $request->query('spot'),
+            // ?mode=bulk のときは、過去の釣行のまとめて登録モード（PG15）
+            'bulk' => $request->query('mode') === 'bulk',
         ]);
     }
 
@@ -57,6 +60,57 @@ class TripController extends Controller
             ->route('trips.show', $trip)
             ->with('status', $this->savedMessage('記録', $trip))
             ->with('highlights', $highlighter->for($trip));
+    }
+
+    /**
+     * 過去の釣行のまとめて登録（PG15）
+     * 同じ日・同じ釣り場・同じ時間帯の行を、1つの釣行にまとめて保存する
+     */
+    public function storeBulk(BulkTripRequest $request, TideCalculator $tides): RedirectResponse
+    {
+        $visibility = $request->validated('visibility');
+
+        // まとめる目印：「2026-05-03|12|朝マズメ」のような文字
+        $groups = collect($request->validated('rows'))->groupBy(fn(array $row) => implode('|', [
+            Carbon::parse($row['went_at'])->toDateString(),
+            $row['spot_id'],
+            $row['time_of_day'],
+        ]));
+
+        $catchCount = DB::transaction(function () use ($request, $tides, $groups, $visibility) {
+            $fetchWeather = true;
+            $catchCount = 0;
+
+            foreach ($groups as $group) {
+                // 釣行の日時は、まとまった行のうち一番早いもの
+                $first = $group->sortBy('went_at')->first();
+
+                $data = $this->withConditions([
+                    'spot_id' => $first['spot_id'],
+                    'went_at' => $first['went_at'],
+                    'time_of_day' => $first['time_of_day'],
+                    'visibility' => $visibility,
+                ], $tides, $fetchWeather);
+
+                // 天候が1回取れなかったら、残りは取りに行かない（API が止まっているときに長く待たせないため）
+                if (array_key_exists('weather', $data) && $data['weather'] === null) {
+                    $fetchWeather = false;
+                }
+
+                $trip = $request->user()->trips()->create($data);
+
+                // 魚種が空の行は坊主なので、釣果にはしない
+                $catches = $group->filter(fn(array $row) => ! empty($row['fish_species']))->all();
+                $this->saveCatches($trip, $catches);
+                $catchCount += count($catches);
+            }
+
+            return $catchCount;
+        });
+
+        return redirect()
+            ->route('trips.index')
+            ->with('status', "{$groups->count()}件の釣行を登録しました（釣果 {$catchCount} 匹）。");
     }
 
     public function show(Request $request, Trip $trip): View
@@ -159,29 +213,36 @@ class TripController extends Controller
     }
 
     /**
-     * 保存する釣行のデータ。日時から計算した潮を足す（FN-08）
+     * 保存する釣行のデータ（1件の登録・編集）
      */
     private function tripData(TripRequest $request, TideCalculator $tides): array
     {
-        $data = $request->safe()->except('catches');
-        $data['tide'] = $tides->tideFor(Carbon::parse($data['went_at'], 'Asia/Tokyo'));
-        // 天候が空で、釣り場に位置があれば、その日時の天候を取ってくる（FN-08）
-        if (empty($data['weather'])) {
+        return $this->withConditions($request->safe()->except('catches'), $tides);
+    }
+
+    /**
+     * 日時から計算した潮と、取ってきた天候を足す（FN-08）
+     */
+    private function withConditions(array $data, TideCalculator $tides, bool $fetchWeather = true): array
+    {
+        $wentAt = Carbon::parse($data['went_at'], 'Asia/Tokyo');
+        $data['tide'] = $tides->tideFor($wentAt);
+
+        // 天候が空で、釣り場に位置があれば、その日時の天候を取ってくる
+        if ($fetchWeather && empty($data['weather'])) {
             $spot = Spot::find($data['spot_id']);
             if ($spot?->latitude !== null && $spot?->longitude !== null) {
                 $data['weather'] = $this->weather->weatherAt(
                     (float) $spot->latitude,
                     (float) $spot->longitude,
-                    Carbon::parse($data['went_at'], 'Asia/Tokyo'),
+                    $wentAt,
                 );
             }
         }
+
         return $data;
     }
 
-    /**
-     * 釣果を1匹ずつ保存する。「その他」は入力した魚の名前で保存（FN-01）
-     */
     /**
      * 釣果を1匹ずつ保存する。「その他」は入力した魚の名前で保存（FN-01）
      * 写真は、新しく選ばれたものを保存するか、今の写真（$keepable の中にあるもの）を引き継ぐ
