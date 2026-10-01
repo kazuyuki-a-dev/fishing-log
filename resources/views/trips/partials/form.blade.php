@@ -59,6 +59,7 @@ $nearbyUrl = route('spots.nearby');
         <x-input-label for="weather" value="天候" />
         <x-option-select id="weather" name="weather" class="mt-1 block w-full"
             :options="config('fishing.weathers')" :selected="old('weather', $trip?->weather)" placeholder="分からない" />
+        <p class="mt-1 text-xs text-sand">分からないときは空欄で大丈夫です。釣り場に位置があれば、保存するときに自動で入れます。</p>
         <x-input-error :messages="$errors->get('weather')" class="mt-2" />
     </div>
 </div>
