@@ -70,10 +70,19 @@
                         </div>
 
                         @if ($plan['visits'] > 0)
-                        <p>
-                            {{ $tide }}{{ $timeOfDay ? '・' . $timeOfDay : '' }}の日：
-                            <span class="font-bold">{{ $plan['visits'] }}回行って {{ $plan['caught'] }}回釣れた</span>
+                        <p class="flex flex-wrap items-center gap-2">
+                            <x-match-level :level="$plan['level']" :label="$plan['label']" />
+                            <span>
+                                {{ $plan['condition'] }}の日：
+                                <span class="font-bold">{{ $plan['visits'] }}回行って {{ $plan['caught'] }}回釣れた</span>
+                            </span>
                         </p>
+                        {{-- 条件をゆるめたときも、ぴったりの条件の結果（坊主の記録）を隠さない --}}
+                        @if ($plan['level'] !== 'exact' && $plan['exact']['visits'] > 0)
+                        <p class="text-xs text-sand">
+                            ぴったりの条件（{{ $plan['exact']['condition'] }}）では {{ $plan['exact']['visits'] }}回行って {{ $plan['exact']['caught'] }}回釣れた
+                        </p>
+                        @endif
                         @if ($plan['caught'] > 0)
                         <p class="text-sm text-sand">
                             @if ($plan['bestTimeOfDay'])

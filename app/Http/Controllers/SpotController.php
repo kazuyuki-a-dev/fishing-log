@@ -15,6 +15,7 @@ use Illuminate\Validation\Rule;
 use App\Services\WeatherService;
 use App\Services\NewPostNotifier;
 use App\Services\SeasonHeatmap;
+use App\Services\ConditionMatcher;
 
 class SpotController extends Controller
 {
@@ -75,7 +76,7 @@ class SpotController extends Controller
             ->with('registered', true);
     }
 
-    public function show(Request $request, Spot $spot, TideCalculator $tides, WeatherService $weather, SeasonHeatmap $heatmap): View
+    public function show(Request $request, Spot $spot, TideCalculator $tides, WeatherService $weather, SeasonHeatmap $heatmap, ConditionMatcher $matcher): View
     {
         $user = $request->user();
 
@@ -102,7 +103,9 @@ class SpotController extends Controller
 
         $tide = $tides->tideFor($date);
 
-        $matched = $trips->filter(fn($trip) => $trip->matchesCondition($tide, $timeOfDay));
+        // 条件に合う釣行。釣れた記録がなければ、プランナーと同じく少しずつゆるめる（FN-16）
+        $match = $matcher->match($trips, $date, $tide, $timeOfDay);
+        $matched = $match['matched'];
 
         $matchedCatches = $matched->flatMap->catches;
 
@@ -111,8 +114,12 @@ class SpotController extends Controller
             'timeOfDay' => $timeOfDay,
             'tide' => $tide,
             'lunarDay' => $tides->lunarDay($date),
-            'visits' => $matched->count(),
-            'caught' => $matched->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
+            'level' => $match['level'],
+            'label' => $match['label'],
+            'condition' => $match['condition'],
+            'exact' => $match['exact'],
+            'visits' => $match['visits'],
+            'caught' => $match['caught'],
             'methods' => $matchedCatches->countBy('method'),
             'species' => $matchedCatches->countBy('fish_species')->sortDesc()->take(3),
             'nextBigTide' => $tides->nextDateWithTide($date->copy()->addDay(), '大潮'),

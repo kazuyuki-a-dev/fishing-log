@@ -81,4 +81,28 @@ class SpotJudgeTest extends TestCase
             ->assertOk()
             ->assertSee(now('Asia/Tokyo')->format('Y年n月j日'));
     }
+
+    public function test_relaxes_to_tide_when_exact_has_no_catch(): void
+    {
+        // 小潮・夜は坊主の1回だけ → 小潮（時間帯は問わない）にゆるめる
+        $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-19&time_of_day=夜")
+            ->assertSee('潮だけ一致')
+            ->assertSee('この釣り場で「小潮（時間帯は問わない）」だった日')
+            ->assertSee('2回行って 1回釣れた')
+            ->assertSee('ぴったりの条件（小潮・夜）では 1回行って 0回釣れた');
+    }
+
+    public function test_relaxes_to_month_and_history_badge_shows_the_level(): void
+    {
+        // 2024-01-10 は中潮。中潮の記録はないので、1月（潮は問わない）にゆるめる
+        $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-10")
+            ->assertSee('この釣り場で「1月（潮は問わない）」だった日')
+            ->assertSee('3回行って 2回釣れた')
+            // 履歴のバッジもレベルの名前（見出しと履歴3件で4つ）
+            ->assertSee('月だけ一致');
+        $this->assertSame(4, substr_count(
+            $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-10")->getContent(),
+            '月だけ一致'
+        ));
+    }
 }

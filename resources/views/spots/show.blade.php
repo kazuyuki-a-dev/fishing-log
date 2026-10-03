@@ -70,11 +70,20 @@
                 @endif
 
                 <div class="border-t border-sea-400 pt-4 space-y-2">
-                    <p class="text-sm text-sea-100">
-                        この釣り場で「{{ $judge['tide'] }}{{ $judge['timeOfDay'] ? '・' . $judge['timeOfDay'] : '' }}」だった日
+                    <p class="flex flex-wrap items-center gap-2 text-sm text-sea-100">
+                        @if ($judge['visits'] > 0)
+                        <x-match-level :level="$judge['level']" :label="$judge['label']" />
+                        @endif
+                        この釣り場で「{{ $judge['condition'] }}」だった日
                     </p>
                     @if ($judge['visits'] > 0)
                     <p class="text-2xl font-bold">{{ $judge['visits'] }}回行って {{ $judge['caught'] }}回釣れた</p>
+                    {{-- 条件をゆるめたときも、ぴったりの条件の結果（坊主の記録）を隠さない --}}
+                    @if ($judge['level'] !== 'exact' && $judge['exact']['visits'] > 0)
+                    <p class="text-xs text-sea-100">
+                        ぴったりの条件（{{ $judge['exact']['condition'] }}）では {{ $judge['exact']['visits'] }}回行って {{ $judge['exact']['caught'] }}回釣れた
+                    </p>
+                    @endif
                     @if ($judge['methods']->isNotEmpty())
                     <p class="text-sm">
                         釣れたときの釣り方：
@@ -165,7 +174,7 @@
                             {{ $trip->went_at->format('Y/m/d') }}
                             <span class="ml-2 text-sm font-normal">{{ $trip->time_of_day }}</span>
                             @if ($judge['matchedIds']->contains($trip->id))
-                            <span class="ml-2 rounded bg-float px-2 py-0.5 text-xs font-bold text-white">条件一致</span>
+                            <x-match-level class="ml-2" :level="$judge['level']" :label="$judge['label']" />
                             @endif
                         </p>
                         <p class="text-sm text-sand">

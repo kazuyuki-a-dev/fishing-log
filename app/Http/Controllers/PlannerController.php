@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Spot;
+use App\Services\ConditionMatcher;
 use App\Services\TideCalculator;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PlannerController extends Controller
 {
-    public function index(Request $request, TideCalculator $tides): View
+    public function index(Request $request, TideCalculator $tides, ConditionMatcher $matcher): View
     {
         $user = $request->user();
 
@@ -43,24 +44,22 @@ class PlannerController extends Controller
             }])
             ->get();
 
-        // 釣り場ごとに、同じ条件の釣行を集計する
-        $plans = $spots->map(function (Spot $spot) use ($tide, $timeOfDay) {
-            $matched = $spot->trips->filter(fn($trip) => $trip->matchesCondition($tide, $timeOfDay));
-            $caughtTrips = $matched->filter(fn($trip) => $trip->catches->isNotEmpty());
-            $catches = $matched->flatMap->catches;
+        // 釣り場ごとに、条件に合う釣行を集計する。釣れた記録がなければ、条件を少しずつゆるめる（FN-16）
+        $plans = $spots->map(function (Spot $spot) use ($matcher, $date, $tide, $timeOfDay) {
+            $match = $matcher->match($spot->trips, $date, $tide, $timeOfDay);
+            $caughtTrips = $match['matched']->filter(fn($trip) => $trip->catches->isNotEmpty());
+            $catches = $match['matched']->flatMap->catches;
 
-            return [
+            return $match + [
                 'spot' => $spot,
-                'visits' => $matched->count(),
-                'caught' => $caughtTrips->count(),
                 'bestTimeOfDay' => $caughtTrips->countBy('time_of_day')->sortDesc()->keys()->first(),
                 'methods' => $catches->countBy('method'),
                 'species' => $catches->countBy('fish_species')->sortDesc()->take(3),
                 'maxSize' => $catches->max('length_cm'),
             ];
         })
-            // 同じ条件で釣れた回数が多い順（同じなら、行った回数が多い順）（FN-16）
-            ->sortBy([['caught', 'desc'], ['visits', 'desc']])
+            // 一致のレベルが先（ぴったり → 潮だけ → 月だけ → 記録なし）。同じレベルなら釣れた回数 → 行った回数の多い順
+            ->sortBy([['rank', 'asc'], ['caught', 'desc'], ['visits', 'desc']])
             ->values();
 
         return view('planner.index', [

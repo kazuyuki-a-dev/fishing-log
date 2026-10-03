@@ -88,4 +88,32 @@ class PlannerTest extends TestCase
             ->assertSee('注意：立入注意')
             ->assertSee('date=2024-01-19', false);
     }
+
+    public function test_exact_match_comes_before_relaxed_matches(): void
+    {
+        // 釣り場C：小潮では坊主だけ、ほかの1月の日に3回釣れた → 月だけ一致
+        $spotC = Spot::factory()->create(['name' => '月だけの磯', 'prefecture' => '秋田県', 'visibility' => 'public']);
+        Trip::factory()->create(['user_id' => $this->me->id, 'spot_id' => $spotC->id, 'went_at' => '2024-01-19 06:00']);
+        foreach (['2024-01-10 06:00', '2024-01-11 06:00', '2024-01-12 06:00'] as $wentAt) {
+            $this->caughtTrip($this->me, $spotC, $wentAt);
+        }
+
+        // 釣れた回数は C の3回が多いが、ぴったり一致の A・B が上
+        $this->actingAs($this->me)->get('/planner?date=2024-01-19&scope=mine')
+            ->assertSeeInOrder(['大漁の堤防', 'ぼちぼちの港', '月だけの磯'])
+            ->assertSee('ぴったり一致')
+            ->assertSee('月だけ一致')
+            ->assertSee('1月（潮は問わない）の日：')
+            // ゆるめたときも、ぴったりの条件の坊主の記録を出す
+            ->assertSee('ぴったりの条件（小潮）では 1回行って 0回釣れた');
+    }
+
+    public function test_spot_without_any_catch_is_listed_last(): void
+    {
+        Spot::factory()->create(['name' => '記録なしの浜', 'prefecture' => '秋田県', 'visibility' => 'public']);
+
+        $this->actingAs($this->me)->get('/planner?date=2024-01-19')
+            ->assertSeeInOrder(['ぼちぼちの港', '大漁の堤防', '記録なしの浜'])
+            ->assertSee('この条件で釣れた記録はまだありません');
+    }
 }
