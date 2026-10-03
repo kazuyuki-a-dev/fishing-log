@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\FishCatch;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * シーズンヒートマップの集計（FN-02・FN-10）
@@ -30,6 +31,53 @@ class SeasonHeatmap
             ->groupBy('species', 'month')
             ->get();
 
+        return [
+            'rows' => $this->rows($counts),
+            // 「この表は釣行 N 件から」に使う（FN-10 の「記録を続けるきっかけ」）
+            'tripCount' => $this->query($user, $scope, $prefecture)->distinct()->count('trips.id'),
+        ];
+    }
+
+    /**
+     * 釣り場カルテの小さな表（PG07）：もう読み込んである釣行（catches 付き）から作る
+     * どの釣行を入れてよいかは、呼ぶ側で絞っておく（カルテでは Trip::scopeVisibleWithSpotTo()）
+     *
+     * @param  Collection<int, \App\Models\Trip>  $trips
+     * @return array{rows: array<string, array<int, array{fish: int, trips: int, level: int}>>, tripCount: int}
+     */
+    public function forTrips(Collection $trips): array
+    {
+        $caught = $trips->filter(fn($trip) => $trip->catches->isNotEmpty());
+
+        // 釣行ごと・魚種ごとに「何匹」を出し、月×魚種でまとめる（DB の集計と同じ形にする）
+        $counts = $caught
+            ->flatMap(fn($trip) => $trip->catches->countBy('fish_species')->map(fn(int $fish, string $species) => [
+                'species' => $species,
+                'month' => $trip->went_at->month,
+                'fish' => $fish,
+            ])->values())
+            ->groupBy(fn(array $record) => $record['species'] . '|' . $record['month'])
+            ->map(fn(Collection $group) => [
+                'species' => $group->first()['species'],
+                'month' => $group->first()['month'],
+                'fish_count' => $group->sum('fish'),
+                'trip_count' => $group->count(),
+            ])
+            ->values();
+
+        return [
+            'rows' => $this->rows($counts),
+            'tripCount' => $caught->count(),
+        ];
+    }
+
+    /**
+     * 月×魚種の数から、表のマスを作る（ヒートマップとカルテで同じ決まりにするため、1か所にまとめる）
+     *
+     * @param  Collection<int, mixed>  $counts  species・month・fish_count・trip_count を持つもの
+     */
+    private function rows(Collection $counts): array
+    {
         // 色の基準：表の中でいちばん多いマスの匹数
         $max = $counts->max('fish_count');
 
@@ -42,21 +90,17 @@ class SeasonHeatmap
             }
 
             foreach (range(1, 12) as $month) {
-                $fish = (int) ($byMonth[$month]->fish_count ?? 0);
+                $fish = (int) data_get($byMonth->get($month), 'fish_count', 0);
                 $rows[$species][$month] = [
                     'fish' => $fish,
-                    'trips' => (int) ($byMonth[$month]->trip_count ?? 0),
+                    'trips' => (int) data_get($byMonth->get($month), 'trip_count', 0),
                     // 0匹は白（0）。1匹でも釣れていれば、いちばん薄い色（1）から付く
                     'level' => $fish > 0 ? (int) ceil($fish / $max * self::LEVELS) : 0,
                 ];
             }
         }
 
-        return [
-            'rows' => $rows,
-            // 「この表は釣行 N 件から」に使う（FN-10 の「記録を続けるきっかけ」）
-            'tripCount' => $this->query($user, $scope, $prefecture)->distinct()->count('trips.id'),
-        ];
+        return $rows;
     }
 
     /**

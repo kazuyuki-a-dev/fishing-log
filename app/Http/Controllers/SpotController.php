@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 use App\Services\WeatherService;
 use App\Services\NewPostNotifier;
+use App\Services\SeasonHeatmap;
 
 class SpotController extends Controller
 {
@@ -74,7 +75,7 @@ class SpotController extends Controller
             ->with('registered', true);
     }
 
-    public function show(Request $request, Spot $spot, TideCalculator $tides, WeatherService $weather): View
+    public function show(Request $request, Spot $spot, TideCalculator $tides, WeatherService $weather, SeasonHeatmap $heatmap): View
     {
         $user = $request->user();
 
@@ -137,6 +138,8 @@ class SpotController extends Controller
                 'caught' => $others->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
             ],
             'judge' => $judge,
+            // 月別×魚種の小さな表（PG07）。履歴と同じ、見てよい釣行だけから作る
+            'season' => $heatmap->forTrips($trips),
             'location' => $spot->locationFor($request->user()),
         ]);
     }
