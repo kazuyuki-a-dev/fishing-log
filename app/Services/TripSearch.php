@@ -7,6 +7,7 @@ use App\Models\Spot;
 use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 
 /**
@@ -116,7 +117,10 @@ class TripSearch
         ];
     }
 
-    private function catchConditions(Builder $catch, array $filters): Builder
+    /**
+     * 釣果を、魚種・釣り方の条件で絞る（検索・まとめ・CSV で同じ決まりを使う）
+     */
+    public function catchConditions(Builder|Relation $catch, array $filters): Builder|Relation
     {
         return $catch
             ->when($filters['species'], fn($catch) => $catch->where('fish_species', $filters['species']))
