@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlannerController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SpotController;
@@ -31,6 +32,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/trips/bulk', [TripController::class, 'storeBulk'])->name('trips.bulk-store');
     Route::resource('trips', TripController::class);
     Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
+
+    // 県内新着のお知らせ一覧（PG25）
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 });
 
 // ゲストも見られる（NF-01・FN-13）。ログインが必要なルートより下に書く

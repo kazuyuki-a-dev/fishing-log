@@ -50,6 +50,8 @@ class ProfileController extends Controller
 
         Auth::logout();
 
+        // 自分宛てのお知らせも消す（notifications には外部キーがないので、自動では消えない）
+        $user->notifications()->delete();
         $user->delete();
 
         $request->session()->invalidate();

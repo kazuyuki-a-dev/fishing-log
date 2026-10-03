@@ -26,6 +26,7 @@ class Trip extends Model
     {
         return [
             'went_at' => 'datetime',
+            'notified_at' => 'datetime',
         ];
     }
 

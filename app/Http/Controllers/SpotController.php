@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 use App\Services\WeatherService;
+use App\Services\NewPostNotifier;
 
 class SpotController extends Controller
 {
@@ -56,12 +57,15 @@ class SpotController extends Controller
         ]);
     }
 
-    public function store(SpotRequest $request): RedirectResponse
+    public function store(SpotRequest $request, NewPostNotifier $notifier): RedirectResponse
     {
         $spot = new Spot($request->validated());
         $spot->created_by = $request->user()->id;
         $spot->updated_by = $request->user()->id;
         $spot->save();
+
+        // 公開の釣り場なら、同じ県の会員にお知らせする（FN-18）
+        $notifier->spot($request->user(), $spot);
 
         // 登録したら、その釣り場のカルテへ。釣行の登録へ進むボタンを出す（PG08）
         return redirect()
@@ -149,15 +153,23 @@ class SpotController extends Controller
         ]);
     }
 
-    public function update(SpotRequest $request, Spot $spot): RedirectResponse
+    public function update(SpotRequest $request, Spot $spot, NewPostNotifier $notifier): RedirectResponse
     {
         Gate::authorize('update', $spot);
+
+        // 更新する前は非公開だったか（非公開から公開にしたときだけ、お知らせする）
+        $wasPrivate = $spot->visibility === 'private';
 
         // 入力チェックを通った項目だけ書き換える（本人でなければ、釣り場名などは入っていない）
         $spot->fill($request->validated());
         // 最後に更新した人を記録する（FN-14）
         $spot->updated_by = $request->user()->id;
         $spot->save();
+
+        // 非公開から公開に変えたら、お知らせする。1回だけ（FN-18）
+        if ($wasPrivate) {
+            $notifier->spot($request->user(), $spot);
+        }
 
         return redirect()
             ->route('spots.show', $spot)

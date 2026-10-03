@@ -29,6 +29,13 @@ class Spot extends Model
         'longitude'
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'notified_at' => 'datetime',
+        ];
+    }
+
     /**
      * この人が見てよい釣り場だけに絞る（NF-01）
      * - ログインしている人：公開か、自分が登録したもの

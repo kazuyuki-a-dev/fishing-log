@@ -19,6 +19,8 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'home_prefecture' => ['required', 'string', Rule::in(config('prefectures'))],
+            // 県内新着のお知らせの ON／OFF（FN-18）
+            'notify_enabled' => ['sometimes', 'boolean'],
             'email' => [
                 'required',
                 'string',
