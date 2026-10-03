@@ -10,7 +10,7 @@
 - 定義書と違いが出るときは、**勝手に決めずに選択肢と理由を出して、ユーザーに決めてもらう**。決めたら `docs/decisions.md` に書く
 - 開発の過程は、すべてログが残るようにする（Issue・PR・コミット・decisions.md）
 - コミット（`git add .` → `git commit`）のタイミングは任されている。切りのいいところで行い、**毎回「ここでコミットします」と伝える**
-- Issue と PR は、ユーザーが **GitHub のブラウザ画面で** 作る。Claude はタイトルと本文を出す（gh コマンドで作りたい場合は、ユーザーに確認してから）
+- Issue と PR は、ユーザーが **GitHub のブラウザ画面で** 作る。Claude は、Issue はタイトルと本文、**PR は本文だけ**を出す（PR のタイトルは GitHub の自動入力を使う）。gh コマンドで作りたい場合は、ユーザーに確認してから
 
 ## 開発の流れ（毎回この順番）
 
@@ -21,7 +21,7 @@
    - 順番は「機能のコミット → テストのコミット → 記録（decisions.md）のコミット」
 5. `docs/decisions.md` の表に追記（列：日付 | 項目 | 定義書 | 決定 | 理由）
 6. **push の前に `git status`**（コミットし忘れを防ぐ。#61 でテストと記録を入れ忘れたことがある）→ `git push -u origin <ブランチ名>`
-7. PR の本文を出す（変更内容／定義書との違い／確認したこと／`Closes #番号`）。**Blade の `@js` `@php` などは本文の中で ` で囲む**（`@名前` は GitHub のメンションになる）
+7. PR の本文だけを出す（変更内容／定義書との違い／確認したこと／`Closes #番号`）。**Blade の `@js` `@php` などは本文の中で ` で囲む**（`@名前` は GitHub のメンションになる）
 8. ユーザーが「Create a merge commit」でマージしてブランチを削除 → `git switch main && git pull && git branch -d <ブランチ名>` → `git status` で `working tree clean`
 
 ## 環境
@@ -65,8 +65,9 @@
 
 - ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`）
 - コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`AnalysisController`（ヒートマップ）
-- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）
+- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`ConditionMatcher`（ぴったり → 潮だけ → 月だけ と条件をゆるめる。プランナーとカルテの判断ビューで共通）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）
 - お知らせ：`app/Notifications/` の `NewTripNotification`（`trip_ids`）・`NewSpotNotification`（`spot_id`）。ベルは `resources/views/components/notification-bell.blade.php`（PC とスマホの両方で使う）
+- 一致レベルのバッジ：`resources/views/components/match-level.blade.php`
 - 月×魚種の表：`resources/views/components/season-table.blade.php`（ヒートマップとカルテの両方で使う。`highlight-month` で月に印）
 - 入力チェック：`app/Http/Requests/` の `TripRequest`・`BulkTripRequest`・`SpotRequest`
 - 決まった言葉の一覧：`config/fishing.php`（魚種20種・時間帯・潮・天候・釣り方・公開範囲など）
@@ -81,16 +82,20 @@
 
 ## 今どこまでできているか（2026-10-03）
 
-**フェーズ1は完了。** フェーズ2は、FN-18（お知らせ、#76）・シーズンヒートマップ（FN-02、#80）・カルテの小さな表（PG07、#82）が完了。テストは 203 件すべて成功。最後の Issue は #82（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** テストは 213 件すべて成功。最後の Issue は #84（PR と次の番号は画面で確かめる）。
 
-### フェーズ2の残り（定義書 Phase 2）
+### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
-- 済：県内新着のアプリ内通知（FN-18）。決めたこと（あとから公開・まとめて登録・番号だけ保存・既読・OFF など）は `docs/decisions.md`
-- 済：シーズンヒートマップ（FN-02、`/analysis/heatmap`）。色は匹数・小さく回数、1匹から色、記録なしは白、最初は「みんな」。FN-10 の「あと何件」は「釣行 N 件から作っています」に変えた
-- 済：カルテの小さな表（PG07）。履歴と同じ釣行（「釣り場だけ隠す」は数えない）、判断ビューで選んだ日付の月に印
-1. **プランナーの拡張（FN-16）← 次はここから**：ぴったり一致 → 潮だけ一致 → 月だけ一致、と少しずつ条件をゆるめる。どのレベルの一致かを必ず表示。まず定義書にないところを整理して、ユーザーに決めてもらってから Issue を作る
+- 県内新着のアプリ内通知（FN-18、#76）：番号だけ保存し、表示のたびに公開範囲をチェック
+- シーズンヒートマップ（FN-02、#80）：色は匹数・小さく回数、1匹から色、最初は「みんな」。FN-10 の「あと何件」は「釣行 N 件から作っています」に変えた
+- カルテの小さな表（PG07、#82）：履歴と同じ釣行（「釣り場だけ隠す」は数えない）、選んだ日付の月に印
+- 条件をゆるめて探す（FN-16、#84）：釣り場ごとに、釣れた記録がなければ ぴったり → 潮だけ → 月だけ。レベルが先に並ぶ。カルテの判断ビュー（FN-11）も同じ
 
-### フェーズ3（そのあと）
+### 次はフェーズ3
+
+- **まず何から作るかをユーザーと決める。** そのあと、いつもどおり定義書にないところを整理して、決めてもらってから Issue を作る
+
+### フェーズ3でやること
 
 - 条件検索（FN-03）・CSV 出力（FN-04、自分のデータだけ）・継続カウンタと気づきカード（FN-10）・不適切な投稿の報告と最小の管理画面（NF-04、`users.role`）
 - 最後に見た目。ユーザーは**オリジナリティを出したい**（例：カルテをクレヨンで書いたメモ帳風に。罫線・手書きフォント・SVG フィルター・Rough.js・付箋など）。数字や注意の読みやすさと、素材の権利には気をつける
