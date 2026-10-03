@@ -20,6 +20,8 @@ use App\Services\WeatherService;
 use App\Http\Requests\BulkTripRequest;
 use App\Services\NewPostNotifier;
 use App\Services\TripSearch;
+use App\Services\TripCsvExporter;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TripController extends Controller
 {
@@ -53,6 +55,34 @@ class TripController extends Controller
             'summary' => $search->summary($query, $filters),
             'spots' => $this->selectableSpots($user),
         ]);
+    }
+
+    /**
+     * 今の絞り込み条件のまま、自分の釣行・釣果を CSV で保存する（FN-04・PG17）
+     */
+    public function export(Request $request, TripSearch $search, TripCsvExporter $exporter): StreamedResponse
+    {
+        $user = $request->user();
+
+        // URL で「みんな」を指定されても、必ず自分のデータだけ（ボタンを隠すだけでは足りないため）
+        $filters = ['scope' => 'mine', 'prefecture' => null] + $search->filters($request, $user);
+
+        $trips = $search->query($user, $filters)
+            // 魚種・釣り方で絞っているときは、当てはまる魚だけを行にする（画面のまとめと数を合わせる）
+            ->with(['spot', 'catches' => fn($catch) => $search->catchConditions($catch, $filters)->orderBy('id')])
+            ->orderByDesc('went_at')
+            ->orderByDesc('id');
+
+        return response()->streamDownload(function () use ($exporter, $trips) {
+            $out = fopen('php://output', 'w');
+            // BOM：Windows の Excel で開いても文字化けしないように
+            fwrite($out, "\u{FEFF}");
+            fputcsv($out, TripCsvExporter::HEADERS);
+            foreach ($exporter->rows($trips) as $row) {
+                fputcsv($out, $row);
+            }
+            fclose($out);
+        }, 'fishinglog-' . now()->format('Ymd') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function create(Request $request): View

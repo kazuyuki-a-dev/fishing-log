@@ -97,13 +97,22 @@
 
             {{-- 結果のまとめ：件数を隠さない --}}
             @if ($summary['visits'] > 0)
-            <p class="bg-sea-50 rounded-md p-3 text-sm">
-                {{ $isFiltered ? 'この条件で' : '全部で' }}
-                <span class="font-bold">{{ $summary['visits'] }}回行って {{ $summary['caught'] }}回釣れた</span>
-                @if ($summary['methods']->isNotEmpty())
-                （@foreach ($summary['methods'] as $method => $fish){{ $method }} {{ $fish }}匹{{ ! $loop->last ? '・' : '' }}@endforeach）
+            <div class="bg-sea-50 rounded-md p-3 text-sm flex flex-wrap items-center justify-between gap-3">
+                <p>
+                    {{ $isFiltered ? 'この条件で' : '全部で' }}
+                    <span class="font-bold">{{ $summary['visits'] }}回行って {{ $summary['caught'] }}回釣れた</span>
+                    @if ($summary['methods']->isNotEmpty())
+                    （@foreach ($summary['methods'] as $method => $fish){{ $method }} {{ $fish }}匹{{ ! $loop->last ? '・' : '' }}@endforeach）
+                    @endif
+                </p>
+                {{-- CSV は自分のデータだけ。「みんな」のときは出さない（FN-04） --}}
+                @if ($filters['scope'] === 'mine')
+                <a href="{{ route('trips.export', request()->except(['page', 'scope', 'prefecture'])) }}"
+                    class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-sea rounded-md font-bold text-sea hover:bg-tide">
+                    CSV で保存
+                </a>
                 @endif
-            </p>
+            </div>
             @endif
 
             @if ($trips->isEmpty())
