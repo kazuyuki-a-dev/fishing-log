@@ -112,13 +112,17 @@ class TripShowTest extends TestCase
 
     public function test_index_lists_only_my_trips(): void
     {
-        $this->tripAt($this->publicSpot, 'public');
+        $others = $this->tripAt($this->publicSpot, 'public');
         $mySpot = Spot::factory()->create(['name' => '自分の港', 'visibility' => 'public']);
-        Trip::factory()->create(['user_id' => $this->viewer->id, 'spot_id' => $mySpot->id]);
+        $mine = Trip::factory()->create(['user_id' => $this->viewer->id, 'spot_id' => $mySpot->id]);
 
-        $this->actingAs($this->viewer)->get('/trips')
+        // 釣り場の選択肢には公開の釣り場も出るので、画面の文字ではなく一覧に渡された釣行で確かめる
+        $trips = $this->actingAs($this->viewer)->get('/trips')
             ->assertOk()
             ->assertSee('自分の港')
-            ->assertDontSee('みんなの堤防');
+            ->viewData('trips');
+
+        $this->assertSame([$mine->id], $trips->pluck('id')->all());
+        $this->assertNotContains($others->id, $trips->pluck('id')->all());
     }
 }

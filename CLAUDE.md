@@ -65,7 +65,7 @@
 
 - ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`）
 - コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`AnalysisController`（ヒートマップ）
-- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`ConditionMatcher`（ぴったり → 潮だけ → 月だけ と条件をゆるめる。プランナーとカルテの判断ビューで共通）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）
+- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`TripSearch`（釣行一覧の条件検索。条件の読み取り・絞り込み・まとめ）、`ConditionMatcher`（ぴったり → 潮だけ → 月だけ と条件をゆるめる。プランナーとカルテの判断ビューで共通）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）
 - お知らせ：`app/Notifications/` の `NewTripNotification`（`trip_ids`）・`NewSpotNotification`（`spot_id`）。ベルは `resources/views/components/notification-bell.blade.php`（PC とスマホの両方で使う）
 - 一致レベルのバッジ：`resources/views/components/match-level.blade.php`
 - 月×魚種の表：`resources/views/components/season-table.blade.php`（ヒートマップとカルテの両方で使う。`highlight-month` で月に印）
@@ -82,7 +82,7 @@
 
 ## 今どこまでできているか（2026-10-03）
 
-**フェーズ1・フェーズ2は完了。** テストは 213 件すべて成功。最後の Issue は #84（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）が完了。テストは 224 件すべて成功。最後の Issue は #86（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
@@ -91,9 +91,11 @@
 - カルテの小さな表（PG07、#82）：履歴と同じ釣行（「釣り場だけ隠す」は数えない）、選んだ日付の月に印
 - 条件をゆるめて探す（FN-16、#84）：釣り場ごとに、釣れた記録がなければ ぴったり → 潮だけ → 月だけ。レベルが先に並ぶ。カルテの判断ビュー（FN-11）も同じ
 
-### 次はフェーズ3
+### フェーズ3の進み具合（順番はユーザーと決めた）
 
-- **まず何から作るかをユーザーと決める。** そのあと、いつもどおり定義書にないところを整理して、決めてもらってから Issue を作る
+- 済：① 条件検索（FN-03、#86）：釣行一覧（`/trips`）に絞り込み・「自分／みんな」・まとめ。**「みんな」で釣り場を指定したら「釣り場だけ隠す」は出さない**。魚種×釣り方は同じ1匹。条件は URL に残す
+- **② CSV 出力（FN-04、PG17 `/trips/export`）← 次はここから**。今の絞り込み条件（`TripSearch`）のまま、**自分のデータだけ**。「みんな」のときはボタンを出さない。まず定義書にないところを整理して、ユーザーに決めてもらってから Issue を作る
+- ③ 継続カウンタと気づきカード（FN-10）→ ④ 報告と管理画面（NF-04）→ ⑤ 見た目
 
 ### フェーズ3でやること
 
