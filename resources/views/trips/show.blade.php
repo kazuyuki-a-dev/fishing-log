@@ -58,9 +58,9 @@
                 </div>
                 @endforeach
 
-                <div class="flex flex-wrap items-center gap-3">
-                    <x-primary-button>送る</x-primary-button>
+                <div class="flex flex-wrap items-center justify-end gap-3">
                     <span class="text-xs text-sand">答えなくても、このまま画面を離れれば大丈夫です。</span>
+                    <x-primary-button>送る</x-primary-button>
                 </div>
             </form>
             @endif
