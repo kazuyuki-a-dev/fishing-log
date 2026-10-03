@@ -46,6 +46,9 @@
 - VS Code（Intelephense）の赤線は勘違いのことが多い（`assertExists` など）。`Storage::fake` は `/** @var \Illuminate\Filesystem\FilesystemAdapter $disk */` を付けると消える
 - 見本コードを出すときは「（…今のまま）」のような省略を入れない。ユーザーがそのまま貼ってしまうことがある
 - ボタンの位置：フォームの決定ボタンは右寄せ（`justify-end`）。説明の文と並ぶ大きなボタンは `w-full sm:w-auto`。アカウント削除だけは左のまま
+- 新しい画面部品は、スマホ幅（360px）でも見えるか確かめる（ナビの `hidden sm:flex` の中だけに置いて、スマホでベルマークが消えたことがある）
+- 説明のコメントは Blade コメント `{{-- --}}` で書く。HTML コメント `<!-- -->` は画面のソースに出るので、テストの `assertDontSee` に引っかかることがある
+- 写真が 403 になるときは、まずファイルがあるかを見る（`storage/app/public/catches`）。`restore.sh` で DB と写真の時点がずれると、DB にだけ写真が残る
 
 ## 公開範囲とプライバシー（このアプリの肝。どの機能でも必ず守る）
 
@@ -56,12 +59,14 @@
 - 選べる・提案する釣り場は「公開の釣り場」と「自分の釣り場」だけ（スコープ `visibleTo`）
 - 写真の Exif は、保存時に必ず消す（`App\Services\PhotoStorer`）
 - 画面以外からデータが出る場所（お知らせ・CSV・API の JSON）でも、同じチェックを必ずする（NF-01）
+- お知らせには釣行・釣り場の**番号だけ**を保存し、表示するたびに `NotificationPresenter` でその時点の公開範囲をチェックして文章を作る（一覧もベルの件数も、ここ1か所を通す）
 
 ## 主なファイル
 
 - ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`）
-- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`、`HomeController`、プランナー
-- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`
+- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）
+- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）
+- お知らせ：`app/Notifications/` の `NewTripNotification`（`trip_ids`）・`NewSpotNotification`（`spot_id`）。ベルは `resources/views/components/notification-bell.blade.php`（PC とスマホの両方で使う）
 - 入力チェック：`app/Http/Requests/` の `TripRequest`・`BulkTripRequest`・`SpotRequest`
 - 決まった言葉の一覧：`config/fishing.php`（魚種20種・時間帯・潮・天候・釣り方・公開範囲など）
 - JavaScript：`resources/js/app.js`（`spotMapInput`・`spotMapView`・`catchRows`・`bulkRows`）、`resources/js/photo-hints.js`
@@ -75,19 +80,16 @@
 
 ## 今どこまでできているか（2026-10-03）
 
-**フェーズ1は完了。** テストは 162 件すべて成功。最後の Issue/PR は #71。
+**フェーズ1は完了。** フェーズ2の **FN-18（県内新着のアプリ内通知）も完了**（#76／PR #77）。テストは 187 件すべて成功。最後の Issue/PR は #78（次の番号は画面で確かめる）。
 
-### 次はフェーズ2（定義書 Phase 2）
+### フェーズ2の残り（定義書 Phase 2）
 
-1. **県内新着のアプリ内通知（FN-18）← 次はここから**。まず定義書に書かれていないところを整理して、ユーザーに決めてもらってから Issue を作る
-   - Laravel 標準の notifications テーブル（database チャンネル）。メール通知はしない（キュー不要）
-   - お知らせする：同じ県の釣り場に公開の釣行が登録されたとき／同じ県に新しい釣り場が登録されたとき
-   - お知らせしない：自分の投稿・非公開の釣行・非公開の釣り場
-   - **文章を作るときに公開範囲をもう一度チェック**。「釣り場だけ隠す」（釣り場が非公開の場合も）は釣り場名を入れず「〇〇県で釣果が公開されました」
-   - ベルマークに未読件数、お知らせ一覧（PG25 `/notifications`）、プロフィール（PG18）で ON／OFF
-2. シーズンヒートマップ（FN-02、PG16 `/analysis/heatmap`）：月別×魚種の釣果数を色の濃さで。自分／公開の切り替え、県の絞り込み（FN-17）。カルテにも小さな表
-3. 継続支援の一部（FN-10）：ヒートマップの空のマスに「あと何件で表示されるか」
-4. プランナーの拡張（FN-16）：ぴったり一致 → 潮だけ一致 → 月だけ一致、と少しずつ条件をゆるめる。どのレベルの一致かを必ず表示
+- 済：県内新着のアプリ内通知（FN-18）。決めたこと（あとから公開・まとめて登録・番号だけ保存・既読・OFF など）は `docs/decisions.md`
+1. **シーズンヒートマップ（FN-02、PG16 `/analysis/heatmap`）← 次はここから**。まず定義書に書かれていないところを整理して、ユーザーに決めてもらってから Issue を作る
+   - 月別×魚種の釣果数を色の濃さで。自分／公開の切り替え、県の絞り込み（FN-17）。カルテにも小さな表
+   - 「公開」の集計に入れてよいのは、ほかの人の非公開の釣行を除いたもの。公開範囲のチェックを忘れない
+2. 継続支援の一部（FN-10）：ヒートマップの空のマスに「あと何件で表示されるか」
+3. プランナーの拡張（FN-16）：ぴったり一致 → 潮だけ一致 → 月だけ一致、と少しずつ条件をゆるめる。どのレベルの一致かを必ず表示
 
 ### フェーズ3（そのあと）
 
