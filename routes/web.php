@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
@@ -32,6 +33,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/trips/bulk', [TripController::class, 'storeBulk'])->name('trips.bulk-store');
     Route::resource('trips', TripController::class);
     Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
+
+    // シーズンヒートマップ（PG16）
+    Route::get('/analysis/heatmap', [AnalysisController::class, 'heatmap'])->name('analysis.heatmap');
 
     // 県内新着のお知らせ一覧（PG25）
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

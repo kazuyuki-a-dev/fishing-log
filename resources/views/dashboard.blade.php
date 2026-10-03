@@ -39,6 +39,11 @@
                 </div>
             </section>
 
+            {{-- シーズンヒートマップへ（PG16） --}}
+            <div class="flex justify-end">
+                <a href="{{ route('analysis.heatmap') }}" class="text-sm underline text-sea">月ごとに釣れる魚を見る（シーズンヒートマップ）</a>
+            </div>
+
             {{-- 直近の釣行 --}}
             <section class="space-y-3">
                 <h3 class="font-bold">直近の釣行</h3>
