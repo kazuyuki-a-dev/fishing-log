@@ -64,8 +64,8 @@
 ## 主なファイル
 
 - ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`）
-- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）
-- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）
+- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`AnalysisController`（ヒートマップ）
+- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`SeasonHeatmap`（月×魚種の匹数と回数）
 - お知らせ：`app/Notifications/` の `NewTripNotification`（`trip_ids`）・`NewSpotNotification`（`spot_id`）。ベルは `resources/views/components/notification-bell.blade.php`（PC とスマホの両方で使う）
 - 入力チェック：`app/Http/Requests/` の `TripRequest`・`BulkTripRequest`・`SpotRequest`
 - 決まった言葉の一覧：`config/fishing.php`（魚種20種・時間帯・潮・天候・釣り方・公開範囲など）
@@ -80,16 +80,16 @@
 
 ## 今どこまでできているか（2026-10-03）
 
-**フェーズ1は完了。** フェーズ2の **FN-18（県内新着のアプリ内通知）も完了**（#76／PR #77）。テストは 187 件すべて成功。最後の Issue/PR は #78（次の番号は画面で確かめる）。
+**フェーズ1は完了。** フェーズ2は、FN-18（お知らせ、#76）とシーズンヒートマップ（FN-02、#80）が完了。テストは 197 件すべて成功。最後の Issue は #80（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2の残り（定義書 Phase 2）
 
 - 済：県内新着のアプリ内通知（FN-18）。決めたこと（あとから公開・まとめて登録・番号だけ保存・既読・OFF など）は `docs/decisions.md`
-1. **シーズンヒートマップ（FN-02、PG16 `/analysis/heatmap`）← 次はここから**。まず定義書に書かれていないところを整理して、ユーザーに決めてもらってから Issue を作る
-   - 月別×魚種の釣果数を色の濃さで。自分／公開の切り替え、県の絞り込み（FN-17）。カルテにも小さな表
-   - 「公開」の集計に入れてよいのは、ほかの人の非公開の釣行を除いたもの。公開範囲のチェックを忘れない
-2. 継続支援の一部（FN-10）：ヒートマップの空のマスに「あと何件で表示されるか」
-3. プランナーの拡張（FN-16）：ぴったり一致 → 潮だけ一致 → 月だけ一致、と少しずつ条件をゆるめる。どのレベルの一致かを必ず表示
+- 済：シーズンヒートマップ（FN-02、`/analysis/heatmap`）。色は匹数・小さく回数、1匹から色、記録なしは白、最初は「みんな」。FN-10 の「あと何件」は「釣行 N 件から作っています」に変えた（`docs/decisions.md`）
+1. **カルテの小さな表（PG07、FN-09 の一部）← 次はここから**。釣り場1つ分の月×魚種。まず定義書にないところを整理して、ユーザーに決めてもらってから Issue を作る
+   - 釣り場1つ分なので、**「釣り場だけ隠す」の釣行は数えない**（数えると「この釣り場での釣行だ」と分かってしまう）。カルテの履歴と同じ `Trip::scopeVisibleWithSpotTo()` の範囲にそろえる
+   - 見た目と数え方は、ヒートマップ（`SeasonHeatmap`）にそろえるとよい
+2. プランナーの拡張（FN-16）：ぴったり一致 → 潮だけ一致 → 月だけ一致、と少しずつ条件をゆるめる。どのレベルの一致かを必ず表示
 
 ### フェーズ3（そのあと）
 
