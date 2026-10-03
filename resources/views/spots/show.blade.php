@@ -144,6 +144,17 @@
             </div>
             @endauth
 
+            {{-- 月別×魚種の小さな表（PG07・FN-09）。判断ビューで選んだ日付の月に印を付ける --}}
+            <section class="space-y-3">
+                <h3 class="font-bold">この釣り場の季節</h3>
+                @if (empty($season['rows']))
+                <p class="bg-white rounded-md shadow-sm p-4 text-sm">まだ釣果の記録がありません。</p>
+                @else
+                <p class="text-sm">月ごとの釣れた数です。この表は釣行 <span class="font-bold">{{ $season['tripCount'] }}</span> 件から作っています。</p>
+                <x-season-table :rows="$season['rows']" :highlight-month="$judge['date']->month" />
+                @endif
+            </section>
+
             {{-- 釣行の履歴（FN-09） --}}
             <section class="space-y-3">
                 <h3 class="font-bold">釣行の履歴</h3>
