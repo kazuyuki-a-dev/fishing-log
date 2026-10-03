@@ -19,6 +19,7 @@ use App\Services\PhotoStorer;
 use App\Services\WeatherService;
 use App\Http\Requests\BulkTripRequest;
 use App\Services\NewPostNotifier;
+use App\Services\TripSearch;
 
 class TripController extends Controller
 {
@@ -29,15 +30,29 @@ class TripController extends Controller
         private NewPostNotifier $notifier,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request, TripSearch $search): View
     {
-        // 自分の釣行を新しい順に（PG10）
-        $trips = $request->user()->trips()
-            ->with(['spot:id,name,prefecture', 'catches:id,trip_id,fish_species'])
-            ->orderByDesc('went_at')
-            ->paginate(20);
+        $user = $request->user();
 
-        return view('trips.index', ['trips' => $trips]);
+        // 条件検索（FN-03）。条件は URL に残す（CSV 出力でも同じ条件を使うため）
+        $filters = $search->filters($request, $user);
+        $query = $search->query($user, $filters);
+
+        // 釣行を新しい順に（PG10）
+        $trips = (clone $query)
+            ->with(['spot', 'user:id,name', 'catches'])
+            ->orderByDesc('went_at')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('trips.index', [
+            'trips' => $trips,
+            'filters' => $filters,
+            'isFiltered' => $search->isFiltered($filters),
+            'summary' => $search->summary($query, $filters),
+            'spots' => $this->selectableSpots($user),
+        ]);
     }
 
     public function create(Request $request): View
