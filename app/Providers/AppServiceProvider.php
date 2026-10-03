@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\NotificationPresenter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // どの画面のナビにも、ベルマークの未読件数を渡す（FN-18）
+        View::composer('layouts.navigation', function ($view) {
+            $user = auth()->user();
+            $view->with('unreadNotifications', $user ? app(NotificationPresenter::class)->unreadCount($user) : 0);
+        });
     }
 }

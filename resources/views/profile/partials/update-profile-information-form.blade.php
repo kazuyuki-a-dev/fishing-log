@@ -32,6 +32,18 @@
         </div>
 
         <div>
+            {{-- チェックを外すと何も送られないので、先に 0 を送っておく（チェックがあれば 1 で上書き） --}}
+            <input type="hidden" name="notify_enabled" value="0">
+            <label for="notify_enabled" class="inline-flex items-start">
+                <input id="notify_enabled" type="checkbox" name="notify_enabled" value="1"
+                    @checked(old('notify_enabled', $user->notify_enabled))
+                    class="mt-1 rounded border-gray-300 text-sea-600 shadow-sm focus:ring-sea-500">
+                <span class="ms-2 text-sm text-gray-600">メインフィールドの県で釣果や釣り場が公開されたら、お知らせを受け取る</span>
+            </label>
+            <x-input-error class="mt-2" :messages="$errors->get('notify_enabled')" />
+        </div>
+
+        <div>
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />

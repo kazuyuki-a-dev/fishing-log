@@ -18,11 +18,16 @@ use App\Services\CatchHighlighter;
 use App\Services\PhotoStorer;
 use App\Services\WeatherService;
 use App\Http\Requests\BulkTripRequest;
+use App\Services\NewPostNotifier;
 
 class TripController extends Controller
 {
-    // 写真の係。コントローラが作られるときに、Laravel が用意して渡してくれる
-    public function __construct(private PhotoStorer $photos, private WeatherService $weather) {}
+    // 写真・天気・お知らせの係。コントローラが作られるときに、Laravel が用意して渡してくれる
+    public function __construct(
+        private PhotoStorer $photos,
+        private WeatherService $weather,
+        private NewPostNotifier $notifier,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -56,6 +61,9 @@ class TripController extends Controller
             return $trip;
         });
 
+        // 公開の釣行なら、同じ県の会員にお知らせする（FN-18）
+        $this->notifier->trips($request->user(), new Collection([$trip]));
+
         return redirect()
             ->route('trips.show', $trip)
             ->with('status', $this->savedMessage('記録', $trip))
@@ -77,7 +85,10 @@ class TripController extends Controller
             $row['time_of_day'],
         ]));
 
-        $catchCount = DB::transaction(function () use ($request, $tides, $groups, $visibility) {
+        // 登録した釣行（あとでまとめてお知らせするために集めておく）
+        $created = new Collection();
+
+        $catchCount = DB::transaction(function () use ($request, $tides, $groups, $visibility, $created) {
             $fetchWeather = true;
             $catchCount = 0;
 
@@ -98,6 +109,7 @@ class TripController extends Controller
                 }
 
                 $trip = $request->user()->trips()->create($data);
+                $created->push($trip);
 
                 // 魚種が空の行は坊主なので、釣果にはしない
                 $catches = $group->filter(fn(array $row) => ! empty($row['fish_species']))->all();
@@ -107,6 +119,9 @@ class TripController extends Controller
 
             return $catchCount;
         });
+
+        // まとめて登録は、お知らせも県ごとに1件にまとめる（FN-18）
+        $this->notifier->trips($request->user(), $created);
 
         return redirect()
             ->route('trips.index')
@@ -151,6 +166,9 @@ class TripController extends Controller
     {
         Gate::authorize('update', $trip);
 
+        // 更新する前は非公開だったか（非公開から公開にしたときだけ、お知らせする）
+        $wasPrivate = $trip->visibility === 'private';
+
         // 今ついている写真（引き継いでよい写真の一覧）
         $oldPhotos = $trip->catches()->whereNotNull('image_path')->pluck('image_path')->all();
 
@@ -167,6 +185,11 @@ class TripController extends Controller
         $usedPhotos = $trip->catches()->whereNotNull('image_path')->pluck('image_path')->all();
         foreach (array_diff($oldPhotos, $usedPhotos) as $path) {
             $this->photos->delete($path);
+        }
+
+        // 非公開から公開（または釣り場だけ隠す）に変えたら、お知らせする。1回だけ（FN-18）
+        if ($wasPrivate) {
+            $this->notifier->trips($request->user(), new Collection([$trip]));
         }
 
         return redirect()
