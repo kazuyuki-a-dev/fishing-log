@@ -60,14 +60,13 @@
                         <div class="flex flex-wrap items-baseline gap-2">
                             <a href="{{ route('spots.show', ['spot' => $plan['spot'], 'date' => $date->format('Y-m-d'), 'time_of_day' => $timeOfDay]) }}"
                                 class="font-bold hover:underline">
-                                {{-- 1位の釣り場名に黄色のマーカー（#100） --}}
-                                <span class="{{ $loop->first ? 'crayon-marker' : '' }}">{{ $plan['spot']->name }}</span>
+                                {{-- 1位の釣り場名に黄色のマーカー（#100）。釣れた記録があるときだけ（#110） --}}
+                                <span class="{{ $loop->first && $plan['caught'] > 0 ? 'crayon-marker' : '' }}">{{ $plan['spot']->name }}</span>
                             </a>
                             <span class="text-xs text-sand">{{ $plan['spot']->prefecture }}</span>
+                            {{-- 注意区分だけを出す（「注意あり」「立入注意」など。言葉だけで注意だと分かるため。#110） --}}
                             @if ($plan['spot']->caution_type && $plan['spot']->caution_type !== 'なし')
-                            <span class="crayon-caution-tag">
-                                注意：{{ $plan['spot']->caution_type }}
-                            </span>
+                            <span class="crayon-caution-tag">{{ $plan['spot']->caution_type }}</span>
                             @endif
                         </div>
 

@@ -29,12 +29,12 @@
             </div>
             @endif
 
-            {{-- 注意区分の警告（FN-14・NF-04） --}}
+            {{-- 注意区分の警告（FN-14・NF-04）。見出しは注意区分だけ（「!」の印があるので「注意：」は付けない。#110） --}}
             @if ($spot->caution_type && $spot->caution_type !== 'なし')
             <div class="crayon-caution">
                 <span class="crayon-caution-icon" aria-hidden="true">!</span>
                 <div>
-                    <p class="font-bold text-float-dark">注意：{{ $spot->caution_type }}</p>
+                    <p class="font-bold text-float-dark">{{ $spot->caution_type }}</p>
                     <p class="text-sm">現地の表示や決まりを守ってください。安全と法律を守る責任は、利用する人自身にあります。</p>
                 </div>
             </div>
