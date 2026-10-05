@@ -6,15 +6,6 @@
 - 主役は **釣行プランナー**（行く日と県を選ぶと、過去の記録から釣り場を提案）と **釣り場カルテ**（その釣り場で、選んだ日の条件のときにどうだったか）
 - スクールに提出する個人開発アプリです。定義書は [`docs/spec.md`](docs/spec.md)、定義書と違うことをしたときの判断と理由は [`docs/decisions.md`](docs/decisions.md) にすべて記録しています
 
-## 開発者・リンク
-
-| 項目 | 内容 |
-| --- | --- |
-| 開発者 | kazuyuki-a-dev（[GitHub](https://github.com/kazuyuki-a-dev)） |
-| リポジトリ | https://github.com/kazuyuki-a-dev/fishing-log |
-| Issue | https://github.com/kazuyuki-a-dev/fishing-log/issues?q=is%3Aissue |
-| Pull Request | https://github.com/kazuyuki-a-dev/fishing-log/pulls?q=is%3Apr |
-
 ## 画面
 
 開発用のデータ（`test@example.com`、記録はダミー）で撮った画面です。
@@ -221,3 +212,12 @@ sail artisan test
   - フェーズ1：記録する・カルテ・プランナー・公開範囲など、使い始めに必要なもの
   - フェーズ2：お知らせ・ヒートマップ・条件をゆるめて探す処理など、記録が貯まってから効くもの
   - フェーズ3：条件検索・CSV 出力・継続カウンタ・報告と管理画面・見た目
+
+## 開発者・リンク
+
+| 項目 | 内容 |
+| --- | --- |
+| 開発者 | kazuyuki-a-dev（[GitHub](https://github.com/kazuyuki-a-dev)） |
+| リポジトリ | https://github.com/kazuyuki-a-dev/fishing-log |
+| Issue | https://github.com/kazuyuki-a-dev/fishing-log/issues?q=is%3Aissue |
+| Pull Request | https://github.com/kazuyuki-a-dev/fishing-log/pulls?q=is%3Apr |
