@@ -13,7 +13,9 @@ $levelClasses = [
 @endphp
 
 {{-- スマホでは表を横に動かせる。魚種の列は動かさない --}}
-<div class="bg-white rounded-md shadow-sm overflow-x-auto">
+{{-- クレヨンの枠は外側に付ける（内側に付けると、横に動かしたとき枠も一緒に流れるため） --}}
+<div class="crayon-card">
+<div class="overflow-x-auto" style="border-radius: inherit">
     <table class="w-full text-sm text-center border-collapse">
         <thead>
             <tr>
@@ -59,6 +61,7 @@ $levelClasses = [
             @endforeach
         </tbody>
     </table>
+</div>
 </div>
 
 {{-- 凡例 --}}

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-bold text-sea">釣行プランナー</h2>
+        <h2 class="crayon-heading">釣行プランナー</h2>
     </x-slot>
 
     <div class="py-8">
@@ -42,7 +42,7 @@
 
             {{-- 釣り場の候補 --}}
             @if ($plans->isEmpty())
-            <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
+            <div class="crayon-card p-6 text-center space-y-3">
                 <p>まだこの県には釣り場がありません。</p>
                 <div class="flex justify-center gap-4 text-sm">
                     <a href="{{ route('planner', ['date' => $date->format('Y-m-d'), 'prefecture' => 'all']) }}" class="underline text-sea">全国を見る</a>
@@ -52,7 +52,7 @@
             @else
             <ol class="space-y-3">
                 @foreach ($plans as $plan)
-                <li class="bg-white rounded-md shadow-sm p-4 flex gap-4">
+                <li class="crayon-card p-4 flex gap-4">
                     <span class="text-2xl font-bold text-sea-400 w-8 shrink-0 text-center">{{ $loop->iteration }}</span>
 
                     <div class="min-w-0 flex-1 space-y-1">

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-bold text-sea">報告の管理</h2>
+        <h2 class="crayon-heading">報告の管理</h2>
     </x-slot>
 
     @php
@@ -21,7 +21,7 @@
                 $count = $key === 'all' ? $statusCounts->sum() : ($statusCounts[$key] ?? 0);
                 @endphp
                 <a href="{{ route('admin.reports.index', ['status' => $key]) }}"
-                    class="px-3 py-1.5 rounded-md border {{ $filter === $key ? 'bg-sea text-white border-sea font-bold' : 'bg-white border-gray-300 text-ink hover:bg-tide' }}">
+                    class="font-hand px-3 py-1.5 rounded-md border {{ $filter === $key ? 'bg-sea text-white border-sea font-bold' : 'bg-white border-gray-300 text-ink hover:bg-tide' }}">
                     {{ $label }}（{{ $count }}）
                 </a>
                 @endforeach
@@ -33,7 +33,7 @@
             $total = $isTrip ? $tripCounts[$report->trip_id] : $spotCounts[$report->spot_id];
             $alreadyHidden = $isTrip ? $report->trip->visibility === 'private' : $report->spot->visibility === 'private';
             @endphp
-            <article class="bg-white rounded-md shadow-sm p-5 space-y-4">
+            <article class="crayon-card p-5 space-y-4">
                 {{-- 報告の中身 --}}
                 <div class="space-y-1">
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -102,7 +102,7 @@
                 @endunless
             </article>
             @empty
-            <p class="bg-white rounded-md shadow-sm p-6 text-center text-sm">{{ $filterLabels[$filter] }}の報告はありません。</p>
+            <p class="crayon-card p-6 text-center text-sm">{{ $filterLabels[$filter] }}の報告はありません。</p>
             @endforelse
 
             {{ $reports->links() }}

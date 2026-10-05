@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-bold text-sea">
+        <h2 class="crayon-heading">
             {{ $trip->went_at->format('Y年n月j日') }}
             <span class="ml-2 text-base font-normal">{{ $trip->time_of_day }}</span>
         </h2>
@@ -37,7 +37,7 @@
             ];
             @endphp
             <form method="POST" action="{{ route('spots.local-info', $trip->spot) }}"
-                class="bg-white rounded-md shadow-sm p-5 space-y-4">
+                class="crayon-card p-5 space-y-4">
                 @csrf
                 @method('PATCH')
                 <div>
@@ -65,7 +65,7 @@
             </form>
             @endif
 
-            <section class="bg-white rounded-md shadow-sm p-5 space-y-3">
+            <section class="crayon-card p-5 space-y-3">
                 <dl class="grid grid-cols-[6rem_1fr] gap-y-2 text-sm">
                     <dt class="text-sand">釣り場</dt>
                     <dd>
@@ -108,9 +108,9 @@
             </section>
 
             <section class="space-y-3">
-                <h3 class="font-bold">釣果</h3>
+                <h3 class="crayon-subheading">釣果</h3>
                 @forelse ($trip->catches as $catch)
-                <article class="bg-white rounded-md shadow-sm p-4 text-sm space-y-1">
+                <article class="crayon-card p-4 text-sm space-y-1">
                     <p class="text-base font-bold">
                         {{ $catch->fish_species }}
                         @if ($catch->length_cm)
@@ -130,7 +130,7 @@
                     @endif
                 </article>
                 @empty
-                <p class="bg-white rounded-md shadow-sm p-4 text-sm">坊主</p>
+                <p class="crayon-card p-4 text-sm">坊主</p>
                 @endforelse
             </section>
 
@@ -140,7 +140,7 @@
 
                 <div class="flex items-center gap-3">
                     <a href="{{ route('trips.edit', $trip) }}"
-                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-bold text-sm text-ink shadow-sm hover:bg-tide">
+                        class="font-hand inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-bold text-sm text-ink shadow-sm hover:bg-tide">
                         編集する
                     </a>
                     <x-danger-button x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-trip-deletion')">

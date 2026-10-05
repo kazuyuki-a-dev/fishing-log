@@ -1,3 +1,69 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * クレヨンのメモ帳風の見た目（#96）
+ * クレヨンの効果（SVG フィルター）は、枠と下線の飾り（::before / ::after）にだけかける
+ * 文字・数字・表の中の線・入力欄・ボタンにはかけない（ざらついて読みにくくならないように）
+ * フィルターは resources/views/components/crayon-filters.blade.php
+ */
+
+/*
+ * 操作する部分は、全部手書きの字にして統一感を出す（#96）
+ * ボタン・セレクトボックス・入力欄・ラベルに1か所でまとめて当てる（部品ごとに付け忘れないように）
+ * ボタンの形をしたリンク（<a>）は、それぞれの class に font-hand を付けている
+ * 本文の文章・カードの数字・注意区分の警告は、読みやすさのため今の字（BIZ UDPゴシック）のまま
+ */
+@layer base {
+    button,
+    select,
+    input,
+    textarea,
+    label,
+    legend,
+    nav[role="navigation"] {
+        @apply font-hand;
+    }
+}
+@layer components {
+    /* メモ帳の紙（背景） */
+    .crayon-paper {
+        @apply bg-paper;
+    }
+
+    /* 白いカードに、クレヨンで描いた枠 */
+    .crayon-card {
+        @apply relative bg-white;
+        border-radius: 12px 6px 14px 5px;
+    }
+
+    .crayon-card::after {
+        content: "";
+        @apply absolute inset-0 border-sea;
+        border-width: 2.5px;
+        border-style: solid;
+        border-radius: inherit;
+        opacity: 0.85;
+        filter: url(#crayon-line);
+        /* 飾りなので、下のボタンやリンクを押すじゃまをしない */
+        pointer-events: none;
+    }
+
+    /* 画面の見出し：手書きの字と、クレヨンで引いた下線 */
+    .crayon-heading {
+        @apply relative inline-block pb-2 font-hand text-2xl text-sea;
+    }
+
+    .crayon-heading::after {
+        content: "";
+        @apply absolute left-0 bottom-0 h-1.5 w-full rounded-full bg-float;
+        opacity: 0.8;
+        filter: url(#crayon-fill);
+    }
+
+    /* 画面の中のまとまりの見出し：手書きの字だけ */
+    .crayon-subheading {
+        @apply font-hand text-xl text-sea;
+    }
+}

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-bold text-sea">お知らせ</h2>
+        <h2 class="crayon-heading">お知らせ</h2>
     </x-slot>
 
     <div class="py-8">
@@ -13,13 +13,13 @@
             @endunless
 
             @if ($items->isEmpty())
-            <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
+            <div class="crayon-card p-6 text-center space-y-3">
                 <p>まだお知らせはありません。</p>
                 <p class="text-sm text-sand">メインフィールドの県で、釣果や釣り場が公開されるとここに届きます。</p>
                 <a href="{{ route('feed') }}" class="underline text-sea">釣果フィードを見る</a>
             </div>
             @else
-            <ul class="bg-white rounded-md shadow-sm divide-y divide-gray-100">
+            <ul class="crayon-card divide-y divide-gray-100">
                 @foreach ($items as $item)
                 <li>
                     <a href="{{ $item['url'] }}" class="flex items-start justify-between gap-4 p-4 hover:bg-tide">

@@ -9,17 +9,17 @@
                 </p>
                 <div class="flex flex-wrap gap-3">
                     <a href="{{ route('register') }}"
-                        class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                        class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                         会員登録（無料）
                     </a>
                     <a href="{{ route('login') }}"
-                        class="inline-flex items-center px-5 py-2.5 bg-white rounded-md font-bold text-sm text-sea hover:bg-sea-50">
+                        class="font-hand inline-flex items-center px-5 py-2.5 bg-white rounded-md font-bold text-sm text-sea hover:bg-sea-50">
                         ログイン
                     </a>
                 </div>
             </section>
 
-            <section class="bg-white rounded-md shadow-sm p-5 space-y-3">
+            <section class="crayon-card p-5 space-y-3">
                 <h2 class="font-bold">都道府県の釣果を見る</h2>
                 <form method="GET" action="{{ route('feed') }}">
                     <x-prefecture-select name="prefecture" :selected="null" :with-all="true"
@@ -32,7 +32,7 @@
                 @forelse ($trips as $trip)
                 @include('trips.partials.feed-card', ['trip' => $trip])
                 @empty
-                <p class="bg-white rounded-md shadow-sm p-4 text-sm">公開された釣果は、まだありません。</p>
+                <p class="crayon-card p-4 text-sm">公開された釣果は、まだありません。</p>
                 @endforelse
                 <div class="text-right">
                     <a href="{{ route('feed', ['prefecture' => 'all']) }}" class="text-sm underline text-sea">釣果フィードをもっと見る</a>

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-bold text-sea">シーズンヒートマップ</h2>
+        <h2 class="crayon-heading">シーズンヒートマップ</h2>
     </x-slot>
 
     @php
@@ -17,7 +17,7 @@
                     @foreach ($scopes as $value => $label)
                     <a href="{{ route('analysis.heatmap', ['scope' => $value, 'prefecture' => $prefecture]) }}"
                         @if ($scope === $value) aria-current="true" @endif
-                        class="px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $scope === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
+                        class="font-hand px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $scope === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
                         {{ $label }}
                     </a>
                     @endforeach
@@ -31,7 +31,7 @@
             </div>
 
             @if (empty($rows))
-            <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
+            <div class="crayon-card p-6 text-center space-y-3">
                 <p>まだこの条件の記録がありません。</p>
                 <div class="flex flex-wrap justify-center gap-4 text-sm">
                     <a href="{{ route('trips.create') }}" class="underline text-sea">釣行を記録する</a>

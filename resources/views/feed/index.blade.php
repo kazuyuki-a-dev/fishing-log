@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-bold text-sea">釣果フィード</h2>
+        <h2 class="crayon-heading">釣果フィード</h2>
     </x-slot>
 
     <div class="py-8">
@@ -13,23 +13,23 @@
             </form>
 
             @if ($prefecture === null)
-            <div class="bg-white rounded-md shadow-sm p-6 text-center">
+            <div class="crayon-card p-6 text-center">
                 <p>見たい都道府県を選んでください。</p>
             </div>
             @elseif ($trips->isEmpty())
-            <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
+            <div class="crayon-card p-6 text-center space-y-3">
                 <p>この条件の公開釣果は、まだありません。</p>
                 <a href="{{ route('trips.create') }}"
-                    class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                     最初の投稿者になる
                 </a>
             </div>
 
             @if ($spots->isNotEmpty())
             <section class="space-y-3">
-                <h3 class="font-bold">この県の釣り場の現地情報</h3>
+                <h3 class="crayon-subheading">この県の釣り場の現地情報</h3>
                 @foreach ($spots as $spot)
-                <article class="bg-white rounded-md shadow-sm p-4 text-sm">
+                <article class="crayon-card p-4 text-sm">
                     <a href="{{ route('spots.show', $spot) }}" class="font-bold hover:underline">{{ $spot->name }}</a>
                     <p class="mt-1 text-sand">
                         駐車場：{{ $spot->parking_type ?? '未入力' }}

@@ -1,9 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="text-xl font-bold text-sea">釣行の記録</h2>
+            <h2 class="crayon-heading">釣行の記録</h2>
             <a href="{{ route('trips.create') }}"
-                class="inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                class="font-hand inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                 釣行を記録
             </a>
         </div>
@@ -27,14 +27,14 @@
                 @foreach ($scopes as $value => $label)
                 <a href="{{ route('trips.index', array_merge($keep, ['scope' => $value])) }}"
                     @if ($filters['scope'] === $value) aria-current="true" @endif
-                    class="px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $filters['scope'] === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
+                    class="font-hand px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $filters['scope'] === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
                     {{ $label }}
                 </a>
                 @endforeach
             </div>
 
             {{-- 条件検索（FN-03）。条件は URL に残す --}}
-            <form method="GET" action="{{ route('trips.index') }}" class="bg-white rounded-md shadow-sm p-4 space-y-4">
+            <form method="GET" action="{{ route('trips.index') }}" class="crayon-card p-4 space-y-4">
                 <input type="hidden" name="scope" value="{{ $filters['scope'] }}">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                     @if ($filters['scope'] === 'public')
@@ -108,7 +108,7 @@
                 {{-- CSV は自分のデータだけ。「みんな」のときは出さない（FN-04） --}}
                 @if ($filters['scope'] === 'mine')
                 <a href="{{ route('trips.export', request()->except(['page', 'scope', 'prefecture'])) }}"
-                    class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-sea rounded-md font-bold text-sea hover:bg-tide">
+                    class="font-hand inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-sea rounded-md font-bold text-sea hover:bg-tide">
                     CSV で保存
                 </a>
                 @endif
@@ -116,7 +116,7 @@
             @endif
 
             @if ($trips->isEmpty())
-            <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
+            <div class="crayon-card p-6 text-center space-y-3">
                 @if ($isFiltered)
                 <p>この条件の釣行はありません。</p>
                 @elseif ($filters['scope'] === 'public')
@@ -132,7 +132,7 @@
             @include('trips.partials.feed-card', ['trip' => $trip])
             @endforeach
             @else
-            <ul class="bg-white rounded-md shadow-sm divide-y divide-gray-100">
+            <ul class="crayon-card divide-y divide-gray-100">
                 @foreach ($trips as $trip)
                 <li>
                     <a href="{{ route('trips.show', $trip) }}" class="flex items-start justify-between gap-4 p-4 hover:bg-tide">
