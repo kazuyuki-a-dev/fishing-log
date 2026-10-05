@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-bold text-sea">釣り場</h2>
+        <h2 class="crayon-heading">釣り場</h2>
     </x-slot>
 
     <div class="py-8">
@@ -21,13 +21,13 @@
                 @endauth
             </div>
             @if ($prefecture === null)
-            <div class="bg-white rounded-md shadow-sm p-6 text-center">
+            <div class="crayon-card p-6 text-center">
                 <p>見たい都道府県を選んでください。</p>
             </div>
             @else
 
             @if ($spots->isEmpty())
-            <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
+            <div class="crayon-card p-6 text-center space-y-3">
                 <p>まだこの県には釣り場がありません。</p>
                 <div class="flex justify-center gap-4 text-sm">
                     <a href="{{ route('spots.index', ['prefecture' => 'all']) }}" class="underline text-sea">全国を見る</a>
@@ -35,7 +35,7 @@
                 </div>
             </div>
             @else
-            <ul class="bg-white rounded-md shadow-sm divide-y divide-gray-100">
+            <ul class="crayon-card divide-y divide-gray-100">
                 @foreach ($spots as $spot)
                 <li class="p-4 flex items-start justify-between gap-4">
                     <div>

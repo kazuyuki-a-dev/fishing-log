@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 class="text-xl font-bold text-sea">{{ $spot->name }}</h2>
+            <h2 class="crayon-heading">{{ $spot->name }}</h2>
             <p class="text-sm text-sand">
                 {{ $spot->prefecture }}
                 @if ($spot->visibility === 'private')
@@ -20,7 +20,7 @@
 
             {{-- 釣り場を登録した直後だけ出す（PG08） --}}
             @if (session('registered'))
-            <div class="bg-white rounded-md shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
+            <div class="crayon-card p-5 flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm">今日ここに行ったなら、続けて釣行を記録しましょう。</p>
                 <a href="{{ route('trips.create', ['spot' => $spot->id]) }}"
                     class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
@@ -109,7 +109,7 @@
             {{-- 実績（FN-09） --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 @auth
-                <div class="bg-white rounded-md shadow-sm p-5">
+                <div class="crayon-card p-5">
                     <h3 class="text-sm text-sand">自分の実績</h3>
                     @if ($mine['visits'] > 0)
                     <p class="mt-2 text-2xl font-bold">
@@ -127,7 +127,7 @@
                 </div>
                 @endauth
 
-                <div class="bg-white rounded-md shadow-sm p-5">
+                <div class="crayon-card p-5">
                     <h3 class="text-sm text-sand">ほかの人の公開実績</h3>
                     @if ($others['visits'] > 0)
                     <p class="mt-2 text-2xl font-bold">
@@ -147,7 +147,7 @@
                 </a>
             </div>
             @else
-            <div class="bg-white rounded-md shadow-sm p-4 text-sm text-center">
+            <div class="crayon-card p-4 text-sm text-center">
                 自分の釣行を記録して、釣れる条件を貯めていきませんか？
                 <a href="{{ route('register') }}" class="ml-2 font-bold underline text-sea">会員登録する</a>
             </div>
@@ -155,9 +155,9 @@
 
             {{-- 月別×魚種の小さな表（PG07・FN-09）。判断ビューで選んだ日付の月に印を付ける --}}
             <section class="space-y-3">
-                <h3 class="font-bold">この釣り場の季節</h3>
+                <h3 class="crayon-subheading">この釣り場の季節</h3>
                 @if (empty($season['rows']))
-                <p class="bg-white rounded-md shadow-sm p-4 text-sm">まだ釣果の記録がありません。</p>
+                <p class="crayon-card p-4 text-sm">まだ釣果の記録がありません。</p>
                 @else
                 <p class="text-sm">月ごとの釣れた数です。この表は釣行 <span class="font-bold">{{ $season['tripCount'] }}</span> 件から作っています。</p>
                 <x-season-table :rows="$season['rows']" :highlight-month="$judge['date']->month" />
@@ -166,9 +166,9 @@
 
             {{-- 釣行の履歴（FN-09） --}}
             <section class="space-y-3">
-                <h3 class="font-bold">釣行の履歴</h3>
+                <h3 class="crayon-subheading">釣行の履歴</h3>
                 @forelse ($trips as $trip)
-                <article class="bg-white rounded-md shadow-sm p-4 {{ $judge['matchedIds']->contains($trip->id) ? 'ring-2 ring-float' : '' }}">
+                <article class="crayon-card p-4 {{ $judge['matchedIds']->contains($trip->id) ? 'ring-2 ring-float' : '' }}">
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                         <p class="font-bold">
                             {{ $trip->went_at->format('Y/m/d') }}
@@ -206,15 +206,15 @@
                     @endif
                 </article>
                 @empty
-                <p class="bg-white rounded-md shadow-sm p-4 text-sm">
+                <p class="crayon-card p-4 text-sm">
                     まだこの釣り場の記録はありません。最初の釣行を記録しましょう。
                 </p>
                 @endforelse
             </section>
 
             {{-- 現地の情報（FN-14） --}}
-            <section class="bg-white rounded-md shadow-sm p-5">
-                <h3 class="font-bold">現地の情報</h3>
+            <section class="crayon-card p-5">
+                <h3 class="crayon-subheading">現地の情報</h3>
                 <dl class="mt-3 grid grid-cols-[8rem_1fr] gap-y-2 text-sm">
                     <dt class="text-sand">駐車場</dt>
                     <dd>{{ $spot->parking_type ?? '未入力' }}{{ $spot->parking_note ? '（' . $spot->parking_note . '）' : '' }}</dd>

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="text-xl font-bold text-sea">釣行の記録</h2>
+            <h2 class="crayon-heading">釣行の記録</h2>
             <a href="{{ route('trips.create') }}"
                 class="inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                 釣行を記録
@@ -34,7 +34,7 @@
             </div>
 
             {{-- 条件検索（FN-03）。条件は URL に残す --}}
-            <form method="GET" action="{{ route('trips.index') }}" class="bg-white rounded-md shadow-sm p-4 space-y-4">
+            <form method="GET" action="{{ route('trips.index') }}" class="crayon-card p-4 space-y-4">
                 <input type="hidden" name="scope" value="{{ $filters['scope'] }}">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                     @if ($filters['scope'] === 'public')
@@ -116,7 +116,7 @@
             @endif
 
             @if ($trips->isEmpty())
-            <div class="bg-white rounded-md shadow-sm p-6 text-center space-y-3">
+            <div class="crayon-card p-6 text-center space-y-3">
                 @if ($isFiltered)
                 <p>この条件の釣行はありません。</p>
                 @elseif ($filters['scope'] === 'public')
@@ -132,7 +132,7 @@
             @include('trips.partials.feed-card', ['trip' => $trip])
             @endforeach
             @else
-            <ul class="bg-white rounded-md shadow-sm divide-y divide-gray-100">
+            <ul class="crayon-card divide-y divide-gray-100">
                 @foreach ($trips as $trip)
                 <li>
                     <a href="{{ route('trips.show', $trip) }}" class="flex items-start justify-between gap-4 p-4 hover:bg-tide">

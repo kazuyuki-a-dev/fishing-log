@@ -19,7 +19,7 @@
                 </div>
             </section>
 
-            <section class="bg-white rounded-md shadow-sm p-5 space-y-3">
+            <section class="crayon-card p-5 space-y-3">
                 <h2 class="font-bold">都道府県の釣果を見る</h2>
                 <form method="GET" action="{{ route('feed') }}">
                     <x-prefecture-select name="prefecture" :selected="null" :with-all="true"
@@ -32,7 +32,7 @@
                 @forelse ($trips as $trip)
                 @include('trips.partials.feed-card', ['trip' => $trip])
                 @empty
-                <p class="bg-white rounded-md shadow-sm p-4 text-sm">公開された釣果は、まだありません。</p>
+                <p class="crayon-card p-4 text-sm">公開された釣果は、まだありません。</p>
                 @endforelse
                 <div class="text-right">
                     <a href="{{ route('feed', ['prefecture' => 'all']) }}" class="text-sm underline text-sea">釣果フィードをもっと見る</a>

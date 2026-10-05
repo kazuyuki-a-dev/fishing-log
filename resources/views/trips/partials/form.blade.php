@@ -84,7 +84,7 @@ $nearbyUrl = route('spots.nearby');
 {{-- 釣果（Alpine.js で行を増やしたり減らしたりする） --}}
 <div class="border-t border-gray-100 pt-6 space-y-4"
     x-data="catchRows(@js($catchRows), @js($nearbyUrl))">
-    <h3 class="font-bold">釣果</h3>
+    <h3 class="crayon-subheading">釣果</h3>
 
     <p x-show="converting" class="text-sm text-sea">写真を変換しています…</p>
     <p x-show="photoMessage" x-text="photoMessage" class="text-sm text-sea"></p>

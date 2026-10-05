@@ -13,6 +13,8 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['"BIZ UDPGothic"', ...defaultTheme.fontFamily.sans],
+                // 見出しだけに使う手書きの字（Google Fonts の Yomogi、SIL OFL）
+                hand: ['"Yomogi"', '"BIZ UDPGothic"', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 sea: {
@@ -26,12 +28,16 @@ export default {
                     DEFAULT: "#12465A",
                 },
                 tide: "#EEF3F2",
+                // メモ帳の紙の色と、クレヨンの黄色（塗りは次の Issue で使う）
+                paper: "#FFFDF6",
+                crayon: "#FFE58A",
                 float: {
                     DEFAULT: "#E0572B",
                     dark: "#C2461F",
                 },
                 ink: "#1D2A30",
-                sand: "#8A9A9F",
+                // 補足の文字。白と紙の色の上でコントラスト 4.5 以上（5.5）にするため濃くした
+                sand: "#5B6B70",
             },
         },
     },

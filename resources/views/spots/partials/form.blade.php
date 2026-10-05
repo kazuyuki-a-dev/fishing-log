@@ -96,7 +96,7 @@ $mapCenter = config('prefecture_centers.' . old('prefecture', $spot?->prefecture
 {{-- 現地の情報：見られる人みんなで更新できる（FN-14） --}}
 <div class="{{ $canEditBasic ? 'border-t border-gray-100 pt-6' : '' }} space-y-6">
     <div>
-        <h3 class="font-bold">現地の情報</h3>
+        <h3 class="crayon-subheading">現地の情報</h3>
         <p class="text-sm text-sand">
             @if ($spot)
             現地の情報は、この釣り場を見られる人みんなで更新できます。

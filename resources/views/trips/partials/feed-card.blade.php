@@ -1,5 +1,5 @@
 @php($hideSpot = $trip->effectiveVisibility() === 'spot_hidden')
-<article class="bg-white rounded-md shadow-sm p-4">
+<article class="crayon-card p-4">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
         <p class="font-bold">
             {{ $trip->went_at->format('Y/m/d') }}
