@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\FishCatch;
 use App\Models\Spot;
 use App\Models\Trip;
+use App\Services\KeepRecording;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, KeepRecording $keepRecording): View
     {
         $user = $request->user();
 
@@ -24,6 +25,9 @@ class DashboardController extends Controller
             'tripDays' => (int) $user->trips()->selectRaw('COUNT(DISTINCT DATE(went_at)) as days')->value('days'),
             'biggest' => $myCatches()->whereNotNull('length_cm')->orderByDesc('length_cm')->first(),
         ];
+
+        // 継続カウンタと気づきカード（FN-10）
+        $keep = $keepRecording->build($user, today());
 
         // 直近の釣行
         $recentTrips = $user->trips()
@@ -53,6 +57,6 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('dashboard', compact('summary', 'recentTrips', 'mySpots', 'feedTrips'));
+        return view('dashboard', compact('summary', 'keep', 'recentTrips', 'mySpots', 'feedTrips'));
     }
 }

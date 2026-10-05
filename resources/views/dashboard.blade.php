@@ -39,6 +39,61 @@
                 </div>
             </section>
 
+            {{-- 継続カウンタ（FN-10）。数えるのは自分の釣行の回数（坊主も1回） --}}
+            @php
+            $counter = $keep['counter'];
+            @endphp
+            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white rounded-md shadow-sm p-4">
+                    <p class="text-xs text-sand">今月の釣行</p>
+                    <p class="mt-1 text-2xl font-bold text-sea">{{ $counter['thisMonth'] }}<span class="ml-1 text-sm font-normal">回</span></p>
+                </div>
+                <div class="bg-white rounded-md shadow-sm p-4">
+                    <p class="text-xs text-sand">連続で記録している月</p>
+                    <p class="mt-1 text-2xl font-bold text-sea">{{ $counter['streak'] }}<span class="ml-1 text-sm font-normal">か月</span></p>
+                    @if (! $counter['recordedThisMonth'])
+                    <p class="text-xs text-sand">今月記録すると {{ $counter['streak'] + 1 }}か月に</p>
+                    @endif
+                </div>
+                <div class="bg-white rounded-md shadow-sm p-4">
+                    <p class="text-xs text-sand">去年の{{ $counter['month'] }}月</p>
+                    <p class="mt-1 text-2xl font-bold text-sea">{{ $counter['lastYear'] }}<span class="ml-1 text-sm font-normal">回</span></p>
+                    @if ($counter['lastYear'] === 0)
+                    <p class="text-xs text-sand">去年の{{ $counter['month'] }}月は記録なし</p>
+                    @elseif ($counter['thisMonth'] > $counter['lastYear'])
+                    <p class="text-xs text-sand">今月は去年より {{ $counter['thisMonth'] - $counter['lastYear'] }}回多い</p>
+                    @elseif ($counter['thisMonth'] === $counter['lastYear'])
+                    <p class="text-xs text-sand">今月は去年と同じ</p>
+                    @else
+                    <p class="text-xs text-sand">あと {{ $counter['lastYear'] - $counter['thisMonth'] }}回で去年に並ぶ</p>
+                    @endif
+                </div>
+            </section>
+
+            {{-- 気づきカード（FN-10）。何件の記録から言っているかを必ず出す --}}
+            @php
+            $insights = $keep['insights'];
+            @endphp
+            <section class="space-y-3">
+                <h3 class="font-bold">気づき</h3>
+                @if ($insights['remaining'] > 0)
+                <p class="bg-white rounded-md shadow-sm p-4 text-sm">釣行をあと {{ $insights['remaining'] }}件記録すると、潮・時間帯・天候の傾向をお知らせします。</p>
+                @elseif (empty($insights['cards']))
+                <p class="bg-white rounded-md shadow-sm p-4 text-sm">まだはっきりした傾向は見えていません。同じ条件で2回以上行くと、ここに出てきます（自分の釣行 {{ $insights['tripCount'] }}件から）。</p>
+                @else
+                <ul class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    @foreach ($insights['cards'] as $card)
+                    <li class="bg-white rounded-md shadow-sm p-4 text-sm space-y-1">
+                        <p class="text-xs text-sand">{{ $card['label'] }}</p>
+                        <p class="font-bold text-sea">{{ $card['value'] }}のときに釣れているようです</p>
+                        <p>{{ $card['value'] }}で {{ $card['visits'] }}回行って {{ $card['caught'] }}回釣れた</p>
+                    </li>
+                    @endforeach
+                </ul>
+                <p class="text-xs text-sand text-right">自分の釣行 {{ $insights['tripCount'] }}件から。記録が増えるほど確かになります。</p>
+                @endif
+            </section>
+
             {{-- シーズンヒートマップへ（PG16） --}}
             <div class="flex justify-end">
                 <a href="{{ route('analysis.heatmap') }}" class="text-sm underline text-sea">月ごとに釣れる魚を見る（シーズンヒートマップ）</a>

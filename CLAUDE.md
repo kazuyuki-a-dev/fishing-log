@@ -64,8 +64,8 @@
 ## 主なファイル
 
 - ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`）
-- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`AnalysisController`（ヒートマップ）
-- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`TripSearch`（釣行一覧の条件検索。条件の読み取り・絞り込み・まとめ。CSV でも同じものを使う）、`TripCsvExporter`（CSV の行。位置と写真は入れない、式の対策）、`ConditionMatcher`（ぴったり → 潮だけ → 月だけ と条件をゆるめる。プランナーとカルテの判断ビューで共通）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）
+- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`（サマリー指標・継続カウンタと気づきカード）、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`AnalysisController`（ヒートマップ）
+- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`TripSearch`（釣行一覧の条件検索。条件の読み取り・絞り込み・まとめ。CSV でも同じものを使う）、`TripCsvExporter`（CSV の行。位置と写真は入れない、式の対策）、`ConditionMatcher`（ぴったり → 潮だけ → 月だけ と条件をゆるめる。プランナーとカルテの判断ビューで共通）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）、`KeepRecording`（継続カウンタと気づきカード）
 - お知らせ：`app/Notifications/` の `NewTripNotification`（`trip_ids`）・`NewSpotNotification`（`spot_id`）。ベルは `resources/views/components/notification-bell.blade.php`（PC とスマホの両方で使う）
 - 一致レベルのバッジ：`resources/views/components/match-level.blade.php`
 - 月×魚種の表：`resources/views/components/season-table.blade.php`（ヒートマップとカルテの両方で使う。`highlight-month` で月に印）
@@ -80,9 +80,9 @@
 - `test@example.com` / `password`（秋田、釣行15件）
 - ほかに `minato@` `surf@` `iso@`（秋田）、`wanoku@`（神奈川）。すべて `@example.com`、パスワードは `password`
 
-## 今どこまでできているか（2026-10-03）
+## 今どこまでできているか（2026-10-05）
 
-**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）と CSV 出力（FN-04、#88）が完了。テストは 232 件すべて成功。最後の Issue は #88（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。テストは 240 件すべて成功。最後の Issue は #90（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
@@ -95,8 +95,9 @@
 
 - 済：① 条件検索（FN-03、#86）：釣行一覧（`/trips`）に絞り込み・「自分／みんな」・まとめ。**「みんな」で釣り場を指定したら「釣り場だけ隠す」は出さない**。魚種×釣り方は同じ1匹。条件は URL に残す
 - 済：② CSV 出力（FN-04、#88、`/trips/export`）：今の絞り込みのまま**自分のデータだけ**（URL で scope=public でも自分だけ）。魚1匹＝1行、BOM 付き、位置と写真は入れない。ルートは `/trips/{trip}` より上
-- **③ 継続カウンタと気づきカード（FN-10）← 次はここから**。まず定義書にないところを整理して、ユーザーに決めてもらってから Issue を作る
-- ④ 報告と管理画面（NF-04）→ ⑤ 見た目
+- 済：③ 継続カウンタと気づきカード（FN-10、#90、`KeepRecording`）：ダッシュボードのサマリー指標の下。自分の釣行の回数だけ（坊主も1回）。連続月数は今月が終わるまで途切れにしない。気づきは潮・時間帯・天候ごとに釣れた割合がいちばん高いもの（2回以上行った条件だけ、最大3枚、件数を出す）
+- **④ 報告と管理画面（NF-04）← 次はここから**。まず定義書にないところを整理して、ユーザーに決めてもらってから Issue を作る
+- ⑤ 見た目
 
 ### フェーズ3でやること
 
