@@ -20,7 +20,7 @@ $reopen = $errors->report->isNotEmpty() && (string) old($field) === (string) $ta
         <input type="hidden" name="{{ $field }}" value="{{ $targetId }}">
 
         <div>
-            <h2 class="text-lg font-bold">{{ $targetLabel }}を報告する</h2>
+            <h2 class="crayon-subheading">{{ $targetLabel }}を報告する</h2>
             <p class="mt-1 text-sm text-sand">不適切な内容や、間違った情報を見つけたら教えてください。報告した人の名前は、投稿した人には伝わりません。</p>
         </div>
 

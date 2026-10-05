@@ -11,7 +11,7 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             @if (session('status'))
-            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
+            <p class="crayon-note p-3 text-sm">{{ session('status') }}</p>
             @endif
 
             {{-- 対応状況の切り替え。最初は「未対応」 --}}
@@ -41,7 +41,7 @@
                             <span class="text-sand font-normal">#{{ $report->id }}</span>
                             {{ $isTrip ? '釣行' : '釣り場' }}への報告：{{ $report->reason }}
                         </p>
-                        <span class="text-xs px-2 py-0.5 rounded {{ $report->status === 'open' ? 'bg-float text-white font-bold' : 'bg-tide text-ink' }}">
+                        <span class="text-xs px-2 py-0.5 rounded {{ $report->status === 'open' ? 'bg-crayon-pink text-ink font-bold' : 'bg-tide text-ink' }}">
                             {{ $statusLabels[$report->status] }}
                         </span>
                     </div>
@@ -87,7 +87,7 @@
                 <x-modal name="hide-report-{{ $report->id }}" focusable>
                     <form method="POST" action="{{ route('admin.reports.hide', $report) }}" class="p-6">
                         @csrf
-                        <h2 class="text-lg font-bold">この{{ $isTrip ? '釣行' : '釣り場' }}を非表示にしますか？</h2>
+                        <h2 class="crayon-subheading">この{{ $isTrip ? '釣行' : '釣り場' }}を非表示にしますか？</h2>
                         <p class="mt-2 text-sm text-sand">
                             公開範囲を「非公開」にします。ほかの人の画面（フィード・検索・カルテなど）から見えなくなります。
                             投稿した人は自分の画面で見られ、公開に戻すこともできます。

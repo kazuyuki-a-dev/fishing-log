@@ -246,4 +246,36 @@
         filter: url(#crayon-line);
         pointer-events: none;
     }
+
+    /*
+     * 白い塗りに青いクレヨンのふちのボタン（#102）。ぬり絵風のボタンと並べる、2番目のボタン
+     */
+    .crayon-button-secondary {
+        @apply relative inline-flex items-center justify-center bg-white px-5 py-2.5 font-hand text-base text-sea;
+        border-radius: 14px 6px 12px 8px;
+    }
+
+    .crayon-button-secondary::after {
+        content: "";
+        @apply absolute inset-0 border-sea;
+        border-width: 2.5px;
+        border-style: solid;
+        border-radius: inherit;
+        filter: url(#crayon-line);
+        pointer-events: none;
+    }
+
+    .crayon-button-secondary:hover {
+        @apply bg-sea-50;
+    }
+
+    .crayon-button-secondary:focus-visible {
+        @apply outline-none ring-2 ring-sea ring-offset-2;
+    }
+
+    /* 水色のメモ（#102）。「保存しました」などのお知らせの帯や、フォームの説明・案内の箱 */
+    .crayon-note {
+        @apply rounded-lg bg-sticky-blue text-ink;
+        box-shadow: 1px 2px 0 rgb(29 42 48 / 0.1);
+    }
 }

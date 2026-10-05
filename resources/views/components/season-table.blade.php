@@ -22,7 +22,7 @@ $levelClasses = [
                 <th scope="col" class="sticky left-0 bg-white px-3 py-2 text-left whitespace-nowrap">魚種</th>
                 @foreach (range(1, 12) as $month)
                 @if ($month === $highlightMonth)
-                <th scope="col" class="crayon-underline px-1 py-2 font-bold text-float whitespace-nowrap">
+                <th scope="col" class="crayon-underline px-1 py-2 font-bold text-float-dark whitespace-nowrap">
                     {{ $month }}月<span class="sr-only">（選んだ日の月）</span>
                 </th>
                 @else

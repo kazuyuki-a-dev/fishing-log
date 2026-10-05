@@ -6,7 +6,7 @@ $spot = $spot ?? null;
 
 @if ($canEditBasic)
 @unless ($spot)
-<p class="text-sm bg-tide rounded-md p-3">
+<p class="crayon-note text-sm p-3">
     釣り禁止・立入禁止の場所は、釣り場として登録できません。
 </p>
 @endunless
@@ -53,7 +53,7 @@ $mapCenter = config('prefecture_centers.' . old('prefecture', $spot?->prefecture
     </label>
     <p class="mt-1 text-sm text-sea" x-text="message"></p>
     <template x-if="nearby.length > 0">
-        <div class="mt-3 rounded-md border-l-4 border-float bg-white p-3 text-sm shadow-sm">
+        <div class="crayon-note mt-3 p-3 text-sm">
             <p class="font-bold">この釣り場ですか？</p>
             <p class="text-xs text-sand">近くに登録済みの釣り場があります。同じ場所なら、新しく登録せずにそちらを使ってください。</p>
             <ul class="mt-2 space-y-1">
@@ -87,7 +87,7 @@ $mapCenter = config('prefecture_centers.' . old('prefecture', $spot?->prefecture
 </div>
 @else
 {{-- 本人でなければ、基本の情報は見せるだけ（入力欄は出さない） --}}
-<div class="rounded-md bg-tide p-4 text-sm space-y-1">
+<div class="crayon-note p-4 text-sm space-y-1">
     <p class="font-bold">{{ $spot->name }}（{{ $spot->prefecture }}）</p>
     <p class="text-sand">釣り場名・都道府県・位置・公開設定は、登録した人だけが変更できます。</p>
 </div>
