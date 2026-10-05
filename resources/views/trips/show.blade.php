@@ -113,7 +113,8 @@
                 @forelse ($trip->catches as $catch)
                 <article class="crayon-card p-4 text-sm space-y-1">
                     <p class="text-base font-bold">
-                        {{ $catch->fish_species }}
+                        {{-- 魚と釣り方のアイコン（#112） --}}
+                        <x-icon name="fish" class="mr-1 h-5 w-5 text-[#2F86B5] align-[-0.25em]" />{{ $catch->fish_species }}
                         @if ($catch->length_cm)
                         <span class="ml-2">{{ $catch->length_cm }} cm</span>
                         @endif
@@ -121,7 +122,7 @@
                         <span class="ml-2 text-sm font-normal">{{ $catch->weight_g }} g</span>
                         @endif
                     </p>
-                    <p class="text-sand">{{ $catch->method }}{{ $catch->method_detail ? '・' . $catch->method_detail : '' }}</p>
+                    <p class="text-sand"><x-icon :name="$catch->method === 'ルアー' ? 'lure' : 'worm'" class="mr-1 h-4 w-4 text-float-dark align-[-0.2em]" />{{ $catch->method }}{{ $catch->method_detail ? '・' . $catch->method_detail : '' }}</p>
                     @if ($isOwner && $catch->notes)
                     <p class="whitespace-pre-line">{{ $catch->notes }}</p>
                     @endif
@@ -131,7 +132,7 @@
                     @endif
                 </article>
                 @empty
-                <p class="crayon-card p-4 text-sm">坊主</p>
+                <p class="crayon-card p-4 text-sm text-sand"><x-icon name="bucket" class="mr-1 h-5 w-5 align-[-0.3em]" />坊主</p>
                 @endforelse
             </section>
 

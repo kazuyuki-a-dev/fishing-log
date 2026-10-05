@@ -80,7 +80,7 @@
             <a href="{{ route($section['link']) }}" style="--tab: {{ $section['tab'] }};"
                 class="crayon-index-tab {{ $currentSection === $key ? 'is-active' : '' }}"
                 @if ($currentSection === $key) aria-current="page" @endif>
-                {{ $section['label'] }}@if ($key === 'admin')（未対応 {{ $openReports }}件）@endif
+                <x-icon :name="$section['icon']" class="mr-1 h-4 w-4 align-[-0.15em]" />{{ $section['label'] }}@if ($key === 'admin')（未対応 {{ $openReports }}件）@endif
             </a>
             @endforeach
         </div>

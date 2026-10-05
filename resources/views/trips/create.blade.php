@@ -6,7 +6,7 @@
     <div class="py-8">
         <div class="{{ $bulk ? 'max-w-4xl' : 'max-w-2xl' }} mx-auto px-4 sm:px-6 lg:px-8">
             @if ($spots->isEmpty())
-            <div class="crayon-card p-6 text-center space-y-3">
+            <div class="crayon-card crayon-empty p-6 text-center space-y-3">
                 <p>選べる釣り場がまだありません。先に釣り場を登録してください。</p>
                 <a href="{{ route('spots.create') }}" class="underline text-sea">釣り場を登録する</a>
             </div>

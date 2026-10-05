@@ -102,7 +102,7 @@
                 @endunless
             </article>
             @empty
-            <p class="crayon-card p-6 text-center text-sm">{{ $filterLabels[$filter] }}の報告はありません。</p>
+            <p class="crayon-card crayon-empty p-6 text-center text-sm">{{ $filterLabels[$filter] }}の報告はありません。</p>
             @endforelse
 
             {{ $reports->links() }}

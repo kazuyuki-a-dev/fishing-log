@@ -23,16 +23,16 @@
     </p>
 
     @if ($trip->catches->isEmpty())
-    <p class="mt-2 text-sm">坊主</p>
+    <p class="mt-2 text-sm text-sand"><x-icon name="bucket" class="mr-1 h-5 w-5 align-[-0.3em]" />坊主</p>
     @else
     <ul class="mt-2 space-y-1 text-sm">
         @foreach ($trip->catches as $catch)
         <li>
-            {{ $catch->fish_species }}
+            <x-icon name="fish" class="mr-1 h-4 w-4 text-[#2F86B5] align-[-0.2em]" />{{ $catch->fish_species }}
             @if ($catch->length_cm)
             {{ $catch->length_cm }} cm
             @endif
-            <span class="text-sand">（{{ $catch->method }}{{ $catch->method_detail ? '・' . $catch->method_detail : '' }}）</span>
+            <span class="text-sand">（<x-icon :name="$catch->method === 'ルアー' ? 'lure' : 'worm'" class="h-4 w-4 text-float-dark align-[-0.2em]" />{{ $catch->method }}{{ $catch->method_detail ? '・' . $catch->method_detail : '' }}）</span>
             @if ($catch->photoUrl())
             <img src="{{ $catch->photoUrl() }}" alt="{{ $catch->fish_species }}の写真" loading="lazy"
                 class="mt-2 max-h-48 rounded-md object-cover">

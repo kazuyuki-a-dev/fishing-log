@@ -13,7 +13,7 @@
             @endunless
 
             @if ($items->isEmpty())
-            <div class="crayon-card p-6 text-center space-y-3">
+            <div class="crayon-card crayon-empty p-6 text-center space-y-3">
                 <p>まだお知らせはありません。</p>
                 <p class="text-sm text-sand">メインフィールドの県で、釣果や釣り場が公開されるとここに届きます。</p>
                 <a href="{{ route('feed') }}" class="underline text-sea">釣果フィードを見る</a>

@@ -6,12 +6,14 @@
  * - routes：このまとまりに入るルートの名前（開いているページの付箋を手前に出すのに使う）
  * - link：付箋を押したときに開くルート
  * - who：guest＝だれでも／auth＝ログインした人／admin＝管理者だけ
+ * - icon：付箋に付けるアイコンの名前（components/icon.blade.php。#112）
  * どれにも入らないページ（トップ・お知らせ・ヒートマップ・プロフィールなど）は、メモ帳の紙の色のまま
  * 色はどれも、黒い字とのコントラストが付箋 9 以上・紙 13 以上（補足の灰色は紙の上で 4.9 以上）
  */
 return [
     'dashboard' => [
         'label' => 'ダッシュボード',
+        'icon' => 'notebook',
         'link' => 'dashboard',
         'routes' => ['dashboard'],
         'who' => 'auth',
@@ -21,6 +23,7 @@ return [
     ],
     'planner' => [
         'label' => '釣行プランナー',
+        'icon' => 'moon',
         'link' => 'planner',
         'routes' => ['planner'],
         'who' => 'auth',
@@ -30,6 +33,7 @@ return [
     ],
     'spots' => [
         'label' => '釣り場',
+        'icon' => 'lighthouse',
         'link' => 'spots.index',
         'routes' => ['spots.*'],
         'who' => 'guest',
@@ -39,6 +43,7 @@ return [
     ],
     'trips' => [
         'label' => '釣行',
+        'icon' => 'hook',
         'link' => 'trips.index',
         'routes' => ['trips.*'],
         'who' => 'auth',
@@ -48,6 +53,7 @@ return [
     ],
     'feed' => [
         'label' => '釣果フィード',
+        'icon' => 'fish',
         'link' => 'feed',
         'routes' => ['feed'],
         'who' => 'guest',
@@ -57,6 +63,7 @@ return [
     ],
     'admin' => [
         'label' => '報告',
+        'icon' => 'flag',
         'link' => 'admin.reports.index',
         'routes' => ['admin.*'],
         'who' => 'admin',
