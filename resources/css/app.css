@@ -120,26 +120,27 @@
     }
 
     /*
-     * クレヨンで塗ったボタン（#98）
-     * 塗りは線をゆらすフィルター（crayon-line）にして、色はむらなく塗る（白い字が読みにくくならないように）
-     * 色は濃いほうのオレンジ（float-dark）。白い字とのコントラストが 5.0（float だと 3.8 で足りない）
+     * ぬり絵風のボタン（#98）：うすいオレンジのむらのない塗り＋濃いオレンジのクレヨンのふち（カードの枠と同じ描き方）
+     * 字のすぐ後ろにクレヨンのまだらがあると、字が点にまぎれて読みにくかったので、塗りはむらなく、クレヨンらしさはふちで出す
      */
     .crayon-button {
-        @apply relative isolate inline-flex items-center justify-center px-5 py-2.5 font-hand text-base text-white;
-    }
-
-    .crayon-button::before {
-        content: "";
-        @apply absolute inset-0 bg-float-dark;
-        z-index: -1;
+        @apply relative inline-flex items-center justify-center bg-float-light px-5 py-2.5 font-hand text-base text-ink;
         border-radius: 14px 6px 12px 8px;
-        /* 塗りの中にも濃い斜めの筋を入れて、全体を1枚のクレヨンの塗りに見せる（濃い筋なので、白い字はかえって読みやすくなる） */
-        background-image: repeating-linear-gradient(-28deg, rgb(90 25 5 / 0.18) 0 2px, transparent 2px 5px);
-        filter: url(#crayon-line);
     }
 
-    .crayon-button:hover::before {
-        @apply bg-float-darker;
+    .crayon-button::after {
+        content: "";
+        @apply absolute inset-0 border-float-dark;
+        border-width: 2.5px;
+        border-style: solid;
+        border-radius: inherit;
+        filter: url(#crayon-line);
+        pointer-events: none;
+    }
+
+    /* 押せることが分かるように、マウスを乗せたら塗りを少し濃くする */
+    .crayon-button:hover {
+        @apply bg-float-light-hover;
     }
 
     .crayon-button:focus-visible {
