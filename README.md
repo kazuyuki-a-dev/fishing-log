@@ -6,14 +6,35 @@
 - 主役は **釣行プランナー**（行く日と県を選ぶと、過去の記録から釣り場を提案）と **釣り場カルテ**（その釣り場で、選んだ日の条件のときにどうだったか）
 - スクールに提出する個人開発アプリです。定義書は [`docs/spec.md`](docs/spec.md)、定義書と違うことをしたときの判断と理由は [`docs/decisions.md`](docs/decisions.md) にすべて記録しています
 
-## 開発者・リンク
+## 画面
 
-| 項目 | 内容 |
-| --- | --- |
-| 開発者 | kazuyuki-a-dev（[GitHub](https://github.com/kazuyuki-a-dev)） |
-| リポジトリ | https://github.com/kazuyuki-a-dev/fishing-log |
-| Issue | https://github.com/kazuyuki-a-dev/fishing-log/issues?q=is%3Aissue |
-| Pull Request | https://github.com/kazuyuki-a-dev/fishing-log/pulls?q=is%3Apr |
+開発用のデータ（`test@example.com`、記録はダミー）で撮った画面です。
+
+<table>
+<tr>
+<th>ダッシュボード</th>
+<th>釣行プランナー</th>
+</tr>
+<tr>
+<td><img src="docs/images/screen-dashboard.png" alt="ダッシュボード：点線の表と連続記録のスタンプ、気づきカード" width="420"></td>
+<td><img src="docs/images/screen-planner.png" alt="釣行プランナー：行く日の潮と、釣り場の候補" width="420"></td>
+</tr>
+<tr>
+<th>釣り場カルテ（秋田港）</th>
+<th>釣果フィード</th>
+</tr>
+<tr>
+<td><img src="docs/images/screen-karte.png" alt="釣り場カルテ：付箋の釣行判断ビューと実績" width="420"></td>
+<td><img src="docs/images/screen-feed.png" alt="釣果フィード：みんなの公開釣果" width="420"></td>
+</tr>
+</table>
+
+<p>
+<img src="docs/images/screen-mobile-karte.png" alt="スマホ幅の釣り場カルテ" width="240">
+<img src="docs/images/screen-mobile-menu.png" alt="スマホ幅で ≡ メニューを開いたところ" width="240">
+</p>
+
+スマホ幅（左：釣り場カルテ、右：≡ メニューを開いたところ）
 
 ## 主な機能
 
@@ -191,3 +212,12 @@ sail artisan test
   - フェーズ1：記録する・カルテ・プランナー・公開範囲など、使い始めに必要なもの
   - フェーズ2：お知らせ・ヒートマップ・条件をゆるめて探す処理など、記録が貯まってから効くもの
   - フェーズ3：条件検索・CSV 出力・継続カウンタ・報告と管理画面・見た目
+
+## 開発者・リンク
+
+| 項目 | 内容 |
+| --- | --- |
+| 開発者 | kazuyuki-a-dev（[GitHub](https://github.com/kazuyuki-a-dev)） |
+| リポジトリ | https://github.com/kazuyuki-a-dev/fishing-log |
+| Issue | https://github.com/kazuyuki-a-dev/fishing-log/issues?q=is%3Aissue |
+| Pull Request | https://github.com/kazuyuki-a-dev/fishing-log/pulls?q=is%3Apr |
