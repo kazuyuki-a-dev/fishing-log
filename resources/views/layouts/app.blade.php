@@ -21,19 +21,26 @@
     <div class="min-h-screen crayon-paper">
         @include('layouts.navigation')
 
-        <!-- Page Heading -->
-        @isset($header)
-        <header>
-            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                {{ $header }}
-            </div>
-        </header>
-        @endisset
+        {{-- 本文の紙（#108）。開いているページの付箋の色にする。どの付箋にも入らないページはメモ帳の紙の色のまま --}}
+        @php
+        $sectionColors = $currentSection ? $sections[$currentSection] : null;
+        @endphp
+        <div class="crayon-section-paper"
+            @if ($sectionColors) style="--section: {{ $sectionColors['tab'] }}; --section-paper: {{ $sectionColors['paper'] }}; --section-line: {{ $sectionColors['line'] }};" @endif>
+            <!-- Page Heading -->
+            @isset($header)
+            <header>
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    {{ $header }}
+                </div>
+            </header>
+            @endisset
 
-        <!-- Page Content -->
-        <main>
-            {{ $slot }}
-        </main>
+            <!-- Page Content -->
+            <main>
+                {{ $slot }}
+            </main>
+        </div>
         <footer class="py-6 text-center text-xs text-sand space-x-4">
             <a href="{{ route('terms') }}" class="hover:underline">利用規約</a>
             <a href="{{ route('privacy') }}" class="hover:underline">プライバシーポリシー</a>

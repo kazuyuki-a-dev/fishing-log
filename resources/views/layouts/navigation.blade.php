@@ -1,5 +1,6 @@
-{{-- ナビは全部手書きの字（#96） --}}
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100 font-hand">
+{{-- ナビは全部手書きの字（#96）。スクロールしても画面の上に残る（#108。確認の小窓 z-50 より下に重ねる） --}}
+{{-- 背景は少しだけ透かし、後ろの画面はぼかす（字が重なって読みにくくならないように） --}}
+<nav x-data="{ open: false }" class="sticky top-0 z-40 bg-white/85 backdrop-blur-sm font-hand">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -11,34 +12,6 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    @auth
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('planner')" :active="request()->routeIs('planner')">
-                        釣行プランナー
-                    </x-nav-link>
-                    @endauth
-                    <x-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')">
-                        釣り場
-                    </x-nav-link>
-                    @auth
-                    <x-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
-                        釣行
-                    </x-nav-link>
-                    @endauth
-                    <x-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
-                        釣果フィード
-                    </x-nav-link>
-                    {{-- 管理者だけ（NF-04） --}}
-                    @if ($openReports !== null)
-                    <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.*')">
-                        報告（未対応 {{ $openReports }}件）
-                    </x-nav-link>
-                    @endif
-                </div>
             </div>
 
             <!-- Settings Dropdown -->
@@ -47,7 +20,7 @@
                 <x-notification-bell :count="$unreadNotifications" />
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">
@@ -99,37 +72,50 @@
                 </button>
             </div>
         </div>
+
+        {{-- インデックス付箋（#108）。開いているページの付箋だけ長く出て、本文の紙とつながる --}}
+        {{-- スマホでは開いているページの付箋1枚だけ（ページは ≡ メニューから選ぶ） --}}
+        <div class="crayon-index-tabs">
+            @foreach ($sections as $key => $section)
+            <a href="{{ route($section['link']) }}" style="--tab: {{ $section['tab'] }};"
+                class="crayon-index-tab {{ $currentSection === $key ? 'is-active' : '' }}"
+                @if ($currentSection === $key) aria-current="page" @endif>
+                {{ $section['label'] }}@if ($key === 'admin')（未対応 {{ $openReports }}件）@endif
+            </a>
+            @endforeach
+        </div>
     </div>
 
     <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    {{-- ヘッダーが上に固定なので、メニューが長いときはメニューの中だけスクロールする --}}
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden max-h-[calc(100vh-7rem)] overflow-y-auto">
         <div class="pt-2 pb-3 space-y-1">
             @auth
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.dashboard.tab') }}" aria-hidden="true"></span>{{ __('Dashboard') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('planner')" :active="request()->routeIs('planner')">
-                釣行プランナー
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.planner.tab') }}" aria-hidden="true"></span>釣行プランナー
             </x-responsive-nav-link>
             @endauth
             <x-responsive-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')">
-                釣り場
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.spots.tab') }}" aria-hidden="true"></span>釣り場
             </x-responsive-nav-link>
             @auth
             <x-responsive-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
-                釣行
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.trips.tab') }}" aria-hidden="true"></span>釣行
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                 お知らせ{{ $unreadNotifications > 0 ? '（' . ($unreadNotifications > 99 ? '99+' : $unreadNotifications) . '）' : '' }}
             </x-responsive-nav-link>
             @endauth
             <x-responsive-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
-                釣果フィード
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.feed.tab') }}" aria-hidden="true"></span>釣果フィード
             </x-responsive-nav-link>
             {{-- 管理者だけ（NF-04） --}}
             @if ($openReports !== null)
             <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.*')">
-                報告（未対応 {{ $openReports }}件）
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.admin.tab') }}" aria-hidden="true"></span>報告（未対応 {{ $openReports }}件）
             </x-responsive-nav-link>
             @endif
         </div>

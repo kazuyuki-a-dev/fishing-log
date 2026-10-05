@@ -57,7 +57,9 @@
 
     .crayon-heading::after {
         content: "";
-        @apply absolute left-0 bottom-0 h-1.5 w-full rounded-full bg-float;
+        @apply absolute left-0 bottom-0 h-1.5 w-full rounded-full;
+        /* 開いているページの付箋の色（#108）。どの付箋にも入らないページはオレンジ */
+        background: var(--section-line, theme("colors.float.DEFAULT"));
         opacity: 0.8;
         filter: url(#crayon-fill);
     }
@@ -277,5 +279,59 @@
     .crayon-note {
         @apply rounded-lg bg-sticky-blue text-ink;
         box-shadow: 1px 2px 0 rgb(29 42 48 / 0.1);
+    }
+
+    /*
+     * インデックス付箋（#108）。ナビの下の段に、ページごとの色の付箋の耳を並べる
+     * 色は config/sections.php の tab を style の --tab で渡す。開いているページの付箋（is-active）だけ長く出る
+     * スマホでは開いているページの付箋1枚だけを見せる（並べると見づらいので、ページは ≡ メニューから選ぶ）
+     */
+    .crayon-index-tabs {
+        @apply flex gap-1 pt-1;
+    }
+
+    .crayon-index-tab:not(.is-active) {
+        @apply hidden sm:block;
+    }
+
+    .crayon-index-tab {
+        @apply whitespace-nowrap rounded-t-lg px-3 pb-1 pt-1.5 font-hand text-base text-ink;
+        background: var(--tab);
+        transform: translateY(6px);
+        /* 奥にある付箋に見えるように、下のほうに影 */
+        box-shadow: inset 0 -6px 6px -6px rgb(29 42 48 / 0.25);
+        transition: transform 0.15s;
+    }
+
+    .crayon-index-tab:hover {
+        transform: translateY(3px);
+    }
+
+    .crayon-index-tab.is-active {
+        @apply pb-2.5;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .crayon-index-tab:focus-visible {
+        @apply outline-none ring-2 ring-sea ring-offset-2;
+    }
+
+    /*
+     * 本文の紙（#108）。開いているページの付箋の色のうすい色にし、上のふちに付箋と同じ色の帯
+     * どの付箋にも入らないページは、メモ帳の紙の色のまま（帯はうすい青）
+     */
+    .crayon-section-paper {
+        @apply min-h-[60vh];
+        background: var(--section-paper, transparent);
+        border-top: 6px solid var(--section, theme("colors.sea.100"));
+    }
+
+    /*
+     * 地図（Leaflet）の重なりを地図の箱の中に閉じ込める（#108）
+     * Leaflet は中で大きな重なりの数字（最大1000）を使うので、そのままだと上に固定したナビの上に出てしまう
+     */
+    .leaflet-container {
+        isolation: isolate;
     }
 }
