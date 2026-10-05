@@ -133,6 +133,8 @@
         @apply absolute inset-0 bg-float-dark;
         z-index: -1;
         border-radius: 14px 6px 12px 8px;
+        /* 塗りの中にも濃い斜めの筋を入れて、全体を1枚のクレヨンの塗りに見せる（濃い筋なので、白い字はかえって読みやすくなる） */
+        background-image: repeating-linear-gradient(-28deg, rgb(90 25 5 / 0.18) 0 2px, transparent 2px 5px);
         filter: url(#crayon-line);
     }
 
@@ -144,11 +146,17 @@
         @apply outline-none ring-2 ring-float ring-offset-2;
     }
 
-    /* 条件が一致した履歴に、赤いクレヨンのチェックを書き込む（#98）。意味はバッジの文字でも伝える */
+    /*
+     * 条件が一致した履歴に、赤いクレヨンのチェックを書き込む（#98）。意味はバッジの文字でも伝える
+     * 「✔」の字は Windows などで青い絵文字になるので、字は使わずに線（枠の右と下）で描いて45度回す
+     */
     .crayon-check::before {
-        content: "✔";
-        @apply absolute -top-3 -right-1 font-hand text-3xl text-float;
-        transform: rotate(8deg);
+        content: "";
+        @apply absolute -top-3 right-3 h-7 w-3.5 border-float-dark;
+        border-width: 0 5px 5px 0;
+        border-radius: 0 0 3px 0;
+        transform: rotate(40deg);
+        filter: url(#crayon-line);
         pointer-events: none;
     }
 
