@@ -1,5 +1,6 @@
 {{-- ナビは全部手書きの字（#96）。スクロールしても画面の上に残る（#108。確認の小窓 z-50 より下に重ねる） --}}
-<nav x-data="{ open: false }" class="sticky top-0 z-40 bg-white font-hand">
+{{-- 背景は少しだけ透かし、後ろの画面はぼかす（字が重なって読みにくくならないように） --}}
+<nav x-data="{ open: false }" class="sticky top-0 z-40 bg-white/85 backdrop-blur-sm font-hand">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -19,7 +20,7 @@
                 <x-notification-bell :count="$unreadNotifications" />
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-transparent hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">
