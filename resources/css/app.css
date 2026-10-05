@@ -172,4 +172,78 @@
         filter: url(#crayon-line);
         pointer-events: none;
     }
+
+    /* ノートの点線の行に書いた表（#100）。dt に名前、dd に数字 */
+    .crayon-ledger {
+        @apply grid gap-x-4;
+        grid-template-columns: 1fr auto;
+    }
+
+    .crayon-ledger dt,
+    .crayon-ledger dd {
+        @apply border-b border-dashed border-gray-300 py-1.5;
+    }
+
+    .crayon-ledger dt {
+        @apply text-sm text-sand;
+    }
+
+    .crayon-ledger dd {
+        @apply text-right font-bold text-sea;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /*
+     * 赤いハンコのスタンプ（#100）。連続で記録している月数に使う
+     * crayon-stamp-empty は、まだ押されていない点線の空き枠
+     */
+    .crayon-stamp {
+        @apply relative grid h-20 w-20 flex-none place-items-center text-center font-hand text-sm leading-tight text-float-dark;
+        transform: rotate(-12deg);
+    }
+
+    .crayon-stamp::after {
+        content: "";
+        @apply absolute inset-0 rounded-full border-float-dark;
+        border-width: 4px;
+        border-style: double;
+        filter: url(#crayon-line);
+        pointer-events: none;
+    }
+
+    .crayon-stamp-empty {
+        @apply text-xs text-sand;
+        transform: none;
+    }
+
+    .crayon-stamp-empty::after {
+        @apply border-gray-400;
+        border-width: 2px;
+        border-style: dashed;
+    }
+
+    /* 黄色のマーカー（#100）。字の下半分にだけ引く */
+    .crayon-marker {
+        @apply px-0.5;
+        background: linear-gradient(transparent 55%, theme("colors.crayon") 55%);
+    }
+
+    /* オレンジの手書きのひとこと（#100） */
+    .crayon-scrawl {
+        @apply font-hand text-base text-float-dark;
+    }
+
+    /* 一覧の中の小さな注意のしるし（#100）。赤いクレヨンの点線で囲む */
+    .crayon-caution-tag {
+        @apply relative inline-block px-2 font-hand text-sm text-float-dark;
+    }
+
+    .crayon-caution-tag::after {
+        content: "";
+        @apply absolute inset-0 rounded-lg border-float;
+        border-width: 2px;
+        border-style: dashed;
+        filter: url(#crayon-line);
+        pointer-events: none;
+    }
 }

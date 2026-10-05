@@ -9,7 +9,7 @@
                 </p>
                 <div class="flex flex-wrap gap-3">
                     <a href="{{ route('register') }}"
-                        class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                        class="crayon-button">
                         会員登録（無料）
                     </a>
                     <a href="{{ route('login') }}"

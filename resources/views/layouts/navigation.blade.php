@@ -79,7 +79,7 @@
                 <div class="flex items-center gap-4 text-sm">
                     <a href="{{ route('login') }}" class="text-ink hover:underline">ログイン</a>
                     <a href="{{ route('register') }}"
-                        class="font-hand inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-white hover:bg-float-dark">
+                        class="crayon-button">
                         会員登録
                     </a>
                 </div>

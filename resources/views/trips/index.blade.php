@@ -3,7 +3,7 @@
         <div class="flex items-center justify-between">
             <h2 class="crayon-heading">釣行の記録</h2>
             <a href="{{ route('trips.create') }}"
-                class="font-hand inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                class="crayon-button">
                 釣行を記録
             </a>
         </div>
