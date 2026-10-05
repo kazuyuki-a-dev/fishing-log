@@ -31,9 +31,17 @@ export default {
                 // メモ帳の紙の色と、クレヨンの黄色（塗りは次の Issue で使う）
                 paper: "#FFFDF6",
                 crayon: "#FFE58A",
+                // 付箋の色（#98）。どれも補足の文字（sand）とのコントラストが 4.5 以上
+                sticky: {
+                    yellow: "#FFF1A8",
+                    pink: "#FFE6DE",
+                    blue: "#D4ECF5",
+                },
                 float: {
                     DEFAULT: "#E0572B",
                     dark: "#C2461F",
+                    // クレヨンのボタンを押したときの色（#98）
+                    darker: "#A83B19",
                 },
                 ink: "#1D2A30",
                 // 補足の文字。白と紙の色の上でコントラスト 4.5 以上（5.5）にするため濃くした

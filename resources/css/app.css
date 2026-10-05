@@ -66,4 +66,101 @@
     .crayon-subheading {
         @apply font-hand text-xl text-sea;
     }
+
+    /*
+     * 付箋（#98）。テープで貼った形で、少しだけ傾ける
+     * 色と傾きは crayon-sticky-yellow / pink / blue で選ぶ
+     */
+    .crayon-sticky {
+        @apply relative;
+        box-shadow: 2px 3px 0 rgb(29 42 48 / 0.12);
+    }
+
+    .crayon-sticky::before {
+        content: "";
+        @apply absolute left-1/2 -top-2 h-4 w-14;
+        transform: translateX(-50%) rotate(2deg);
+        background: rgb(160 200 215 / 0.7);
+        pointer-events: none;
+    }
+
+    .crayon-sticky-yellow {
+        @apply bg-sticky-yellow;
+        transform: rotate(-0.8deg);
+    }
+
+    .crayon-sticky-pink {
+        @apply bg-sticky-pink;
+        transform: rotate(1deg);
+    }
+
+    .crayon-sticky-blue {
+        @apply bg-sticky-blue;
+        transform: rotate(-0.6deg);
+    }
+
+    /* 注意の警告（#98）：赤いクレヨンの点線で囲み、「!」の印 */
+    .crayon-caution {
+        @apply relative flex items-start gap-3 bg-white p-4;
+        border-radius: 10px;
+    }
+
+    .crayon-caution::after {
+        content: "";
+        @apply absolute inset-0 border-float;
+        border-width: 2.5px;
+        border-style: dashed;
+        border-radius: inherit;
+        filter: url(#crayon-line);
+        pointer-events: none;
+    }
+
+    .crayon-caution-icon {
+        @apply grid h-6 w-6 flex-none place-items-center rounded-full bg-float font-hand text-white;
+    }
+
+    /*
+     * クレヨンで塗ったボタン（#98）
+     * 塗りは線をゆらすフィルター（crayon-line）にして、色はむらなく塗る（白い字が読みにくくならないように）
+     * 色は濃いほうのオレンジ（float-dark）。白い字とのコントラストが 5.0（float だと 3.8 で足りない）
+     */
+    .crayon-button {
+        @apply relative isolate inline-flex items-center justify-center px-5 py-2.5 font-hand text-base text-white;
+    }
+
+    .crayon-button::before {
+        content: "";
+        @apply absolute inset-0 bg-float-dark;
+        z-index: -1;
+        border-radius: 14px 6px 12px 8px;
+        filter: url(#crayon-line);
+    }
+
+    .crayon-button:hover::before {
+        @apply bg-float-darker;
+    }
+
+    .crayon-button:focus-visible {
+        @apply outline-none ring-2 ring-float ring-offset-2;
+    }
+
+    /* 条件が一致した履歴に、赤いクレヨンのチェックを書き込む（#98）。意味はバッジの文字でも伝える */
+    .crayon-check::before {
+        content: "✔";
+        @apply absolute -top-3 -right-1 font-hand text-3xl text-float;
+        transform: rotate(8deg);
+        pointer-events: none;
+    }
+
+    /* クレヨンの下線（#98）。表の選んだ月の見出しなど */
+    .crayon-underline {
+        @apply relative;
+    }
+
+    .crayon-underline::after {
+        content: "";
+        @apply absolute left-1 right-1 bottom-0.5 h-1 rounded-full bg-float;
+        filter: url(#crayon-line);
+        pointer-events: none;
+    }
 }
