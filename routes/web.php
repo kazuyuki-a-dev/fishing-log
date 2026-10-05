@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
@@ -45,6 +46,13 @@ Route::middleware('auth')->group(function () {
 
     // 不適切な投稿の報告（PG21）。画面はなく、カルテと釣行詳細のモーダルから送る
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
+
+    // 報告を確かめて対応する管理画面（NF-04）。管理者だけ（ほかの人には 404）
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
+        Route::patch('/reports/{report}', [AdminReportController::class, 'update'])->name('reports.update');
+        Route::post('/reports/{report}/hide', [AdminReportController::class, 'hide'])->name('reports.hide');
+    });
 });
 
 // ゲストも見られる（NF-01・FN-13）。ログインが必要なルートより下に書く
