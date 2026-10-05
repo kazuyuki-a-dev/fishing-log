@@ -84,7 +84,7 @@
 
 ## 今どこまでできているか（2026-10-05）
 
-**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目も土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）・残りの画面（#102）でひととおり完了。テストは 263 件すべて成功。最後の Issue は #102（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目も土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）・残りの画面（#102）でひととおり完了。テストは 263 件すべて成功。README も書き直した（#104）。最後の Issue は #104（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
@@ -109,7 +109,8 @@
   - 済：ダッシュボードとプランナー（#100、見本 https://claude.ai/artifact/XHVi3DDLDE3vPTaHEqSYot の B「書き込みとスタンプ」）。共通クラス `crayon-ledger`（点線の表）・`crayon-stamp`（＋`crayon-stamp-empty`）・`crayon-marker`・`crayon-scrawl`・`crayon-caution-tag`。白い字のオレンジのボタンは全部 `crayon-button` に（`primary-button` の部品も）
   - 済：残りの画面（#102）。今の部品でそろえた。共通クラス `crayon-button-secondary`（白い塗り＋青いふち）・`crayon-note`（水色のメモ。お知らせの帯・説明や案内の箱）。目立たせたいしるし（「ぴったり一致」・NEW・未対応）は `bg-crayon-pink text-ink`。見出しは全部 `crayon-heading` / `crayon-subheading`
   - **新しい画面部品を作るとき**：カード `crayon-card`、ボタン `crayon-button`（2番目は `crayon-button-secondary`）、案内 `crayon-note`、注意 `crayon-caution`、付箋 `crayon-sticky`。オレンジの地に白い字は使わない（3.8 で足りない）
-- **次はここから：README**（下の「README」の項目。全部終わったので書き直す）。そのあと、ユーザーと残りを相談
+- 済：README（#104）。ER 図は `docs/images/er-diagram.png`（開くと出る形）。`.env.example` を Sail と MySQL の値にそろえた
+- **次はここから**：ユーザーが見た目を微調整 → そのあと README に画面の画像を入れる（`docs/images/`、開発用データで撮る）。ほかに残っていることは、ユーザーと相談
   - 見た目の確認：作業用の場所（scratchpad）に確認用の HTML を作り、Playwright の chrome-headless-shell で画像にして自分でも見る（足りないライブラリ libnspr4・libnss3・libasound は apt-get download で scratchpad に取り出し、LD_LIBRARY_PATH で使う。システムには入れない）
 
 ### フェーズ3でやること
@@ -119,5 +120,5 @@
 
 ### README
 
-- フェーズ2・3で変わるので、**全部終わってから**まとめて書き直す（今は Laravel の初期文章のまま）。提出がその前なら先に書く
-- 書くこと：アプリの説明、セットアップ（`sail up -d` → `sail artisan migrate --seed` → `sail artisan storage:link` → `sail npm install` → `sail npm run build`）、`APP_URL` の注意、`sail down -v` を使わない、シーダーのログイン、外部サービス、テストの動かし方、バックアップ（`docs/backup.md`）、開発の記録（`docs/decisions.md`）
+- 書き直し済み（#104）。機能や画面を変えたら、README の該当するところ（機能一覧・ログイン・テストの件数など）も直す
+- 画面の画像は、見た目の微調整が終わってから入れる（ユーザーが決めた）
