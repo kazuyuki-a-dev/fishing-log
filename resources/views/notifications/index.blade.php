@@ -25,7 +25,7 @@
                     <a href="{{ $item['url'] }}" class="flex items-start justify-between gap-4 p-4 hover:bg-tide">
                         <p class="min-w-0">
                             @if (in_array($item['notification']->id, $newIds, true))
-                            <span class="inline-block mr-2 px-2 py-0.5 rounded bg-crayon text-ink text-xs font-bold">NEW</span>
+                            <span class="inline-block mr-2 px-2 py-0.5 rounded bg-crayon-pink text-ink text-xs font-bold">NEW</span>
                             @endif
                             {{ $item['text'] }}
                         </p>

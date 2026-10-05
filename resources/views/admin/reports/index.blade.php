@@ -41,7 +41,7 @@
                             <span class="text-sand font-normal">#{{ $report->id }}</span>
                             {{ $isTrip ? '釣行' : '釣り場' }}への報告：{{ $report->reason }}
                         </p>
-                        <span class="text-xs px-2 py-0.5 rounded {{ $report->status === 'open' ? 'bg-crayon text-ink font-bold' : 'bg-tide text-ink' }}">
+                        <span class="text-xs px-2 py-0.5 rounded {{ $report->status === 'open' ? 'bg-crayon-pink text-ink font-bold' : 'bg-tide text-ink' }}">
                             {{ $statusLabels[$report->status] }}
                         </span>
                     </div>
