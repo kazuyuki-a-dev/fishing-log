@@ -23,7 +23,7 @@
             <div class="crayon-card p-5 flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm">今日ここに行ったなら、続けて釣行を記録しましょう。</p>
                 <a href="{{ route('trips.create', ['spot' => $spot->id]) }}"
-                    class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    class="crayon-button">
                     この釣り場で釣行を記録する
                 </a>
             </div>

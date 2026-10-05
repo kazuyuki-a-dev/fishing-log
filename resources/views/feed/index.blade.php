@@ -20,7 +20,7 @@
             <div class="crayon-card p-6 text-center space-y-3">
                 <p>この条件の公開釣果は、まだありません。</p>
                 <a href="{{ route('trips.create') }}"
-                    class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    class="crayon-button">
                     最初の投稿者になる
                 </a>
             </div>

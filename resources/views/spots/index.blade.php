@@ -15,7 +15,7 @@
                 </form>
                 @auth
                 <a href="{{ route('spots.create') }}"
-                    class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    class="crayon-button">
                     釣り場を登録
                 </a>
                 @endauth

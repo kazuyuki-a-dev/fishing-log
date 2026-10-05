@@ -9,63 +9,62 @@
             <div class="crayon-card p-5 flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm">今日の潮と過去の記録から、行き先を決めましょう。</p>
                 <a href="{{ route('planner') }}"
-                    class="font-hand inline-flex w-full sm:w-auto justify-center items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    class="crayon-button w-full sm:w-auto">
                     次の釣行をプランする
                 </a>
             </div>
 
-            {{-- サマリー指標（FN-06） --}}
-            <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="crayon-card p-4">
-                    <p class="text-xs text-sand">累計の釣果</p>
-                    <p class="mt-1 text-2xl font-bold text-sea">{{ $summary['catchCount'] }}<span class="ml-1 text-sm font-normal">匹</span></p>
-                </div>
-                <div class="crayon-card p-4">
-                    <p class="text-xs text-sand">釣った魚種</p>
-                    <p class="mt-1 text-2xl font-bold text-sea">{{ $summary['speciesCount'] }}<span class="ml-1 text-sm font-normal">種類</span></p>
-                </div>
-                <div class="crayon-card p-4">
-                    <p class="text-xs text-sand">釣行した日</p>
-                    <p class="mt-1 text-2xl font-bold text-sea">{{ $summary['tripDays'] }}<span class="ml-1 text-sm font-normal">日</span></p>
-                </div>
-                <div class="crayon-card p-4">
-                    <p class="text-xs text-sand">自分の最大サイズ</p>
-                    @if ($summary['biggest'])
-                    <p class="mt-1 text-2xl font-bold text-sea">{{ $summary['biggest']->length_cm }}<span class="ml-1 text-sm font-normal">cm</span></p>
-                    <p class="text-xs text-sand">{{ $summary['biggest']->fish_species }}</p>
-                    @else
-                    <p class="mt-1 text-sm">記録なし</p>
-                    @endif
-                </div>
-            </section>
-
-            {{-- 継続カウンタ（FN-10）。数えるのは自分の釣行の回数（坊主も1回） --}}
+            {{-- サマリー指標（FN-06）と継続カウンタ（FN-10）。ノートの点線の表と、連続の月数のスタンプ（#100） --}}
             @php
             $counter = $keep['counter'];
             @endphp
-            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="crayon-card p-4">
-                    <p class="text-xs text-sand">今月の釣行</p>
-                    <p class="mt-1 text-2xl font-bold text-sea">{{ $counter['thisMonth'] }}<span class="ml-1 text-sm font-normal">回</span></p>
-                </div>
-                <div class="crayon-card p-4">
-                    <p class="text-xs text-sand">連続で記録している月</p>
-                    <p class="mt-1 text-2xl font-bold text-sea">{{ $counter['streak'] }}<span class="ml-1 text-sm font-normal">か月</span></p>
-                    @if (! $counter['recordedThisMonth'])
-                    <p class="text-xs text-sand">今月記録すると {{ $counter['streak'] + 1 }}か月に</p>
+            <section class="crayon-card p-5 space-y-3">
+                <div class="flex items-start gap-4">
+                    <dl class="crayon-ledger min-w-0 flex-1">
+                        <dt>累計の釣果</dt>
+                        <dd>{{ $summary['catchCount'] }}<span class="ml-0.5 text-sm font-normal">匹</span></dd>
+                        <dt>釣った魚種</dt>
+                        <dd>{{ $summary['speciesCount'] }}<span class="ml-0.5 text-sm font-normal">種類</span></dd>
+                        <dt>釣行した日</dt>
+                        <dd>{{ $summary['tripDays'] }}<span class="ml-0.5 text-sm font-normal">日</span></dd>
+                        <dt>自分の最大サイズ</dt>
+                        <dd>
+                            @if ($summary['biggest'])
+                            {{ $summary['biggest']->length_cm }}<span class="ml-0.5 text-sm font-normal">cm</span>
+                            <span class="block text-xs font-normal text-sand">{{ $summary['biggest']->fish_species }}</span>
+                            @else
+                            <span class="text-sm font-normal">記録なし</span>
+                            @endif
+                        </dd>
+                        {{-- 継続カウンタ。数えるのは自分の釣行の回数（坊主も1回） --}}
+                        <dt>今月の釣行</dt>
+                        <dd>{{ $counter['thisMonth'] }}<span class="ml-0.5 text-sm font-normal">回</span></dd>
+                        <dt>去年の{{ $counter['month'] }}月</dt>
+                        <dd>{{ $counter['lastYear'] }}<span class="ml-0.5 text-sm font-normal">回</span></dd>
+                    </dl>
+
+                    {{-- 連続で記録している月数のスタンプ。0か月なら点線の空き枠 --}}
+                    @if ($counter['streak'] > 0)
+                    <p class="crayon-stamp">
+                        <span>連続<span class="block text-2xl">{{ $counter['streak'] }}</span>か月</span>
+                    </p>
+                    @else
+                    <p class="crayon-stamp crayon-stamp-empty">記録すると<br>押されます</p>
                     @endif
                 </div>
-                <div class="crayon-card p-4">
-                    <p class="text-xs text-sand">去年の{{ $counter['month'] }}月</p>
-                    <p class="mt-1 text-2xl font-bold text-sea">{{ $counter['lastYear'] }}<span class="ml-1 text-sm font-normal">回</span></p>
+
+                <div class="space-y-0.5 text-xs text-sand">
+                    @if (! $counter['recordedThisMonth'])
+                    <p>今月記録すると {{ $counter['streak'] + 1 }}か月に</p>
+                    @endif
                     @if ($counter['lastYear'] === 0)
-                    <p class="text-xs text-sand">去年の{{ $counter['month'] }}月は記録なし</p>
+                    <p>去年の{{ $counter['month'] }}月は記録なし</p>
                     @elseif ($counter['thisMonth'] > $counter['lastYear'])
-                    <p class="text-xs text-sand">今月は去年より {{ $counter['thisMonth'] - $counter['lastYear'] }}回多い</p>
+                    <p>今月は去年より {{ $counter['thisMonth'] - $counter['lastYear'] }}回多い</p>
                     @elseif ($counter['thisMonth'] === $counter['lastYear'])
-                    <p class="text-xs text-sand">今月は去年と同じ</p>
+                    <p>今月は去年と同じ</p>
                     @else
-                    <p class="text-xs text-sand">あと {{ $counter['lastYear'] - $counter['thisMonth'] }}回で去年に並ぶ</p>
+                    <p>あと {{ $counter['lastYear'] - $counter['thisMonth'] }}回で去年に並ぶ</p>
                     @endif
                 </div>
             </section>
@@ -83,10 +82,11 @@
                 @else
                 <ul class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     @foreach ($insights['cards'] as $card)
+                    {{-- オレンジの手書きのひとことと、数字に黄色のマーカー（#100） --}}
                     <li class="crayon-card p-4 text-sm space-y-1">
                         <p class="text-xs text-sand">{{ $card['label'] }}</p>
-                        <p class="font-bold text-sea">{{ $card['value'] }}のときに釣れているようです</p>
-                        <p>{{ $card['value'] }}で {{ $card['visits'] }}回行って {{ $card['caught'] }}回釣れた</p>
+                        <p class="crayon-scrawl"><span aria-hidden="true">→ </span>{{ $card['value'] }}のときに釣れているようです</p>
+                        <p>{{ $card['value'] }}で <span class="crayon-marker">{{ $card['visits'] }}回行って {{ $card['caught'] }}回釣れた</span></p>
                     </li>
                     @endforeach
                 </ul>
