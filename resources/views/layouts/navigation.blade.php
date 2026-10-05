@@ -1,5 +1,5 @@
 {{-- ナビは全部手書きの字（#96） --}}
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100 font-hand">
+<nav x-data="{ open: false }" class="bg-white font-hand">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -11,34 +11,6 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    @auth
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('planner')" :active="request()->routeIs('planner')">
-                        釣行プランナー
-                    </x-nav-link>
-                    @endauth
-                    <x-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')">
-                        釣り場
-                    </x-nav-link>
-                    @auth
-                    <x-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
-                        釣行
-                    </x-nav-link>
-                    @endauth
-                    <x-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
-                        釣果フィード
-                    </x-nav-link>
-                    {{-- 管理者だけ（NF-04） --}}
-                    @if ($openReports !== null)
-                    <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.*')">
-                        報告（未対応 {{ $openReports }}件）
-                    </x-nav-link>
-                    @endif
-                </div>
             </div>
 
             <!-- Settings Dropdown -->
@@ -99,6 +71,20 @@
                 </button>
             </div>
         </div>
+
+        {{-- インデックス付箋（#108）。開いているページの付箋だけ長く出て、本文の紙とつながる。スマホでは横にスクロール --}}
+        {{-- 開いたときに、手前の付箋がまん中あたりに見えるように横にスクロールしておく --}}
+        <div class="crayon-index-tabs"
+            x-data
+            x-init="const tab = $el.querySelector('.is-active'); if (tab) $el.scrollLeft = tab.offsetLeft - ($el.clientWidth - tab.offsetWidth) / 2">
+            @foreach ($sections as $key => $section)
+            <a href="{{ route($section['link']) }}" style="--tab: {{ $section['tab'] }};"
+                class="crayon-index-tab {{ $currentSection === $key ? 'is-active' : '' }}"
+                @if ($currentSection === $key) aria-current="page" @endif>
+                {{ $section['label'] }}@if ($key === 'admin')（未対応 {{ $openReports }}件）@endif
+            </a>
+            @endforeach
+        </div>
     </div>
 
     <!-- Responsive Navigation Menu -->
@@ -106,30 +92,30 @@
         <div class="pt-2 pb-3 space-y-1">
             @auth
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.dashboard.tab') }}" aria-hidden="true"></span>{{ __('Dashboard') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('planner')" :active="request()->routeIs('planner')">
-                釣行プランナー
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.planner.tab') }}" aria-hidden="true"></span>釣行プランナー
             </x-responsive-nav-link>
             @endauth
             <x-responsive-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')">
-                釣り場
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.spots.tab') }}" aria-hidden="true"></span>釣り場
             </x-responsive-nav-link>
             @auth
             <x-responsive-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
-                釣行
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.trips.tab') }}" aria-hidden="true"></span>釣行
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                 お知らせ{{ $unreadNotifications > 0 ? '（' . ($unreadNotifications > 99 ? '99+' : $unreadNotifications) . '）' : '' }}
             </x-responsive-nav-link>
             @endauth
             <x-responsive-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
-                釣果フィード
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.feed.tab') }}" aria-hidden="true"></span>釣果フィード
             </x-responsive-nav-link>
             {{-- 管理者だけ（NF-04） --}}
             @if ($openReports !== null)
             <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.*')">
-                報告（未対応 {{ $openReports }}件）
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.admin.tab') }}" aria-hidden="true"></span>報告（未対応 {{ $openReports }}件）
             </x-responsive-nav-link>
             @endif
         </div>
