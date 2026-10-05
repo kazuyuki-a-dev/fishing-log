@@ -43,6 +43,13 @@ class SeederTest extends TestCase
         $this->assertTrue(User::pluck('email')->every(fn($email) => str_ends_with($email, '@example.com')));
     }
 
+    public function test_admin_is_only_admin_example_com(): void
+    {
+        // 管理者は1人だけ（NF-04）。釣行は持たない
+        $this->assertSame(['admin@example.com'], User::where('role', 'admin')->pluck('email')->all());
+        $this->assertSame(0, User::where('email', 'admin@example.com')->first()->trips()->count());
+    }
+
     public function test_test_user_has_enough_trips(): void
     {
         $me = User::where('email', 'test@example.com')->first();

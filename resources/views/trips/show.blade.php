@@ -168,6 +168,11 @@
                 </form>
             </x-modal>
             @endif
+
+            {{-- 不適切な投稿の報告（PG21）。ほかの人の釣行だけ --}}
+            @can('report', $trip)
+            @include('reports.partials.modal', ['field' => 'trip_id', 'targetId' => $trip->id, 'targetLabel' => 'この釣行'])
+            @endcan
         </div>
     </div>
 </x-app-layout>

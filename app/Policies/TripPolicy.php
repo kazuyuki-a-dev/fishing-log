@@ -24,6 +24,19 @@ class TripPolicy
     }
 
     /**
+     * 釣行を報告してよいか（PG21・NF-04）
+     * ほかの人の釣行で、見られるもの（全体公開・釣り場だけ隠す）だけ。見えない釣行は「ない」ことにする
+     */
+    public function report(User $user, Trip $trip): Response
+    {
+        if ($trip->user_id === $user->id) {
+            return Response::deny('自分の投稿は報告できません。');
+        }
+
+        return $this->view($user, $trip);
+    }
+
+    /**
      * 釣行を編集してよいか（PG13・NF-01）：本人だけ
      */
     public function update(User $user, Trip $trip): Response

@@ -92,4 +92,10 @@ class Trip extends Model
     {
         return $this->hasMany(FishCatch::class);
     }
+
+    // この釣行への報告（NF-04）
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
 }

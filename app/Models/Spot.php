@@ -100,4 +100,10 @@ class Spot extends Model
     {
         return $this->hasMany(Trip::class);
     }
+
+    // この釣り場への報告（NF-04）
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
+    }
 }
