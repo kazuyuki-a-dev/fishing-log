@@ -12,9 +12,11 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * 開発用のダミーデータ（NF-07）
- * プランナー（FN-16）とカルテ（FN-09）を確かめられるだけの記録を、秋田県に集めて入れる
- * 県の切り替え（FN-17）を確かめるために、神奈川県のデータも少しだけ入れる
+ * 開発用のデータ（NF-07）
+ * - 釣り場は全国の実在する港と湖（database/seeders/data/real_spots.php。名前と位置の出どころはそのファイルの先頭）
+ * - 釣行と釣果は開発用のダミー。プランナー（FN-16）とカルテ（FN-09）を確かめられるだけの記録を、秋田県に集めて入れる
+ * - ダミーの釣行は、国が釣りができると案内している「釣り文化振興モデル港」にだけ付ける
+ *   （ふつうの港は立入禁止・釣り禁止の場所が多く、そこに釣果があるように見せないため）
  */
 class DatabaseSeeder extends Seeder
 {
@@ -32,15 +34,31 @@ class DatabaseSeeder extends Seeder
     // 小さめの魚（サイズを 12〜30cm にする）。それ以外は 30〜75cm
     private const SMALL_FISH = ['アジ', 'サバ', 'イワシ', 'カマス', 'キス', 'メバル', 'カサゴ', 'カワハギ'];
 
-    // 釣り場ごとによく釣れる魚（釣り場の id => 魚の一覧）
-    private array $fishBySpot = [];
+    // ダミーの釣行で釣れる魚（港の防波堤でよく釣れるもの。config/fishing.php の魚種から）
+    private const HARBOR_FISH = ['アジ', 'サバ', 'イワシ', 'カサゴ', 'メバル', 'クロダイ', 'シーバス', 'アイナメ'];
+
+    // 港の注意のメモ（NF-04：釣り禁止の場所を、釣りができるように見せないため）
+    private const PORT_NOTE = '港の中は立入禁止・釣り禁止の場所が多いです。釣りができる場所は、現地の表示や港の管理者の案内を確かめてください。';
+
+    private const LAKE_NOTE = '釣りの決まり（遊漁券・期間・釣り方・リリースの決まりなど）は、漁協や県の案内を確かめてください。';
 
     public function run(): void
     {
         // 毎回同じダミーデータになるように、でたらめの元（シード）を固定する
         fake()->seed(2026);
 
-        // ---- 秋田県（メインのデータ） ----
+        // ---- 管理者（NF-04）。実在の釣り場の登録者にする。釣行は持たせない ----
+        $admin = User::factory()->admin()->create([
+            'name' => '管理者',
+            'email' => 'admin@example.com',
+            'home_prefecture' => '東京都',
+            'notify_enabled' => false,
+        ]);
+
+        // ---- 全国の実在する釣り場 ----
+        $spots = $this->createRealSpots($admin);
+
+        // ---- 秋田県（メインのダミーデータ） ----
 
         // 自分でログインして確かめるためのユーザー（パスワードは password）
         $me = User::factory()->create([
@@ -56,199 +74,58 @@ class DatabaseSeeder extends Seeder
             ['name' => '磯の常連', 'email' => 'iso@example.com'],
         ])->map(fn(array $user) => User::factory()->create([...$user, 'home_prefecture' => '秋田県']));
 
-        // 釣り場8件。名前は架空、位置は秋田の海沿いのだいたいの場所
-        // 現地の情報（駐車場・トイレ・コンビニ）が空の釣り場は、釣行登録のあとに質問が出る（FN-14）
-        $akitaSpots = $this->createSpots('秋田県', [
-            [
-                'name' => '北港 第一堤防',
-                'lat' => 39.7600,
-                'lng' => 140.0550,
-                'owner' => $me,
-                'visibility' => 'public',
-                'caution' => 'なし',
-                'parking' => '公式駐車場',
-                'toilet' => 'あり',
-                'convenience' => 800,
-                'fish' => ['アジ', 'サバ', 'イワシ']
-            ],
-            [
-                'name' => '南浜サーフ',
-                'lat' => 39.6900,
-                'lng' => 140.0500,
-                'owner' => $others[0],
-                'visibility' => 'public',
-                'caution' => 'なし',
-                'parking' => '路肩等',
-                'toilet' => 'なし',
-                'convenience' => 1500,
-                'fish' => ['ヒラメ', 'キス', 'マゴチ']
-            ],
-            [
-                'name' => '旧河口',
-                'lat' => 39.7300,
-                'lng' => 140.0600,
-                'owner' => $others[1],
-                'visibility' => 'public',
-                'caution' => '注意あり',
-                'parking' => '路肩等',
-                'toilet' => '不明',
-                'convenience' => null,
-                'fish' => ['シーバス', 'クロダイ']
-            ],
-            [
-                'name' => '岬の磯',
-                'lat' => 39.8800,
-                'lng' => 139.8400,
-                'owner' => $others[2],
-                'visibility' => 'public',
-                'caution' => '立入注意',
-                'parking' => '駐車不可',
-                'toilet' => 'なし',
-                'convenience' => null,
-                'fish' => ['メジナ', 'メバル', 'アイナメ']
-            ],
-            [
-                'name' => '東漁港',
-                'lat' => 39.3900,
-                'lng' => 140.0300,
-                'owner' => $others[0],
-                'visibility' => 'public',
-                'caution' => 'なし',
-                'parking' => '公式駐車場',
-                'toilet' => 'あり',
-                'convenience' => 300,
-                'fish' => ['アジ', 'カサゴ', 'アオリイカ']
-            ],
-            [
-                'name' => '西防波堤',
-                'lat' => 39.9500,
-                'lng' => 139.7100,
-                'owner' => $others[1],
-                'visibility' => 'public',
-                'caution' => '私有地隣接',
-                'parking' => null,
-                'toilet' => null,
-                'convenience' => null,
-                'fish' => ['ブリ', 'サワラ', 'タチウオ']
-            ],
-            [
-                'name' => '運河筋',
-                'lat' => 39.7450,
-                'lng' => 140.0750,
-                'owner' => $me,
-                'visibility' => 'private',
-                'caution' => 'なし',
-                'parking' => '路肩等',
-                'toilet' => 'なし',
-                'convenience' => 600,
-                'fish' => ['シーバス', 'メバル']
-            ],
-            [
-                'name' => '新港 岸壁',
-                'lat' => 39.2650,
-                'lng' => 139.9000,
-                'owner' => $others[2],
-                'visibility' => 'private',
-                'caution' => 'なし',
-                'parking' => '公式駐車場',
-                'toilet' => 'あり',
-                'convenience' => 2000,
-                'fish' => ['カワハギ', 'マダイ', 'マダコ']
-            ],
-        ]);
-
-        // 釣行50件。自分が15件、ほかの3人で35件
+        // 釣行50件。自分が15件、ほかの3人で35件。秋田県のモデル港に付ける
+        $akitaModelPorts = $spots->filter(fn(array $row) => $row['data']['prefecture'] === '秋田県' && $row['data']['model'])
+            ->pluck('spot');
         for ($i = 0; $i < 50; $i++) {
-            $this->createTrip($i < 15 ? $me : $others[$i % 3], $akitaSpots, config('fishing.trip_visibility'));
+            $this->createTrip($i < 15 ? $me : $others[$i % 3], $akitaModelPorts, config('fishing.trip_visibility'));
         }
 
-        // ---- 神奈川県（県の切り替えを確かめるための少しだけのデータ） ----
-
-        $visitor = User::factory()->create([
+        // ---- 神奈川県（県の切り替えを確かめるための人。神奈川にはモデル港がないので釣行はない） ----
+        User::factory()->create([
             'name' => '湾奥アングラー',
             'email' => 'wanoku@example.com',
             'home_prefecture' => '神奈川県',
         ]);
-
-        $kanagawaSpots = $this->createSpots('神奈川県', [
-            [
-                'name' => '湾奥 海釣り桟橋',
-                'lat' => 35.4200,
-                'lng' => 139.6800,
-                'owner' => $visitor,
-                'visibility' => 'public',
-                'caution' => 'なし',
-                'parking' => '公式駐車場',
-                'toilet' => 'あり',
-                'convenience' => 500,
-                'fish' => ['アジ', 'サバ', 'シーバス']
-            ],
-            [
-                'name' => '南岬 地磯',
-                'lat' => 35.1400,
-                'lng' => 139.6300,
-                'owner' => $visitor,
-                'visibility' => 'public',
-                'caution' => '立入注意',
-                'parking' => '路肩等',
-                'toilet' => 'なし',
-                'convenience' => 1200,
-                'fish' => ['メジナ', 'クロダイ', 'カサゴ']
-            ],
-        ]);
-
-        // 釣行6件。ほかの人の画面やフィードに出るように、全体公開か釣り場だけ隠すにする
-        for ($i = 0; $i < 6; $i++) {
-            $this->createTrip($visitor, $kanagawaSpots, ['public', 'spot_hidden']);
-        }
-
-        // ---- 管理者（NF-04）。報告を確かめる人なので、釣行は持たせない ----
-        // 最後に作る（先に作ると、ほかのデータの乱数がずれて毎回同じにならなくなるため）
-        User::factory()->admin()->create([
-            'name' => '管理者',
-            'email' => 'admin@example.com',
-            'home_prefecture' => '東京都',
-            'notify_enabled' => false,
-        ]);
     }
 
     /**
-     * 釣り場をまとめて作る。よく釣れる魚も覚えておく
+     * 実在の釣り場を作る。公開・登録者は管理者
+     * 駐車場やトイレなどの現地の情報は分からないので空にしておく（使う人が入れる。FN-14）
+     *
+     * @return Collection<int, array{spot: Spot, data: array}>
      */
-    private function createSpots(string $prefecture, array $spotData): Collection
+    private function createRealSpots(User $admin): Collection
     {
-        $spots = collect();
-        foreach ($spotData as $data) {
-            $spot = Spot::factory()->create([
+        return collect(require __DIR__ . '/data/real_spots.php')->map(function (array $data) use ($admin) {
+            $note = $data['kind'] === '湖' ? self::LAKE_NOTE : self::PORT_NOTE;
+            if ($data['model']) {
+                $place = $data['model_place'] ? "（釣りができる場所：{$data['model_place']}）" : '';
+                $note .= "\n国の「釣り文化振興モデル港」です{$place}。開いている日や時間は、港の管理者の案内を確かめてください。";
+            }
+
+            $spot = Spot::forceCreate([
                 'name' => $data['name'],
-                'prefecture' => $prefecture,
+                'prefecture' => $data['prefecture'],
                 'latitude' => $data['lat'],
                 'longitude' => $data['lng'],
-                'created_by' => $data['owner']->id,
-                'visibility' => $data['visibility'],
-                'caution_type' => $data['caution'],
-                'parking_type' => $data['parking'],
-                'toilet_available' => $data['toilet'],
-                'convenience_distance_m' => $data['convenience'],
+                'visibility' => 'public',
+                'caution_type' => '注意あり',
+                'facility_note' => $note,
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
             ]);
-            $spots->push($spot);
-            $this->fishBySpot[$spot->id] = $data['fish'];
-        }
 
-        return $spots;
+            return ['spot' => $spot, 'data' => $data];
+        });
     }
 
     /**
-     * 釣行を1件作る。3割くらいは坊主、残りはその釣り場でよく釣れる魚を1〜3匹
+     * ダミーの釣行を1件作る。3割くらいは坊主、残りは港でよく釣れる魚を1〜3匹
      */
     private function createTrip(User $user, Collection $spots, array $visibilities): void
     {
-        // 選べる釣り場は、公開か、その人が登録した釣り場だけ（アプリと同じ決まり。NF-01）
-        $choices = $spots
-            ->filter(fn(Spot $spot) => $spot->visibility === 'public' || $spot->created_by === $user->id)
-            ->values()
-            ->all();
-        $spot = fake()->randomElement($choices);
+        $spot = fake()->randomElement($spots->values()->all());
 
         // 時間帯を先に決めて、それに合う時刻にする
         $timeOfDay = fake()->randomElement(config('fishing.times_of_day'));
@@ -276,7 +153,7 @@ class DatabaseSeeder extends Seeder
             return; // 坊主
         }
         for ($n = fake()->numberBetween(1, 3); $n > 0; $n--) {
-            $fish = fake()->randomElement($this->fishBySpot[$spot->id]);
+            $fish = fake()->randomElement(self::HARBOR_FISH);
             FishCatch::factory()->for($trip)->create([
                 'fish_species' => $fish,
                 'method' => fake()->randomElement(config('fishing.methods')),
