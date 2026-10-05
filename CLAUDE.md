@@ -84,7 +84,7 @@
 
 ## 今どこまでできているか（2026-10-05）
 
-**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目は土台（#96）とカルテ（#98）まで。テストは 263 件すべて成功。最後の Issue は #98（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目は土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）まで。テストは 263 件すべて成功。最後の Issue は #100（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
@@ -106,7 +106,8 @@
   - 済：カルテ（#98、見本 https://claude.ai/artifact/SRU3JbH7hHtHiHK53BgCj5 の C「付箋と書き込み」）。共通クラス `crayon-sticky`（＋`-yellow` `-pink` `-blue`）・`crayon-caution`（＋`crayon-caution-icon`）・`crayon-button`・`crayon-check`・`crayon-underline`
     - **ボタンはぬり絵風**（うすいオレンジ `float-light` のむらのない塗り＋濃いオレンジのクレヨンのふち、字は黒）。**字の後ろにクレヨンのまだら（crayon-fill）を置かない**（字が点にまぎれて読めない。何度も試してだめだった）
     - **「✔」などの記号の字は使わない**（Windows で色付きの絵文字になる）。CSS の線で描く
-  - **次はここから：ダッシュボードとプランナー**。ほかの画面のオレンジのボタン（`bg-float` に白い字、コントラスト 3.8 で足りない）を `crayon-button` に置き換えるのも一緒に。どこをどうするか、見本を作ってユーザーと決めてから Issue を作る
+  - 済：ダッシュボードとプランナー（#100、見本 https://claude.ai/artifact/XHVi3DDLDE3vPTaHEqSYot の B「書き込みとスタンプ」）。共通クラス `crayon-ledger`（点線の表）・`crayon-stamp`（＋`crayon-stamp-empty`）・`crayon-marker`・`crayon-scrawl`・`crayon-caution-tag`。白い字のオレンジのボタンは全部 `crayon-button` に（`primary-button` の部品も）
+  - **次はここから：残りの画面**（釣行一覧と詳細・フィード・釣り場一覧・ヒートマップ・お知らせ・トップ・ログインなど）。オレンジの地に白い字の小さなしるし（「ぴったり一致」のバッジ `match-level`、お知らせの NEW、管理画面の未対応、釣行詳細の登録直後のハイライト。コントラスト 3.8）も一緒に直す。見本を作ってユーザーと決めてから Issue を作る
   - 見た目の確認：作業用の場所（scratchpad）に確認用の HTML を作り、Playwright の chrome-headless-shell で画像にして自分でも見る（足りないライブラリ libnspr4・libnss3・libasound は apt-get download で scratchpad に取り出し、LD_LIBRARY_PATH で使う。システムには入れない）
 
 ### フェーズ3でやること
