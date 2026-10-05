@@ -1,4 +1,5 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+{{-- ナビは全部手書きの字（#96） --}}
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100 font-hand">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -78,7 +79,7 @@
                 <div class="flex items-center gap-4 text-sm">
                     <a href="{{ route('login') }}" class="text-ink hover:underline">ログイン</a>
                     <a href="{{ route('register') }}"
-                        class="inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-white hover:bg-float-dark">
+                        class="font-hand inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-white hover:bg-float-dark">
                         会員登録
                     </a>
                 </div>

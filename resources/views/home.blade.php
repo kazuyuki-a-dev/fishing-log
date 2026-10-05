@@ -9,11 +9,11 @@
                 </p>
                 <div class="flex flex-wrap gap-3">
                     <a href="{{ route('register') }}"
-                        class="inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                        class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                         会員登録（無料）
                     </a>
                     <a href="{{ route('login') }}"
-                        class="inline-flex items-center px-5 py-2.5 bg-white rounded-md font-bold text-sm text-sea hover:bg-sea-50">
+                        class="font-hand inline-flex items-center px-5 py-2.5 bg-white rounded-md font-bold text-sm text-sea hover:bg-sea-50">
                         ログイン
                     </a>
                 </div>

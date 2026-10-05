@@ -140,7 +140,7 @@
 
                 <div class="flex items-center gap-3">
                     <a href="{{ route('trips.edit', $trip) }}"
-                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-bold text-sm text-ink shadow-sm hover:bg-tide">
+                        class="font-hand inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-bold text-sm text-ink shadow-sm hover:bg-tide">
                         編集する
                     </a>
                     <x-danger-button x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-trip-deletion')">

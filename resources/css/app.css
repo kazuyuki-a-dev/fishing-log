@@ -8,6 +8,24 @@
  * 文字・数字・表の中の線・入力欄・ボタンにはかけない（ざらついて読みにくくならないように）
  * フィルターは resources/views/components/crayon-filters.blade.php
  */
+
+/*
+ * 操作する部分は、全部手書きの字にして統一感を出す（#96）
+ * ボタン・セレクトボックス・入力欄・ラベルに1か所でまとめて当てる（部品ごとに付け忘れないように）
+ * ボタンの形をしたリンク（<a>）は、それぞれの class に font-hand を付けている
+ * 本文の文章・カードの数字・注意区分の警告は、読みやすさのため今の字（BIZ UDPゴシック）のまま
+ */
+@layer base {
+    button,
+    select,
+    input,
+    textarea,
+    label,
+    legend,
+    nav[role="navigation"] {
+        @apply font-hand;
+    }
+}
 @layer components {
     /* メモ帳の紙（背景） */
     .crayon-paper {

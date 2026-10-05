@@ -21,7 +21,7 @@
                 $count = $key === 'all' ? $statusCounts->sum() : ($statusCounts[$key] ?? 0);
                 @endphp
                 <a href="{{ route('admin.reports.index', ['status' => $key]) }}"
-                    class="px-3 py-1.5 rounded-md border {{ $filter === $key ? 'bg-sea text-white border-sea font-bold' : 'bg-white border-gray-300 text-ink hover:bg-tide' }}">
+                    class="font-hand px-3 py-1.5 rounded-md border {{ $filter === $key ? 'bg-sea text-white border-sea font-bold' : 'bg-white border-gray-300 text-ink hover:bg-tide' }}">
                     {{ $label }}（{{ $count }}）
                 </a>
                 @endforeach

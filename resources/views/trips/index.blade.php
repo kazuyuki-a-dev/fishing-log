@@ -3,7 +3,7 @@
         <div class="flex items-center justify-between">
             <h2 class="crayon-heading">釣行の記録</h2>
             <a href="{{ route('trips.create') }}"
-                class="inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                class="font-hand inline-flex items-center px-4 py-2 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                 釣行を記録
             </a>
         </div>
@@ -27,7 +27,7 @@
                 @foreach ($scopes as $value => $label)
                 <a href="{{ route('trips.index', array_merge($keep, ['scope' => $value])) }}"
                     @if ($filters['scope'] === $value) aria-current="true" @endif
-                    class="px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $filters['scope'] === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
+                    class="font-hand px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $filters['scope'] === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
                     {{ $label }}
                 </a>
                 @endforeach
@@ -108,7 +108,7 @@
                 {{-- CSV は自分のデータだけ。「みんな」のときは出さない（FN-04） --}}
                 @if ($filters['scope'] === 'mine')
                 <a href="{{ route('trips.export', request()->except(['page', 'scope', 'prefecture'])) }}"
-                    class="inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-sea rounded-md font-bold text-sea hover:bg-tide">
+                    class="font-hand inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-sea rounded-md font-bold text-sea hover:bg-tide">
                     CSV で保存
                 </a>
                 @endif

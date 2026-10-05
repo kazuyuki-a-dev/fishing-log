@@ -9,7 +9,7 @@
             <div class="crayon-card p-5 flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm">今日の潮と過去の記録から、行き先を決めましょう。</p>
                 <a href="{{ route('planner') }}"
-                    class="inline-flex w-full sm:w-auto justify-center items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                    class="font-hand inline-flex w-full sm:w-auto justify-center items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
                     次の釣行をプランする
                 </a>
             </div>
@@ -108,7 +108,7 @@
                     <p>前に行った釣行を覚えていたら、まとめて入れておくと、プランナーやカルテがすぐ役に立ちます。釣った魚の写真があれば、日時と釣り場を写真から読み取ります。</p>
                     <div class="flex flex-wrap items-center gap-4">
                         <a href="{{ route('trips.create', ['mode' => 'bulk']) }}"
-                            class="inline-flex items-center px-5 py-2.5 bg-sea rounded-md font-bold text-sm text-white hover:opacity-90 w-full sm:w-auto justify-center">
+                            class="font-hand inline-flex items-center px-5 py-2.5 bg-sea rounded-md font-bold text-sm text-white hover:opacity-90 w-full sm:w-auto justify-center">
                             昔の釣行をまとめて登録する
                         </a>
                         <a href="{{ route('trips.create') }}" class="underline text-sea">1件ずつ記録する</a>

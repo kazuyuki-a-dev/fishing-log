@@ -17,7 +17,7 @@
                     @foreach ($scopes as $value => $label)
                     <a href="{{ route('analysis.heatmap', ['scope' => $value, 'prefecture' => $prefecture]) }}"
                         @if ($scope === $value) aria-current="true" @endif
-                        class="px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $scope === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
+                        class="font-hand px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : 'rounded-r-md -ml-px' }} {{ $scope === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
                         {{ $label }}
                     </a>
                     @endforeach
