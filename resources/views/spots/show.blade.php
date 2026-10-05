@@ -31,46 +31,49 @@
 
             {{-- 注意区分の警告（FN-14・NF-04） --}}
             @if ($spot->caution_type && $spot->caution_type !== 'なし')
-            <div class="rounded-md border-l-4 border-float bg-white p-4 shadow-sm">
-                <p class="font-bold text-float">注意：{{ $spot->caution_type }}</p>
-                <p class="text-sm">現地の表示や決まりを守ってください。安全と法律を守る責任は、利用する人自身にあります。</p>
+            <div class="crayon-caution">
+                <span class="crayon-caution-icon" aria-hidden="true">!</span>
+                <div>
+                    <p class="font-bold text-float-dark">注意：{{ $spot->caution_type }}</p>
+                    <p class="text-sm">現地の表示や決まりを守ってください。安全と法律を守る責任は、利用する人自身にあります。</p>
+                </div>
             </div>
             @endif
 
-            {{-- 釣行判断（FN-11） --}}
-            <section class="bg-sea text-white rounded-md shadow-sm p-5 space-y-4">
+            {{-- 釣行判断（FN-11）。黄色の付箋（#98） --}}
+            <section class="crayon-sticky crayon-sticky-yellow p-5 space-y-4">
                 <form method="GET" action="{{ route('spots.show', $spot) }}" class="flex flex-wrap items-end gap-3">
                     <div>
-                        <label for="date" class="block text-xs text-sea-100">行く日</label>
+                        <label for="date" class="block text-xs text-sand">行く日</label>
                         <input id="date" type="date" name="date" value="{{ $judge['date']->format('Y-m-d') }}"
-                            onchange="this.form.submit()" class="mt-1 rounded-md border-0 text-ink">
+                            onchange="this.form.submit()" class="mt-1 rounded-md border-gray-300 text-ink">
                     </div>
                     <div>
-                        <label for="time_of_day" class="block text-xs text-sea-100">時間帯</label>
-                        <x-option-select id="time_of_day" name="time_of_day" class="mt-1 border-0 text-ink"
+                        <label for="time_of_day" class="block text-xs text-sand">時間帯</label>
+                        <x-option-select id="time_of_day" name="time_of_day" class="mt-1 border-gray-300 text-ink"
                             :options="config('fishing.times_of_day')" :selected="$judge['timeOfDay']"
                             placeholder="指定なし" onchange="this.form.submit()" />
                     </div>
                 </form>
 
                 <div>
-                    <p class="text-sm text-sea-100">{{ $judge['date']->format('Y年n月j日') }}（旧暦{{ $judge['lunarDay'] }}日）</p>
-                    <p class="text-3xl font-bold">{{ $judge['tide'] }}</p>
+                    <p class="text-sm text-sand">{{ $judge['date']->format('Y年n月j日') }}（旧暦{{ $judge['lunarDay'] }}日）</p>
+                    <p class="font-hand text-4xl text-sea">{{ $judge['tide'] }}</p>
                 </div>
                 @if ($judge['forecast'])
                 <div>
-                    <p class="text-sm text-sea-100">天気予報</p>
+                    <p class="text-sm text-sand">天気予報</p>
                     <p class="text-xl font-bold">{{ $judge['forecast'] }}</p>
-                    <p class="text-xs text-sea-100">
+                    <p class="text-xs text-sand">
                         天気データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline">Open-Meteo</a>
                     </p>
                 </div>
                 @elseif ($spot->latitude === null)
-                <p class="text-xs text-sea-100">この釣り場は位置が登録されていないので、天気予報は出せません。</p>
+                <p class="text-xs text-sand">この釣り場は位置が登録されていないので、天気予報は出せません。</p>
                 @endif
 
-                <div class="border-t border-sea-400 pt-4 space-y-2">
-                    <p class="flex flex-wrap items-center gap-2 text-sm text-sea-100">
+                <div class="border-t-2 border-dashed border-sea/30 pt-4 space-y-2">
+                    <p class="flex flex-wrap items-center gap-2 text-sm text-sand">
                         @if ($judge['visits'] > 0)
                         <x-match-level :level="$judge['level']" :label="$judge['label']" />
                         @endif
@@ -80,7 +83,7 @@
                     <p class="text-2xl font-bold">{{ $judge['visits'] }}回行って {{ $judge['caught'] }}回釣れた</p>
                     {{-- 条件をゆるめたときも、ぴったりの条件の結果（坊主の記録）を隠さない --}}
                     @if ($judge['level'] !== 'exact' && $judge['exact']['visits'] > 0)
-                    <p class="text-xs text-sea-100">
+                    <p class="text-xs text-sand">
                         ぴったりの条件（{{ $judge['exact']['condition'] }}）では {{ $judge['exact']['visits'] }}回行って {{ $judge['exact']['caught'] }}回釣れた
                     </p>
                     @endif
@@ -103,13 +106,14 @@
                     @endif
                 </div>
 
-                <p class="text-sm text-sea-100">次の大潮：{{ $judge['nextBigTide']->format('n月j日') }}</p>
+                <p class="text-sm text-sand">次の大潮：{{ $judge['nextBigTide']->format('n月j日') }}</p>
             </section>
 
             {{-- 実績（FN-09） --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 @auth
-                <div class="crayon-card p-5">
+                {{-- 実績は付箋。自分はピンク、ほかの人は水色（見出しの文字でも分かるようにする） --}}
+                <div class="crayon-sticky crayon-sticky-pink p-5">
                     <h3 class="text-sm text-sand">自分の実績</h3>
                     @if ($mine['visits'] > 0)
                     <p class="mt-2 text-2xl font-bold">
@@ -127,7 +131,7 @@
                 </div>
                 @endauth
 
-                <div class="crayon-card p-5">
+                <div class="crayon-sticky crayon-sticky-blue p-5">
                     <h3 class="text-sm text-sand">ほかの人の公開実績</h3>
                     @if ($others['visits'] > 0)
                     <p class="mt-2 text-2xl font-bold">
@@ -141,8 +145,7 @@
 
             @auth
             <div class="flex justify-end">
-                <a href="{{ route('trips.create', ['spot' => $spot->id]) }}"
-                    class="font-hand inline-flex items-center px-5 py-2.5 bg-float rounded-md font-bold text-sm text-white hover:bg-float-dark">
+                <a href="{{ route('trips.create', ['spot' => $spot->id]) }}" class="crayon-button">
                     この釣り場で釣行を記録
                 </a>
             </div>
@@ -168,7 +171,8 @@
             <section class="space-y-3">
                 <h3 class="crayon-subheading">釣行の履歴</h3>
                 @forelse ($trips as $trip)
-                <article class="crayon-card p-4 {{ $judge['matchedIds']->contains($trip->id) ? 'ring-2 ring-float' : '' }}">
+                {{-- 条件が一致した履歴には、赤いクレヨンのチェック（#98） --}}
+                <article class="crayon-card p-4 {{ $judge['matchedIds']->contains($trip->id) ? 'crayon-check' : '' }}">
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                         <p class="font-bold">
                             {{ $trip->went_at->format('Y/m/d') }}
