@@ -1,5 +1,5 @@
-{{-- ナビは全部手書きの字（#96） --}}
-<nav x-data="{ open: false }" class="bg-white font-hand">
+{{-- ナビは全部手書きの字（#96）。スクロールしても画面の上に残る（#108。確認の小窓 z-50 より下に重ねる） --}}
+<nav x-data="{ open: false }" class="sticky top-0 z-40 bg-white font-hand">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -72,11 +72,9 @@
             </div>
         </div>
 
-        {{-- インデックス付箋（#108）。開いているページの付箋だけ長く出て、本文の紙とつながる。スマホでは横にスクロール --}}
-        {{-- 開いたときに、手前の付箋がまん中あたりに見えるように横にスクロールしておく --}}
-        <div class="crayon-index-tabs"
-            x-data
-            x-init="const tab = $el.querySelector('.is-active'); if (tab) $el.scrollLeft = tab.offsetLeft - ($el.clientWidth - tab.offsetWidth) / 2">
+        {{-- インデックス付箋（#108）。開いているページの付箋だけ長く出て、本文の紙とつながる --}}
+        {{-- スマホでは開いているページの付箋1枚だけ（ページは ≡ メニューから選ぶ） --}}
+        <div class="crayon-index-tabs">
             @foreach ($sections as $key => $section)
             <a href="{{ route($section['link']) }}" style="--tab: {{ $section['tab'] }};"
                 class="crayon-index-tab {{ $currentSection === $key ? 'is-active' : '' }}"
@@ -88,7 +86,8 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    {{-- ヘッダーが上に固定なので、メニューが長いときはメニューの中だけスクロールする --}}
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden max-h-[calc(100vh-7rem)] overflow-y-auto">
         <div class="pt-2 pb-3 space-y-1">
             @auth
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">

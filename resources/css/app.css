@@ -284,15 +284,14 @@
     /*
      * インデックス付箋（#108）。ナビの下の段に、ページごとの色の付箋の耳を並べる
      * 色は config/sections.php の tab を style の --tab で渡す。開いているページの付箋（is-active）だけ長く出る
-     * スマホでは入りきらないので、横にスクロールする
+     * スマホでは開いているページの付箋1枚だけを見せる（並べると見づらいので、ページは ≡ メニューから選ぶ）
      */
     .crayon-index-tabs {
-        @apply -mx-4 flex gap-1 overflow-x-auto px-4 pt-1 sm:mx-0 sm:px-0;
-        scrollbar-width: none;
+        @apply flex gap-1 pt-1;
     }
 
-    .crayon-index-tabs::-webkit-scrollbar {
-        display: none;
+    .crayon-index-tab:not(.is-active) {
+        @apply hidden sm:block;
     }
 
     .crayon-index-tab {
@@ -326,5 +325,13 @@
         @apply min-h-[60vh];
         background: var(--section-paper, transparent);
         border-top: 6px solid var(--section, theme("colors.sea.100"));
+    }
+
+    /*
+     * 地図（Leaflet）の重なりを地図の箱の中に閉じ込める（#108）
+     * Leaflet は中で大きな重なりの数字（最大1000）を使うので、そのままだと上に固定したナビの上に出てしまう
+     */
+    .leaflet-container {
+        isolation: isolate;
     }
 }
