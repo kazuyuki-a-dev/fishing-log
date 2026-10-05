@@ -18,6 +18,7 @@
                         ログイン
                     </a>
                 </div>
+                <p class="text-sm">はじめての方は <a href="{{ route('guide') }}" class="underline text-sea">使い方を見る</a></p>
             </section>
 
             <section class="crayon-card p-5 space-y-3">

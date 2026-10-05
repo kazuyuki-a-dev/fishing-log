@@ -118,6 +118,10 @@
                 <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.admin.tab') }}" aria-hidden="true"></span>報告（未対応 {{ $openReports }}件）
             </x-responsive-nav-link>
             @endif
+            {{-- アプリの使い方（#116）。だれでも --}}
+            <x-responsive-nav-link :href="route('guide')" :active="request()->routeIs('guide')">
+                使い方
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
