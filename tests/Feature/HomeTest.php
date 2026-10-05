@@ -80,4 +80,24 @@ class HomeTest extends TestCase
         $this->get('/terms')->assertOk()->assertSee('会員登録');
         $this->get('/privacy')->assertOk()->assertSee('会員登録');
     }
+
+    public function test_terms_and_privacy_have_the_required_items(): void
+    {
+        // 定義書 NF-05 の「書くこと」と、あとから増えた機能（#118）
+        $this->get('/terms')
+            ->assertSeeText('ログインしていない人にも見えます')
+            ->assertSeeText('釣り禁止・立入禁止の場所や私有地')
+            ->assertSeeText('安全と法律を守る責任は、利用する人自身にあります')
+            ->assertSeeText('ほかのユーザーも編集できます')
+            ->assertSeeText('非公開にすることがあります')
+            ->assertDontSee('仮の本文');
+
+        $this->get('/privacy')
+            ->assertSeeText('メールアドレスと、メインフィールドの都道府県は公開しません')
+            ->assertSeeText('約1km四方')
+            ->assertSeeText('Exif')
+            ->assertSeeText('Open-Meteo')
+            ->assertSeeText('登録した人の名前を外して残します')
+            ->assertDontSee('仮の本文');
+    }
 }

@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\FishCatch;
+use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -80,6 +83,26 @@ class ProfileTest extends TestCase
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+    }
+
+    public function test_photos_are_deleted_with_the_account(): void
+    {
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::fake('public');
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+
+        // 自分の釣果の写真と、ほかの人の釣果の写真
+        $mine = FishCatch::factory()->create(['trip_id' => Trip::factory()->create(['user_id' => $user->id])->id, 'image_path' => 'catches/mine.jpg']);
+        $theirs = FishCatch::factory()->create(['trip_id' => Trip::factory()->create(['user_id' => $other->id])->id, 'image_path' => 'catches/theirs.jpg']);
+        $disk->put($mine->image_path, 'photo');
+        $disk->put($theirs->image_path, 'photo');
+
+        $this->actingAs($user)->delete('/profile', ['password' => 'password'])->assertRedirect('/');
+
+        // 退会した人の写真のファイルは消える（URL を知っていても見られない）。ほかの人の写真は残る（#118）
+        $disk->assertMissing('catches/mine.jpg');
+        $disk->assertExists('catches/theirs.jpg');
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void
