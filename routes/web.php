@@ -60,5 +60,6 @@ Route::resource('spots', SpotController::class)->only(['index', 'show']);
 Route::get('/feed', [FeedController::class, 'index'])->name('feed');
 Route::get('/terms', [StaticPageController::class, 'terms'])->name('terms');
 Route::get('/privacy', [StaticPageController::class, 'privacy'])->name('privacy');
+Route::get('/guide', [StaticPageController::class, 'guide'])->name('guide');
 
 require __DIR__ . '/auth.php';

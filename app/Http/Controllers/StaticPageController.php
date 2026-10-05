@@ -16,4 +16,10 @@ class StaticPageController extends Controller
     {
         return view('static.privacy');
     }
+
+    /** アプリの使い方（#116）。だれでも見られる */
+    public function guide(): View
+    {
+        return view('static.guide');
+    }
 }
