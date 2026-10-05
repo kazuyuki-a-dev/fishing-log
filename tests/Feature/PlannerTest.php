@@ -84,9 +84,23 @@ class PlannerTest extends TestCase
 
     public function test_caution_and_link_to_the_karte_with_the_same_date(): void
     {
+        // 注意のしるしは注意区分だけ（「注意：」は付けない。#110）
         $this->actingAs($this->me)->get('/planner?date=2024-01-19')
-            ->assertSee('注意：立入注意')
+            ->assertSee('<span class="crayon-caution-tag">立入注意</span>', false)
+            ->assertDontSee('注意：')
             ->assertSee('date=2024-01-19', false);
+    }
+
+    public function test_first_spot_is_marked_only_when_it_has_a_catch(): void
+    {
+        // 釣れた記録がある県では、1位の釣り場名に黄色のマーカー（#110）
+        $this->actingAs($this->me)->get('/planner?date=2024-01-19')
+            ->assertSee('<span class="crayon-marker">ぼちぼちの港</span>', false);
+
+        // 釣れた記録がない県では、1位にもマーカーを付けない
+        $this->actingAs($this->me)->get('/planner?date=2024-01-19&prefecture=' . urlencode('青森県'))
+            ->assertSee('青森の釣り場')
+            ->assertDontSee('crayon-marker');
     }
 
     public function test_exact_match_comes_before_relaxed_matches(): void
