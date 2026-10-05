@@ -31,6 +31,12 @@
                     <x-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
                         釣果フィード
                     </x-nav-link>
+                    {{-- 管理者だけ（NF-04） --}}
+                    @if ($openReports !== null)
+                    <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.*')">
+                        報告（未対応 {{ $openReports }}件）
+                    </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -119,6 +125,12 @@
             <x-responsive-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
                 釣果フィード
             </x-responsive-nav-link>
+            {{-- 管理者だけ（NF-04） --}}
+            @if ($openReports !== null)
+            <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.*')">
+                報告（未対応 {{ $openReports }}件）
+            </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

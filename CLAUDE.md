@@ -64,7 +64,7 @@
 ## 主なファイル
 
 - ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`）
-- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`（サマリー指標・継続カウンタと気づきカード）、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`ReportController`（報告を受け取る）、`AnalysisController`（ヒートマップ）
+- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`（サマリー指標・継続カウンタと気づきカード）、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`ReportController`（報告を受け取る）、`Admin\ReportController`（管理画面：一覧・状態の変更・非表示）、`AnalysisController`（ヒートマップ）
 - サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`TripSearch`（釣行一覧の条件検索。条件の読み取り・絞り込み・まとめ。CSV でも同じものを使う）、`TripCsvExporter`（CSV の行。位置と写真は入れない、式の対策）、`ConditionMatcher`（ぴったり → 潮だけ → 月だけ と条件をゆるめる。プランナーとカルテの判断ビューで共通）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）、`KeepRecording`（継続カウンタと気づきカード）
 - お知らせ：`app/Notifications/` の `NewTripNotification`（`trip_ids`）・`NewSpotNotification`（`spot_id`）。ベルは `resources/views/components/notification-bell.blade.php`（PC とスマホの両方で使う）
 - 一致レベルのバッジ：`resources/views/components/match-level.blade.php`
@@ -79,12 +79,12 @@
 ## 開発用のログイン
 
 - `test@example.com` / `password`（秋田、釣行15件）
-- 管理者：`admin@example.com`（東京都、釣行なし。シーダーを流し直したときにできる。今のデータに足すなら `app:make-admin`）
+- 管理者：`admin@example.com`（東京都、釣行なし。今の開発用データベースにも足してある）
 - ほかに `minato@` `surf@` `iso@`（秋田）、`wanoku@`（神奈川）。すべて `@example.com`、パスワードは `password`
 
 ## 今どこまでできているか（2026-10-05）
 
-**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告（NF-04）は送るところ（#92）まで。テストは 256 件すべて成功。最後の Issue は #92（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。残りは見た目。テストは 263 件すべて成功。最後の Issue は #94（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
@@ -100,8 +100,8 @@
 - 済：③ 継続カウンタと気づきカード（FN-10、#90、`KeepRecording`）：ダッシュボードのサマリー指標の下。自分の釣行の回数だけ（坊主も1回）。連続月数は今月が終わるまで途切れにしない。気づきは潮・時間帯・天候ごとに釣れた割合がいちばん高いもの（2回以上行った条件だけ、最大3枚、件数を出す）
 - ④ 報告と管理画面（NF-04）：2つの Issue に分けた
   - 済：報告を送る（#92）：`users.role`（user／admin）、`reports` テーブル、カルテと釣行詳細のモーダル（`reports/partials/modal.blade.php`）、ポリシーの `report`（見えないものは 404、自分の投稿は 403）、未対応の重複は不可。管理者は `sail artisan app:make-admin メール` とシーダーの `admin@example.com`
-  - **次はここから：管理画面**（報告の一覧・対応状況の変更・投稿の非表示）。**非表示は公開範囲を `private` に変える**（ユーザーが決めた。新しい列は足さない）。管理者は報告された投稿の中身を見られる
-- ⑤ 見た目
+  - 済：管理画面（#94、`/admin/reports`、`Admin\ReportController`）：ミドルウェア `admin`（`EnsureAdmin`、管理者以外は 404）。最初は未対応だけ。投稿の中身は管理画面の中に出す（**メモは出さない**、釣り場名は出す）。**非表示は公開範囲を `private` に変える**（新しい列は足さない）＋その投稿への報告をまとめて対応完了。釣り場の updated_at は変えない
+- **⑤ 見た目 ← 次はここから**。まずどこをどう変えるか、ユーザーと決める
 
 ### フェーズ3でやること
 
