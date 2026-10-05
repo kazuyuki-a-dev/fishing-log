@@ -21,6 +21,21 @@ class SpotPolicy
     }
 
     /**
+     * 釣り場を報告してよいか（PG21・NF-04）
+     * ほかの人が登録した公開の釣り場だけ。非公開は「ない」ことにする
+     */
+    public function report(User $user, Spot $spot): Response
+    {
+        if ($spot->visibility !== 'public') {
+            return Response::denyAsNotFound();
+        }
+
+        return $spot->created_by === $user->id
+            ? Response::deny('自分の投稿は報告できません。')
+            : Response::allow();
+    }
+
+    /**
      * 釣り場を編集してよいか（FN-14）：見られる人はみんな、現地の情報を直せる
      */
     public function update(User $user, Spot $spot): Response

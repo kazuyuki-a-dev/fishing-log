@@ -35,6 +35,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * 管理者にする（NF-04）
+     */
+    public function admin(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => 'admin',
+        ]);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static

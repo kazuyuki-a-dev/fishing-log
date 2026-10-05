@@ -49,4 +49,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Trip::class);
     }
+
+    // 自分が送った報告（NF-04）
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'reporter_id');
+    }
+
+    /** 管理者か（NF-04）。role は一覧（Fillable）に入れず、画面からは変えられないようにしている */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 }

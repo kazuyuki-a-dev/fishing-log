@@ -201,6 +201,15 @@ class DatabaseSeeder extends Seeder
         for ($i = 0; $i < 6; $i++) {
             $this->createTrip($visitor, $kanagawaSpots, ['public', 'spot_hidden']);
         }
+
+        // ---- 管理者（NF-04）。報告を確かめる人なので、釣行は持たせない ----
+        // 最後に作る（先に作ると、ほかのデータの乱数がずれて毎回同じにならなくなるため）
+        User::factory()->admin()->create([
+            'name' => '管理者',
+            'email' => 'admin@example.com',
+            'home_prefecture' => '東京都',
+            'notify_enabled' => false,
+        ]);
     }
 
     /**

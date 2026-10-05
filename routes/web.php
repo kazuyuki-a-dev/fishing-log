@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlannerController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SpotController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\TripController;
@@ -41,6 +42,9 @@ Route::middleware('auth')->group(function () {
 
     // 県内新着のお知らせ一覧（PG25）
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+
+    // 不適切な投稿の報告（PG21）。画面はなく、カルテと釣行詳細のモーダルから送る
+    Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
 });
 
 // ゲストも見られる（NF-01・FN-13）。ログインが必要なルートより下に書く

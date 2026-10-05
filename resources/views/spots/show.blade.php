@@ -249,6 +249,13 @@
                 </div>
                 @endauth
             </section>
+
+            {{-- 不適切な投稿の報告（PG21）。ほかの人が登録した公開の釣り場だけ。ゲストには出さない --}}
+            @auth
+            @can('report', $spot)
+            @include('reports.partials.modal', ['field' => 'spot_id', 'targetId' => $spot->id, 'targetLabel' => 'この釣り場'])
+            @endcan
+            @endauth
         </div>
     </div>
 </x-app-layout>
