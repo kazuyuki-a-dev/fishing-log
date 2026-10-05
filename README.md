@@ -19,15 +19,28 @@
 
 開発用のデータ（`test@example.com`、記録はダミー）で撮った画面です。
 
-| ダッシュボード | 釣行プランナー |
-| --- | --- |
-| ![ダッシュボード：点線の表と連続記録のスタンプ、気づきカード](docs/images/screen-dashboard.png) | ![釣行プランナー：行く日の潮と、釣り場の候補](docs/images/screen-planner.png) |
-| **釣り場カルテ（秋田港）** | **釣果フィード** |
-| ![釣り場カルテ：付箋の釣行判断ビュー、実績、月×魚種の表](docs/images/screen-karte.png) | ![釣果フィード：みんなの公開釣果](docs/images/screen-feed.png) |
+<table>
+<tr>
+<th>ダッシュボード</th>
+<th>釣行プランナー</th>
+</tr>
+<tr>
+<td><img src="docs/images/screen-dashboard.png" alt="ダッシュボード：点線の表と連続記録のスタンプ、気づきカード" width="420"></td>
+<td><img src="docs/images/screen-planner.png" alt="釣行プランナー：行く日の潮と、釣り場の候補" width="420"></td>
+</tr>
+<tr>
+<th>釣り場カルテ（秋田港）</th>
+<th>釣果フィード</th>
+</tr>
+<tr>
+<td><img src="docs/images/screen-karte.png" alt="釣り場カルテ：付箋の釣行判断ビューと実績" width="420"></td>
+<td><img src="docs/images/screen-feed.png" alt="釣果フィード：みんなの公開釣果" width="420"></td>
+</tr>
+</table>
 
 <p>
-<img src="docs/images/screen-mobile-karte.png" alt="スマホ幅の釣り場カルテ" width="260">
-<img src="docs/images/screen-mobile-menu.png" alt="スマホ幅で ≡ メニューを開いたところ" width="260">
+<img src="docs/images/screen-mobile-karte.png" alt="スマホ幅の釣り場カルテ" width="240">
+<img src="docs/images/screen-mobile-menu.png" alt="スマホ幅で ≡ メニューを開いたところ" width="240">
 </p>
 
 スマホ幅（左：釣り場カルテ、右：≡ メニューを開いたところ）
