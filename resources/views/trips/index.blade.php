@@ -116,7 +116,7 @@
             @endif
 
             @if ($trips->isEmpty())
-            <div class="crayon-card p-6 text-center space-y-3">
+            <div class="crayon-card crayon-empty p-6 text-center space-y-3">
                 @if ($isFiltered)
                 <p>この条件の釣行はありません。</p>
                 @elseif ($filters['scope'] === 'public')
@@ -144,10 +144,11 @@
                             <p class="text-sm text-sand">{{ $trip->spot->name }}（{{ $trip->spot->prefecture }}）・{{ $trip->tide }}</p>
                         </div>
                         <div class="text-sm text-right shrink-0">
+                            {{-- 坊主は空のバケツ、釣れたら魚のアイコン（#112） --}}
                             @if ($trip->catches->isEmpty())
-                            <p>坊主</p>
+                            <p class="text-sand"><x-icon name="bucket" class="mr-1 h-4 w-4 align-[-0.2em]" />坊主</p>
                             @else
-                            <p class="font-bold">{{ $trip->catches->count() }}匹</p>
+                            <p class="font-bold"><x-icon name="fish" class="mr-1 h-4 w-4 text-[#2F86B5] align-[-0.2em]" />{{ $trip->catches->count() }}匹</p>
                             <p class="text-sand">{{ $trip->catches->pluck('fish_species')->unique()->take(3)->join('・') }}</p>
                             @endif
                         </div>

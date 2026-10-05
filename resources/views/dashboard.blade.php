@@ -122,8 +122,9 @@
                             <span class="font-bold">{{ $trip->went_at->format('Y/m/d') }}</span>
                             <span class="ml-2">{{ $trip->spot->name }}</span>
                         </a>
+                        {{-- 坊主は空のバケツ、釣れたら魚のアイコン（#112） --}}
                         <span class="text-sand">
-                            {{ $trip->catches->isEmpty() ? '坊主' : $trip->catches->count() . '匹' }}
+                            <x-icon :name="$trip->catches->isEmpty() ? 'bucket' : 'fish'" class="mr-1 h-4 w-4 align-[-0.2em] {{ $trip->catches->isEmpty() ? '' : 'text-[#2F86B5]' }}" />{{ $trip->catches->isEmpty() ? '坊主' : $trip->catches->count() . '匹' }}
                         </span>
                     </li>
                     @endforeach

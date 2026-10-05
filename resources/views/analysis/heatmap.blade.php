@@ -31,7 +31,7 @@
             </div>
 
             @if (empty($rows))
-            <div class="crayon-card p-6 text-center space-y-3">
+            <div class="crayon-card crayon-empty p-6 text-center space-y-3">
                 <p>まだこの条件の記録がありません。</p>
                 <div class="flex flex-wrap justify-center gap-4 text-sm">
                     <a href="{{ route('trips.create') }}" class="underline text-sea">釣行を記録する</a>

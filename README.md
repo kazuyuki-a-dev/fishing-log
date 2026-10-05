@@ -90,6 +90,7 @@
 | 地図 | Leaflet ＋ OpenStreetMap |
 | 天気 | Open-Meteo（API キー不要） |
 | フォント | Google Fonts の BIZ UDPGothic・Yomogi（どちらも SIL Open Font License） |
+| アイコン | [Tabler Icons](https://tabler.io/icons)（MIT ライセンス、Copyright (c) 2020-2026 Paweł Kuna）の魚・釣り針・灯台など。エサとルアーの絵は自作 |
 
 ## データベース（ER 図）
 

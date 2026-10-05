@@ -17,7 +17,7 @@
                 <p>見たい都道府県を選んでください。</p>
             </div>
             @elseif ($trips->isEmpty())
-            <div class="crayon-card p-6 text-center space-y-3">
+            <div class="crayon-card crayon-empty p-6 text-center space-y-3">
                 <p>この条件の公開釣果は、まだありません。</p>
                 <a href="{{ route('trips.create') }}"
                     class="crayon-button">
