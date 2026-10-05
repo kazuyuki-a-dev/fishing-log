@@ -6,6 +6,15 @@
 - 主役は **釣行プランナー**（行く日と県を選ぶと、過去の記録から釣り場を提案）と **釣り場カルテ**（その釣り場で、選んだ日の条件のときにどうだったか）
 - スクールに提出する個人開発アプリです。定義書は [`docs/spec.md`](docs/spec.md)、定義書と違うことをしたときの判断と理由は [`docs/decisions.md`](docs/decisions.md) にすべて記録しています
 
+## 開発者・リンク
+
+| 項目 | 内容 |
+| --- | --- |
+| 開発者 | kazuyuki-a-dev（[GitHub](https://github.com/kazuyuki-a-dev)） |
+| リポジトリ | https://github.com/kazuyuki-a-dev/fishing-log |
+| Issue | https://github.com/kazuyuki-a-dev/fishing-log/issues?q=is%3Aissue |
+| Pull Request | https://github.com/kazuyuki-a-dev/fishing-log/pulls?q=is%3Apr |
+
 ## 主な機能
 
 番号は定義書（`docs/spec.md`）の機能番号です。
@@ -81,6 +90,22 @@
 | 地図 | Leaflet ＋ OpenStreetMap |
 | 天気 | Open-Meteo（API キー不要） |
 | フォント | Google Fonts の BIZ UDPGothic・Yomogi（どちらも SIL Open Font License） |
+
+## データベース（ER 図）
+
+アプリで使うテーブルは7つです（users・spots・trips・catches・reports・notifications・password_reset_tokens）。ほかに、Laravel が最初から作るセッション・キャッシュ・ジョブ用のテーブルがあります。各テーブルの列の説明は、定義書（`docs/spec.md`）のテーブル一覧にあります。
+
+<details>
+<summary>ER 図を開く</summary>
+
+![FishingLog の ER 図](docs/images/er-diagram.png)
+
+- 図は設計のとき（2026-09-25）に作ったものです。そのあと、次の列を足しています
+  - `users.role`（一般／管理者。図では「Phase 3 で role を追加」のメモ）
+  - `trips.notified_at`・`spots.notified_at`（県内新着のお知らせを送ったかの印）
+- ★ はあとから足した列、点線は外部キーの制約を張っていない（論理的な）つながりです
+
+</details>
 
 ## セットアップ
 
