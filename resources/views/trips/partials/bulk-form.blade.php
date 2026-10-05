@@ -6,7 +6,7 @@ $nearbyUrl = route('spots.nearby');
 $maxRows = \App\Http\Requests\BulkTripRequest::MAX_ROWS;
 @endphp
 
-<div class="rounded-md bg-sea-50 p-4 text-sm space-y-1">
+<div class="crayon-note p-4 text-sm space-y-1">
     <p>釣った魚の写真をまとめて選ぶと、写真1枚につき1行ができます。撮影日時と近くの釣り場は、写真から読み取れたら最初から入れておきます。</p>
     <p>同じ日・同じ釣り場・同じ時間帯の行は、保存するときに1つの釣行にまとまります。魚種を「坊主」にした行は、釣れなかった釣行になります。</p>
     <p>潮と天候は自動で入ります。メモや天候の手直しは、あとで各釣行の編集からできます。</p>

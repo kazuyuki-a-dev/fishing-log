@@ -108,7 +108,7 @@
                     <p>前に行った釣行を覚えていたら、まとめて入れておくと、プランナーやカルテがすぐ役に立ちます。釣った魚の写真があれば、日時と釣り場を写真から読み取ります。</p>
                     <div class="flex flex-wrap items-center gap-4">
                         <a href="{{ route('trips.create', ['mode' => 'bulk']) }}"
-                            class="font-hand inline-flex items-center px-5 py-2.5 bg-sea rounded-md font-bold text-sm text-white hover:opacity-90 w-full sm:w-auto justify-center">
+                            class="crayon-button-secondary w-full sm:w-auto">
                             昔の釣行をまとめて登録する
                         </a>
                         <a href="{{ route('trips.create') }}" class="underline text-sea">1件ずつ記録する</a>

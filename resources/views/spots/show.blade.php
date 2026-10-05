@@ -15,7 +15,7 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
             @if (session('status'))
-            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
+            <p class="crayon-note p-3 text-sm">{{ session('status') }}</p>
             @endif
 
             {{-- 釣り場を登録した直後だけ出す（PG08） --}}

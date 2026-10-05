@@ -89,7 +89,7 @@ $nearbyUrl = route('spots.nearby');
     <p x-show="converting" class="text-sm text-sea">写真を変換しています…</p>
     <p x-show="photoMessage" x-text="photoMessage" class="text-sm text-sea"></p>
     <template x-if="hint">
-        <div class="rounded-md border-l-4 border-float bg-white p-3 text-sm shadow-sm space-y-2">
+        <div class="crayon-note p-3 text-sm space-y-2">
             <p class="font-bold">写真から読み取った候補</p>
             <template x-if="hint.takenAt">
                 <div class="flex flex-wrap items-center gap-3">

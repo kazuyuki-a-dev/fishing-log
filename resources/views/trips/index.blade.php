@@ -19,7 +19,7 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             @if (session('status'))
-            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
+            <p class="crayon-note p-3 text-sm">{{ session('status') }}</p>
             @endif
 
             {{-- 自分／みんなの切り替え（FN-03） --}}
@@ -97,7 +97,7 @@
 
             {{-- 結果のまとめ：件数を隠さない --}}
             @if ($summary['visits'] > 0)
-            <div class="bg-sea-50 rounded-md p-3 text-sm flex flex-wrap items-center justify-between gap-3">
+            <div class="crayon-note p-3 text-sm flex flex-wrap items-center justify-between gap-3">
                 <p>
                     {{ $isFiltered ? 'この条件で' : '全部で' }}
                     <span class="font-bold">{{ $summary['visits'] }}回行って {{ $summary['caught'] }}回釣れた</span>

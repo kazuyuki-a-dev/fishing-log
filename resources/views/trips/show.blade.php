@@ -9,12 +9,13 @@
     <div class="py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             @if (session('status'))
-            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">{{ session('status') }}</p>
+            <p class="crayon-note p-3 text-sm">{{ session('status') }}</p>
             @endif
 
             {{-- 釣果ハイライト（FN-07）。登録した直後だけ出る --}}
             @if (session('highlights'))
-            <div class="rounded-md bg-float text-white p-4 shadow-sm space-y-1">
+            {{-- 黄色の付箋に黒い字（#102。オレンジの地に白い字は読みにくかったため） --}}
+            <div class="crayon-sticky crayon-sticky-yellow p-4 space-y-1">
                 @foreach (session('highlights') as $highlight)
                 <p class="font-bold">{{ $highlight }}</p>
                 @endforeach
@@ -155,7 +156,7 @@
                     @csrf
                     @method('DELETE')
 
-                    <h2 class="text-lg font-bold">この釣行を削除しますか？</h2>
+                    <h2 class="crayon-subheading">この釣行を削除しますか？</h2>
                     <p class="mt-2 text-sm text-sand">
                         {{ $trip->went_at->format('Y年n月j日') }}の釣行と、
                         {{ $trip->catches->isEmpty() ? '坊主の記録' : '釣果 ' . $trip->catches->count() . ' 匹' }}が削除されます。元には戻せません。

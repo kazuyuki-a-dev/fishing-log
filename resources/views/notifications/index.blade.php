@@ -6,7 +6,7 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             @unless ($notifyEnabled)
-            <p class="bg-sea-50 text-sea rounded-md p-3 text-sm">
+            <p class="crayon-note p-3 text-sm">
                 お知らせは今 OFF です。新しいお知らせは届きません。
                 <a href="{{ route('profile.edit') }}" class="underline">プロフィールで ON にする</a>
             </p>
@@ -25,7 +25,7 @@
                     <a href="{{ $item['url'] }}" class="flex items-start justify-between gap-4 p-4 hover:bg-tide">
                         <p class="min-w-0">
                             @if (in_array($item['notification']->id, $newIds, true))
-                            <span class="inline-block mr-2 px-2 py-0.5 rounded bg-float text-white text-xs font-bold">NEW</span>
+                            <span class="inline-block mr-2 px-2 py-0.5 rounded bg-crayon text-ink text-xs font-bold">NEW</span>
                             @endif
                             {{ $item['text'] }}
                         </p>
