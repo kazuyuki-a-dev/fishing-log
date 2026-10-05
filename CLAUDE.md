@@ -73,18 +73,18 @@
 - コマンド：`app/Console/Commands/MakeAdmin.php`（`app:make-admin`）
 - 決まった言葉の一覧：`config/fishing.php`（魚種20種・時間帯・潮・天候・釣り方・公開範囲など）
 - JavaScript：`resources/js/app.js`（`spotMapInput`・`spotMapView`・`catchRows`・`bulkRows`）、`resources/js/photo-hints.js`
-- シーダー：`database/seeders/DatabaseSeeder.php`（秋田：ユーザー4・釣り場8・釣行50、神奈川：1・2・6。`fake()->seed(2026)` で毎回同じ）
+- シーダー：`database/seeders/DatabaseSeeder.php`。釣り場は**実在の港131・湖7**（`database/seeders/data/real_spots.php`、登録者は管理者・公開・全部「注意あり」。位置は Wikidata（CC0）にあるものだけで、34か所は位置なし。岐阜県は0か所）。釣行50件は**ダミー**で、秋田港（釣り文化振興モデル港）にだけ付ける。ユーザーは秋田4人・神奈川1人（釣行なし）・管理者。`fake()->seed(2026)` で毎回同じ。**国土数値情報の位置は非商用のみなので使わない**
 - バックアップ：`scripts/backup.sh`・`scripts/restore.sh`・`docs/backup.md`（`/backups` は Git に入れない）
 
 ## 開発用のログイン
 
 - `test@example.com` / `password`（秋田、釣行15件）
 - 管理者：`admin@example.com`（東京都、釣行なし。今の開発用データベースにも足してある）
-- ほかに `minato@` `surf@` `iso@`（秋田）、`wanoku@`（神奈川）。すべて `@example.com`、パスワードは `password`
+- ほかに `minato@` `surf@` `iso@`（秋田）、`wanoku@`（神奈川、釣行なし）。すべて `@example.com`、パスワードは `password`
 
 ## 今どこまでできているか（2026-10-05）
 
-**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目も土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）・残りの画面（#102）でひととおり完了。テストは 263 件すべて成功。README も書き直した（#104）。最後の Issue は #104（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目も土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）・残りの画面（#102）でひととおり完了。テストは 265 件すべて成功。README も書き直した（#104）。シーダーの釣り場を実在の港と湖にした（#106）。最後の Issue は #106（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
