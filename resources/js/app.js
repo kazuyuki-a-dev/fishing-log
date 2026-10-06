@@ -363,5 +363,178 @@ Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
     };
 });
 
+// 単位変換ツール（#122）：どれか1つの欄に入れると、ほかの欄を計算して出す
+// 入れた欄はそのまま残し、ほかの欄だけ書き換える。計算はブラウザの中だけで、何も送らない
+const COEF_STORAGE_KEY = "fishinglog.unitConverter.coef";
+
+// 小数を digits 桁に丸めて、後ろの 0 を消した文字にする（1.50 → "1.5"）
+function roundText(value, digits) {
+    return String(Number(value.toFixed(digits)));
+}
+
+// 数字として読めて 0 より大きいときだけ数にする。空や文字なら null
+function toPositive(text) {
+    const value = Number.parseFloat(text);
+    return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+// 号の小さい順の表 [[号, lb], ...] で、from 列の値から to 列の値を前後の行の割合で出す。表の外なら null
+function interpolate(table, value, from, to) {
+    for (let i = 0; i < table.length - 1; i++) {
+        const [a, b] = [table[i], table[i + 1]];
+        if (value >= a[from] && value <= b[from]) {
+            const rate = (value - a[from]) / (b[from] - a[from]);
+            return a[to] + (b[to] - a[to]) * rate;
+        }
+    }
+    return null;
+}
+
+Alpine.data("unitConverter", (units) => {
+    const types = units.line.types;
+    const defaults = {};
+    for (const [key, type] of Object.entries(types)) {
+        if (type.coef) {
+            defaults[key] = type.coef.default;
+        }
+    }
+
+    // 前に変えた係数を読む。読めないとき（プライベートモードなど）や範囲の外の値は、はじめの値
+    const coef = { ...defaults };
+    try {
+        const saved = JSON.parse(localStorage.getItem(COEF_STORAGE_KEY)) ?? {};
+        for (const key of Object.keys(defaults)) {
+            const value = Number(saved[key]);
+            if (value >= types[key].coef.min && value <= types[key].coef.max) {
+                coef[key] = value;
+            }
+        }
+    } catch {
+        // はじめの値のまま
+    }
+
+    const emptyOf = (group) =>
+        Object.fromEntries(Object.keys(group).map((key) => [key, ""]));
+
+    return {
+        weight: emptyOf(units.weight),
+        length: emptyOf(units.length),
+        line: { gou: "", lb: "", kg: "" },
+        lineType: "nylon",
+        coef,
+        // 最後に入れたラインの欄（種類や係数を変えたら、ここから計算し直す）
+        lastLine: null,
+        outOfTable: false,
+
+        // 重さ・長さ：入れた値を基準の単位（g・cm）にしてから、ほかの単位に直す
+        convert(groupName, from, text) {
+            const group = units[groupName];
+            const value = toPositive(text);
+            for (const [key, unit] of Object.entries(group)) {
+                if (key === from) {
+                    continue;
+                }
+                this[groupName][key] =
+                    value === null
+                        ? ""
+                        : roundText((value * group[from].value) / unit.value, unit.digits);
+            }
+        },
+
+        // 号 → lb。ナイロン・フロロは表、PE・エステルは「号 × 係数」
+        gouToLb(gou) {
+            const type = types[this.lineType];
+            if (type.table) {
+                return interpolate(type.table, gou, 0, 1);
+            }
+            return gou * Number(this.coef[this.lineType]);
+        },
+
+        // lb → 号（上の逆）
+        lbToGou(lb) {
+            const type = types[this.lineType];
+            if (type.table) {
+                return interpolate(type.table, lb, 1, 0);
+            }
+            return lb / Number(this.coef[this.lineType]);
+        },
+
+        // ライン：入れた値を lb にしてから、ほかの欄に直す
+        convertLine(from, text) {
+            this.lastLine = { from, text };
+            const value = toPositive(text);
+            this.outOfTable = false;
+            if (value === null) {
+                for (const key of ["gou", "lb", "kg"]) {
+                    if (key !== from) {
+                        this.line[key] = "";
+                    }
+                }
+                return;
+            }
+
+            const kgPerLb = units.line.kg_per_lb;
+            let lb = value;
+            if (from === "kg") {
+                lb = value / kgPerLb;
+            } else if (from === "gou") {
+                lb = this.gouToLb(value);
+            }
+
+            // 号から lb が出せない（表の外）ときは、lb と kg を空にする
+            if (lb === null) {
+                this.outOfTable = true;
+                this.line.lb = "";
+                this.line.kg = "";
+                return;
+            }
+
+            if (from !== "lb") {
+                this.line.lb = roundText(lb, 2);
+            }
+            if (from !== "kg") {
+                this.line.kg = roundText(lb * kgPerLb, 2);
+            }
+            if (from !== "gou") {
+                const gou = this.lbToGou(lb);
+                this.outOfTable = gou === null;
+                this.line.gou = gou === null ? "" : roundText(gou, 2);
+            }
+        },
+
+        // 最後に入れた欄から、もう一度計算する（種類や係数を変えたとき）
+        recalcLine() {
+            if (this.lastLine) {
+                this.convertLine(this.lastLine.from, this.lastLine.text);
+            }
+        },
+
+        setLineType(key) {
+            this.lineType = key;
+            this.recalcLine();
+        },
+
+        // 係数を変えたら、範囲の中のときだけ使って覚えておく
+        setCoef(key, text) {
+            const value = toPositive(text);
+            const { min, max } = types[key].coef;
+            if (value === null || value < min || value > max) {
+                return;
+            }
+            this.coef[key] = value;
+            try {
+                localStorage.setItem(COEF_STORAGE_KEY, JSON.stringify(this.coef));
+            } catch {
+                // 覚えられなくても、計算はそのまま使える
+            }
+            this.recalcLine();
+        },
+
+        resetCoef(key) {
+            this.setCoef(key, String(defaults[key]));
+        },
+    };
+});
+
 window.Alpine = Alpine;
 Alpine.start();

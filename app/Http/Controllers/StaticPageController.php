@@ -22,4 +22,10 @@ class StaticPageController extends Controller
     {
         return view('static.guide');
     }
+
+    /** 単位変換ツール（#122）。だれでも使える。計算はブラウザの中だけで、何も保存しない */
+    public function converter(): View
+    {
+        return view('tools.converter', ['units' => config('units')]);
+    }
 }

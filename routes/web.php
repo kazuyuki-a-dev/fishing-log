@@ -61,5 +61,6 @@ Route::get('/feed', [FeedController::class, 'index'])->name('feed');
 Route::get('/terms', [StaticPageController::class, 'terms'])->name('terms');
 Route::get('/privacy', [StaticPageController::class, 'privacy'])->name('privacy');
 Route::get('/guide', [StaticPageController::class, 'guide'])->name('guide');
+Route::get('/tools/converter', [StaticPageController::class, 'converter'])->name('tools.converter');
 
 require __DIR__ . '/auth.php';

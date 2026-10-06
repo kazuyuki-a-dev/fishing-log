@@ -75,12 +75,16 @@
 
         {{-- インデックス付箋（#108）。開いているページの付箋だけ長く出て、本文の紙とつながる --}}
         {{-- スマホでは開いているページの付箋1枚だけ（ページは ≡ メニューから選ぶ） --}}
+        {{-- 幅 1280px より せまいときは、ほかの付箋はアイコンだけ（はみ出さないように。#122）。名前は title と読み上げで伝える --}}
         <div class="crayon-index-tabs">
             @foreach ($sections as $key => $section)
-            <a href="{{ route($section['link']) }}" style="--tab: {{ $section['tab'] }};"
+            @php
+            $tabLabel = $section['label'] . ($key === 'admin' ? '（未対応 ' . $openReports . '件）' : '');
+            @endphp
+            <a href="{{ route($section['link']) }}" style="--tab: {{ $section['tab'] }};" title="{{ $tabLabel }}"
                 class="crayon-index-tab {{ $currentSection === $key ? 'is-active' : '' }}"
                 @if ($currentSection === $key) aria-current="page" @endif>
-                <x-icon :name="$section['icon']" class="mr-1 h-4 w-4 align-[-0.15em]" />{{ $section['label'] }}@if ($key === 'admin')（未対応 {{ $openReports }}件）@endif
+                <x-icon :name="$section['icon']" class="h-4 w-4 align-[-0.15em]" /><span class="crayon-index-label">{{ $tabLabel }}</span>
             </a>
             @endforeach
         </div>
@@ -111,6 +115,9 @@
             @endauth
             <x-responsive-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
                 <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.feed.tab') }}" aria-hidden="true"></span>釣果フィード
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('tools.converter')" :active="request()->routeIs('tools.*')">
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.tools.tab') }}" aria-hidden="true"></span>単位変換
             </x-responsive-nav-link>
             {{-- 管理者だけ（NF-04） --}}
             @if ($openReports !== null)

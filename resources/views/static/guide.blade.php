@@ -21,6 +21,7 @@
                     <li><a href="#record" class="underline text-sea">記録する</a></li>
                     <li><a href="#review" class="underline text-sea">ふり返る</a></li>
                     <li><a href="#share" class="underline text-sea">みんなと使う</a></li>
+                    <li><a href="#tools" class="underline text-sea">道具（単位変換）</a></li>
                     <li><a href="#safety" class="underline text-sea">安全とマナー</a></li>
                 </ol>
             </nav>
@@ -75,8 +76,18 @@
                 </ol>
             </section>
 
+            <section id="tools" class="crayon-card p-5 space-y-3 scroll-mt-32">
+                <h3 class="crayon-subheading flex items-center gap-2"><x-icon name="scale" class="h-5 w-5" />6. 道具（単位変換）</h3>
+                <ol class="list-decimal pl-5 space-y-2 text-sm">
+                    <li>付箋の「<a href="{{ route('tools.converter') }}" class="underline text-sea">単位変換</a>」を開きます。ログインしなくても使えます。</li>
+                    <li><b>重さ</b>（oz・lb・g・おもりの号）、<b>長さ</b>（inch・ft・尺・cm）、<b>ライン</b>（号・lb・kg）のどれか1つの欄に数字を入れると、ほかの欄に答えが出ます。</li>
+                    <li>ラインは「ナイロン・フロロ」「PE」「エステル」を切り替えます。PE とエステルは<b>係数</b>（1号が何 lb か）を、使っている糸のパッケージに合わせると、より正確になります。係数はそのブラウザに覚えておきます。</li>
+                    <li>号と強さの関係はメーカーや製品で違うので、出てくるのは大体の値です。</li>
+                </ol>
+            </section>
+
             <section id="safety" class="space-y-3 scroll-mt-32">
-                <h3 class="crayon-subheading flex items-center gap-2"><x-icon name="flag" class="h-5 w-5" />6. 安全とマナー</h3>
+                <h3 class="crayon-subheading flex items-center gap-2"><x-icon name="flag" class="h-5 w-5" />7. 安全とマナー</h3>
                 <div class="crayon-caution">
                     <span class="crayon-caution-icon" aria-hidden="true">!</span>
                     <ul class="list-disc pl-5 space-y-2 text-sm">
