@@ -50,12 +50,14 @@ class SpotJudgeTest extends TestCase
         ]);
     }
 
-    public function test_shows_tide_lunar_day_and_next_big_tide_for_the_chosen_date(): void
+    public function test_shows_tide_and_next_big_tide_for_the_chosen_date(): void
     {
         $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-19")
             ->assertSee('小潮')
-            ->assertSee('旧暦9日')
-            ->assertSee('次の大潮：1月24日');
+            // 次の大潮は付箋の右のスタンプに、日付とあと何日か（#130）
+            ->assertSeeInOrder(['次の大潮', '1/24', 'あと5日'])
+            // 旧暦の日にちは近似でずれることがあるので出さない（#130）
+            ->assertDontSee('旧暦');
     }
 
     public function test_counts_only_trips_with_the_same_tide(): void

@@ -65,7 +65,6 @@ class PlannerController extends Controller
         return view('planner.index', [
             'date' => $date,
             'tide' => $tide,
-            'lunarDay' => $tides->lunarDay($date),
             'prefecture' => $prefecture,
             'timeOfDay' => $timeOfDay,
             'scope' => $scope,

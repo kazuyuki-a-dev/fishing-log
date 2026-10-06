@@ -35,7 +35,7 @@
                 </form>
 
                 <div>
-                    <p class="text-sm text-sand">{{ $date->format('Y年n月j日') }}（旧暦{{ $lunarDay }}日）</p>
+                    <p class="text-sm text-sand">{{ $date->format('Y年n月j日') }}</p>
                     <p class="font-hand text-4xl text-sea">{{ $tide }}</p>
                 </div>
             </section>

@@ -56,21 +56,29 @@
                     </div>
                 </form>
 
-                <div>
-                    <p class="text-sm text-sand">{{ $judge['date']->format('Y年n月j日') }}（旧暦{{ $judge['lunarDay'] }}日）</p>
-                    <p class="font-hand text-4xl text-sea">{{ $judge['tide'] }}</p>
-                </div>
-                @if ($judge['forecast'])
-                <div>
-                    <p class="text-sm text-sand">天気予報</p>
-                    <p class="text-xl font-bold">{{ $judge['forecast'] }}</p>
-                    <p class="text-xs text-sand">
-                        天気データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline">Open-Meteo</a>
+                {{-- 左に日付・潮・天気予報、右の空いているところに次の大潮のスタンプ（見つけやすいように。#130） --}}
+                <div class="flex items-start justify-between gap-4">
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm text-sand">{{ $judge['date']->format('Y年n月j日') }}</p>
+                            <p class="font-hand text-4xl text-sea">{{ $judge['tide'] }}</p>
+                        </div>
+                        @if ($judge['forecast'])
+                        <div>
+                            <p class="text-sm text-sand">天気予報</p>
+                            <p class="text-xl font-bold">{{ $judge['forecast'] }}</p>
+                            <p class="text-xs text-sand">
+                                天気データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline">Open-Meteo</a>
+                            </p>
+                        </div>
+                        @elseif ($spot->latitude === null)
+                        <p class="text-xs text-sand">この釣り場は位置が登録されていないので、天気予報は出せません。</p>
+                        @endif
+                    </div>
+                    <p class="crayon-stamp h-24 w-24 mr-2 mt-2">
+                        <span>次の大潮<span class="block text-2xl">{{ $judge['nextBigTide']->format('n/j') }}</span>あと{{ $judge['daysToBigTide'] }}日</span>
                     </p>
                 </div>
-                @elseif ($spot->latitude === null)
-                <p class="text-xs text-sand">この釣り場は位置が登録されていないので、天気予報は出せません。</p>
-                @endif
 
                 <div class="border-t-2 border-dashed border-sea/30 pt-4 space-y-2">
                     <p class="flex flex-wrap items-center gap-2 text-sm text-sand">
@@ -106,7 +114,6 @@
                     @endif
                 </div>
 
-                <p class="text-sm text-sand">次の大潮：{{ $judge['nextBigTide']->format('n月j日') }}</p>
             </section>
 
             {{-- 実績（FN-09） --}}

@@ -52,6 +52,16 @@ class PlannerTest extends TestCase
         FishCatch::factory()->create(['trip_id' => $trip->id]);
     }
 
+    public function test_shows_the_tide_without_the_lunar_day(): void
+    {
+        // 旧暦の日にちは近似でずれることがあるので出さない。潮の名前は出す（#130）
+        $this->actingAs($this->me)->get('/planner?date=2024-01-19')
+            ->assertOk()
+            ->assertSee('2024年1月19日')
+            ->assertSee('小潮')
+            ->assertDontSee('旧暦');
+    }
+
     public function test_spots_are_ordered_by_catches_including_others_public_trips(): void
     {
         // みんなの公開記録も使うと、Bは「4回行って3回釣れた」でAより上（釣り場だけ隠すの1回は数えない）

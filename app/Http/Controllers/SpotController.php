@@ -113,6 +113,8 @@ class SpotController extends Controller
             : null;
 
         $tide = $tides->tideFor($date);
+        // 次の大潮（選んだ日の翌日から数えて最初の大潮の日）と、そこまでの日数（FN-11・#130）
+        $nextBigTide = $tides->nextDateWithTide($date->copy()->addDay(), '大潮');
 
         // 条件に合う釣行。釣れた記録がなければ、プランナーと同じく少しずつゆるめる（FN-16）
         $match = $matcher->match($trips, $date, $tide, $timeOfDay);
@@ -124,7 +126,6 @@ class SpotController extends Controller
             'date' => $date,
             'timeOfDay' => $timeOfDay,
             'tide' => $tide,
-            'lunarDay' => $tides->lunarDay($date),
             'level' => $match['level'],
             'label' => $match['label'],
             'condition' => $match['condition'],
@@ -133,7 +134,8 @@ class SpotController extends Controller
             'caught' => $match['caught'],
             'methods' => $matchedCatches->countBy('method'),
             'species' => $matchedCatches->countBy('fish_species')->sortDesc()->take(3),
-            'nextBigTide' => $tides->nextDateWithTide($date->copy()->addDay(), '大潮'),
+            'nextBigTide' => $nextBigTide,
+            'daysToBigTide' => (int) round($date->copy()->startOfDay()->diffInDays($nextBigTide->copy()->startOfDay())),
             'matchedIds' => $matched->pluck('id'),
         ];
 
