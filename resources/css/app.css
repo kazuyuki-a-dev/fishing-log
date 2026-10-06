@@ -286,8 +286,9 @@
      * 色は config/sections.php の tab を style の --tab で渡す。開いているページの付箋（is-active）だけ長く出る
      * スマホでは開いているページの付箋1枚だけを見せる（並べると見づらいので、ページは ≡ メニューから選ぶ）
      */
+    /* 入りきらない幅（640px の管理者など）だけ2段に折り返す（横にはみ出さないように。#124） */
     .crayon-index-tabs {
-        @apply flex gap-1 pt-1;
+        @apply flex flex-wrap gap-x-1 gap-y-0.5 pt-1;
     }
 
     .crayon-index-tab:not(.is-active) {
@@ -295,7 +296,7 @@
     }
 
     .crayon-index-tab {
-        @apply whitespace-nowrap rounded-t-lg px-3 pb-1 pt-1.5 font-hand text-base text-ink;
+        @apply whitespace-nowrap rounded-t-lg px-2 pb-1 pt-1.5 font-hand text-sm text-ink xl:px-3 xl:text-base;
         background: var(--tab);
         transform: translateY(6px);
         /* 奥にある付箋に見えるように、下のほうに影 */
@@ -303,14 +304,12 @@
         transition: transform 0.15s;
     }
 
-    /* アイコンと名前のあいだ */
-    .crayon-index-label {
-        @apply ml-1;
-    }
-
-    /* 幅 1280px より せまいときは、開いていない付箋の名前をかくしてアイコンだけにする（読み上げには残す。#122） */
-    .crayon-index-tab:not(.is-active) .crayon-index-label {
-        @apply sr-only xl:not-sr-only xl:ml-1;
+    /*
+     * 幅 1280px より せまいときは、アイコンを消して名前だけにする（字とすきまも上で少し小さくしている）
+     * 名前を消してアイコンだけにすると、見慣れないとどこに何があるか分からなかったため（#124）
+     */
+    .crayon-index-tab svg {
+        @apply hidden xl:mr-1 xl:inline-block;
     }
 
     .crayon-index-tab:hover {
