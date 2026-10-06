@@ -63,7 +63,8 @@
 
 ## 主なファイル
 
-- ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`・`/guide`）
+- ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/terms`・`/privacy`・`/guide`・`/tools/converter`）
+- 単位変換：`/tools/converter`（`StaticPageController@converter`、だれでも）。数字は **`config/units.php` の1か所**（重さ・長さの係数、ナイロン・フロロの [号, lb] の表、PE・エステルの係数の初期値と範囲）。計算は `resources/js/app.js` の `unitConverter`（ブラウザの中だけ。係数は localStorage）。号と強さは「大体の値」と書く
 - 使い方のページ：`resources/views/static/guide.blade.php`（`StaticPageController@guide`）。**画面やボタンの名前を変えたら、使い方のページと README の「使い方」も直す**
 - コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`（サマリー指標・継続カウンタと気づきカード）、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`ReportController`（報告を受け取る）、`Admin\ReportController`（管理画面：一覧・状態の変更・非表示）、`AnalysisController`（ヒートマップ）
 - サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（Open-Meteo、90日より前は archive API、予報は1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`TripSearch`（釣行一覧の条件検索。条件の読み取り・絞り込み・まとめ。CSV でも同じものを使う）、`TripCsvExporter`（CSV の行。位置と写真は入れない、式の対策）、`ConditionMatcher`（ぴったり → 潮だけ → 月だけ と条件をゆるめる。プランナーとカルテの判断ビューで共通）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forTrips()` はカルテ。マスの決まりは `rows()` の1か所）、`KeepRecording`（継続カウンタと気づきカード）
@@ -73,7 +74,7 @@
 - 入力チェック：`app/Http/Requests/` の `TripRequest`・`BulkTripRequest`・`SpotRequest`・`ReportRequest`（エラーは `report` の袋）
 - コマンド：`app/Console/Commands/MakeAdmin.php`（`app:make-admin`）
 - 決まった言葉の一覧：`config/fishing.php`（魚種20種・時間帯・潮・天候・釣り方・公開範囲など）
-- JavaScript：`resources/js/app.js`（`spotMapInput`・`spotMapView`・`catchRows`・`bulkRows`）、`resources/js/photo-hints.js`
+- JavaScript：`resources/js/app.js`（`spotMapInput`・`spotMapView`・`catchRows`・`bulkRows`・`unitConverter`）、`resources/js/photo-hints.js`
 - シーダー：`database/seeders/DatabaseSeeder.php`。釣り場は**実在の港131・湖7**（`database/seeders/data/real_spots.php`、登録者は管理者・公開・全部「注意あり」。位置は Wikidata（CC0）にあるものだけで、34か所は位置なし。岐阜県は0か所）。釣行50件は**ダミー**で、秋田港（釣り文化振興モデル港）にだけ付ける。ユーザーは秋田4人・神奈川1人（釣行なし）・管理者。`fake()->seed(2026)` で毎回同じ。**国土数値情報の位置は非商用のみなので使わない**
 - バックアップ：`scripts/backup.sh`・`scripts/restore.sh`・`docs/backup.md`（`/backups` は Git に入れない）
 
@@ -83,9 +84,9 @@
 - 管理者：`admin@example.com`（東京都、釣行なし。今の開発用データベースにも足してある）
 - ほかに `minato@` `surf@` `iso@`（秋田）、`wanoku@`（神奈川、釣行なし）。すべて `@example.com`、パスワードは `password`
 
-## 今どこまでできているか（2026-10-05）
+## 今どこまでできているか（2026-10-06）
 
-**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目も土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）・残りの画面（#102）でひととおり完了。テストは 271 件すべて成功。README も書き直した（#104）。シーダーの釣り場を実在の港と湖にした（#106）。ナビをインデックス付箋にした（#108）。注意のしるしと1位のマーカーを直した（#110）。魚や釣り具のアイコンと落書きを入れた（#112）。README に画面の画像を入れた（#114）。使い方のページを作った（#116）。利用規約とプライバシーポリシーを書き直し、退会で写真も消すようにした（#118）。エラーページ・タブのアイコン・初期のテストの片付け（#120）。最後の Issue は #120（PR と次の番号は画面で確かめる）。
+**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目も土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）・残りの画面（#102）でひととおり完了。テストは 276 件すべて成功。README も書き直した（#104）。シーダーの釣り場を実在の港と湖にした（#106）。ナビをインデックス付箋にした（#108）。注意のしるしと1位のマーカーを直した（#110）。魚や釣り具のアイコンと落書きを入れた（#112）。README に画面の画像を入れた（#114）。使い方のページを作った（#116）。利用規約とプライバシーポリシーを書き直し、退会で写真も消すようにした（#118）。エラーページ・タブのアイコン・初期のテストの片付け（#120）。単位変換ツール（#122）。最後の Issue は #122（PR と次の番号は画面で確かめる）。
 
 ### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
 
@@ -109,7 +110,7 @@
     - **「✔」などの記号の字は使わない**（Windows で色付きの絵文字になる）。CSS の線で描く
   - 済：ダッシュボードとプランナー（#100、見本 https://claude.ai/artifact/XHVi3DDLDE3vPTaHEqSYot の B「書き込みとスタンプ」）。共通クラス `crayon-ledger`（点線の表）・`crayon-stamp`（＋`crayon-stamp-empty`）・`crayon-marker`・`crayon-scrawl`・`crayon-caution-tag`。白い字のオレンジのボタンは全部 `crayon-button` に（`primary-button` の部品も）
   - 済：残りの画面（#102）。今の部品でそろえた。共通クラス `crayon-button-secondary`（白い塗り＋青いふち）・`crayon-note`（水色のメモ。お知らせの帯・説明や案内の箱）。目立たせたいしるし（「ぴったり一致」・NEW・未対応）は `bg-crayon-pink text-ink`。見出しは全部 `crayon-heading` / `crayon-subheading`
-  - 済：ナビのインデックス付箋（#108、見本 https://claude.ai/artifact/FqBHm8jDi7QD4WhDQpMpoV の B）。ページと色は **`config/sections.php` の1か所**（付箋 tab・紙 paper・下線 line・だれに見せるか who）。`AppServiceProvider` が `$sections` と `$currentSection` をレイアウトとナビに渡し、レイアウトは本文の紙（`crayon-section-paper`）に `--section` などの CSS 変数を渡す。スマホは開いているページの付箋1枚だけ（ページは ≡ メニューから）。ナビは `sticky top-0 z-40`・白85%＋ぼかし。地図は `.leaflet-container { isolation: isolate }` でナビの上に出ないようにしている。**新しいページを足したら、`config/sections.php` の routes にも入れる**
+  - 済：ナビのインデックス付箋（#108、見本 https://claude.ai/artifact/FqBHm8jDi7QD4WhDQpMpoV の B）。ページと色は **`config/sections.php` の1か所**（付箋 tab・紙 paper・下線 line・だれに見せるか who）。`AppServiceProvider` が `$sections` と `$currentSection` をレイアウトとナビに渡し、レイアウトは本文の紙（`crayon-section-paper`）に `--section` などの CSS 変数を渡す。スマホは開いているページの付箋1枚だけ（ページは ≡ メニューから）。幅 1280px より せまいときは、開いていない付箋はアイコンだけ（`crayon-index-label`、#122）。スマホの ≡ メニューは手で書いているので、**付箋を足したら navigation.blade.php のメニューにも足す**。ナビは `sticky top-0 z-40`・白85%＋ぼかし。地図は `.leaflet-container { isolation: isolate }` でナビの上に出ないようにしている。**新しいページを足したら、`config/sections.php` の routes にも入れる**
   - 済：魚・釣り具のアイコンと落書き（#112、見本 https://claude.ai/artifact/1RicrEYRyaeQ5DDxz77xfB の C）。アイコンは `<x-icon name="fish" />`（`components/icon.blade.php`。Tabler Icons（MIT）＋自作のエサ・ルアー）。付箋のアイコンは `config/sections.php` の icon。落書きは `crayon-section-paper` の ::before / ::after（跳ねる魚と波線）と `crayon-empty`（「まだありません」の箱の釣り針）。**アイコンにはクレヨンのざらつきをかけない**（ベルで分かりにくかった）。ベルはふつうの線
   - **新しい画面部品を作るとき**：カード `crayon-card`、ボタン `crayon-button`（2番目は `crayon-button-secondary`）、案内 `crayon-note`、注意 `crayon-caution`、付箋 `crayon-sticky`。オレンジの地に白い字は使わない（3.8 で足りない）
 - 済：README（#104）。ER 図は `docs/images/er-diagram.png`（開くと出る形）。`.env.example` を Sail と MySQL の値にそろえた
