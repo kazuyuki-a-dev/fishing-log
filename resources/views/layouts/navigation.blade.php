@@ -75,7 +75,7 @@
 
         {{-- インデックス付箋（#108）。開いているページの付箋だけ長く出て、本文の紙とつながる --}}
         {{-- スマホでは開いているページの付箋1枚だけ（ページは ≡ メニューから選ぶ） --}}
-        {{-- 幅 1280px より せまいときは、ほかの付箋はアイコンだけ（はみ出さないように。#122）。名前は title と読み上げで伝える --}}
+        {{-- 幅 1280px より せまいときは、アイコンを消して名前だけを小さめに出す。報告は「報告 N」と短く（はみ出さないように。#124） --}}
         <div class="crayon-index-tabs">
             @foreach ($sections as $key => $section)
             @php
@@ -84,7 +84,7 @@
             <a href="{{ route($section['link']) }}" style="--tab: {{ $section['tab'] }};" title="{{ $tabLabel }}"
                 class="crayon-index-tab {{ $currentSection === $key ? 'is-active' : '' }}"
                 @if ($currentSection === $key) aria-current="page" @endif>
-                <x-icon :name="$section['icon']" class="h-4 w-4 align-[-0.15em]" /><span class="crayon-index-label">{{ $tabLabel }}</span>
+                <x-icon :name="$section['icon']" class="h-4 w-4 align-[-0.15em]" />@if ($key === 'admin')<span class="xl:hidden">{{ $section['label'] }} {{ $openReports }}</span><span class="hidden xl:inline">{{ $tabLabel }}</span>@else{{ $tabLabel }}@endif
             </a>
             @endforeach
         </div>
@@ -93,38 +93,22 @@
     <!-- Responsive Navigation Menu -->
     {{-- ヘッダーが上に固定なので、メニューが長いときはメニューの中だけスクロールする --}}
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden max-h-[calc(100vh-7rem)] overflow-y-auto">
+        {{-- 付箋のページは、付箋と同じ $sections から同じ順・同じ色で出す（ページを足しても並びがずれない。#124） --}}
         <div class="pt-2 pb-3 space-y-1">
+            @foreach ($sections as $key => $section)
+            <x-responsive-nav-link :href="route($section['link'])" :active="$currentSection === $key">
+                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ $section['tab'] }}" aria-hidden="true"></span>{{ $section['label'] }}@if ($key === 'admin')（未対応 {{ $openReports }}件）@endif
+            </x-responsive-nav-link>
+            @endforeach
+        </div>
+
+        {{-- 付箋のないページ。線で区切って下に置く（#124） --}}
+        <div class="pt-2 pb-3 space-y-1 border-t border-gray-200">
             @auth
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.dashboard.tab') }}" aria-hidden="true"></span>{{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('planner')" :active="request()->routeIs('planner')">
-                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.planner.tab') }}" aria-hidden="true"></span>釣行プランナー
-            </x-responsive-nav-link>
-            @endauth
-            <x-responsive-nav-link :href="route('spots.index')" :active="request()->routeIs('spots.*')">
-                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.spots.tab') }}" aria-hidden="true"></span>釣り場
-            </x-responsive-nav-link>
-            @auth
-            <x-responsive-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
-                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.trips.tab') }}" aria-hidden="true"></span>釣行
-            </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
                 お知らせ{{ $unreadNotifications > 0 ? '（' . ($unreadNotifications > 99 ? '99+' : $unreadNotifications) . '）' : '' }}
             </x-responsive-nav-link>
             @endauth
-            <x-responsive-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
-                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.feed.tab') }}" aria-hidden="true"></span>釣果フィード
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tools.converter')" :active="request()->routeIs('tools.*')">
-                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.tools.tab') }}" aria-hidden="true"></span>単位変換
-            </x-responsive-nav-link>
-            {{-- 管理者だけ（NF-04） --}}
-            @if ($openReports !== null)
-            <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.*')">
-                <span class="inline-block w-3 h-3 mr-2 rounded-sm align-middle" style="background: {{ config('sections.admin.tab') }}" aria-hidden="true"></span>報告（未対応 {{ $openReports }}件）
-            </x-responsive-nav-link>
-            @endif
             {{-- アプリの使い方（#116）。だれでも --}}
             <x-responsive-nav-link :href="route('guide')" :active="request()->routeIs('guide')">
                 使い方
