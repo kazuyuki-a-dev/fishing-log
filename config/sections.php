@@ -61,6 +61,16 @@ return [
         'paper' => '#FDEEF2',
         'line' => '#D9577A',
     ],
+    'tools' => [
+        'label' => '単位変換',
+        'icon' => 'scale',
+        'link' => 'tools.converter',
+        'routes' => ['tools.*'],
+        'who' => 'guest',
+        'tab' => '#E6D3AE',
+        'paper' => '#FAF4E8',
+        'line' => '#A0782E',
+    ],
     'admin' => [
         'label' => '報告',
         'icon' => 'flag',

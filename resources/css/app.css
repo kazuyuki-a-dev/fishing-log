@@ -303,6 +303,16 @@
         transition: transform 0.15s;
     }
 
+    /* アイコンと名前のあいだ */
+    .crayon-index-label {
+        @apply ml-1;
+    }
+
+    /* 幅 1280px より せまいときは、開いていない付箋の名前をかくしてアイコンだけにする（読み上げには残す。#122） */
+    .crayon-index-tab:not(.is-active) .crayon-index-label {
+        @apply sr-only xl:not-sr-only xl:ml-1;
+    }
+
     .crayon-index-tab:hover {
         transform: translateY(3px);
     }

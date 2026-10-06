@@ -1,6 +1,6 @@
 {{--
     釣りのアイコン（#112）。<x-icon name="fish" class="h-4 w-4" /> のように名前で選ぶ
-    - Tabler Icons（MIT ライセンス、https://tabler.io/icons）：fish・hook・lighthouse・notebook・moon・flag・bucket
+    - Tabler Icons（MIT ライセンス、https://tabler.io/icons）：fish・hook・lighthouse・notebook・moon・flag・bucket・scale
     - 自分で描いたもの：worm（エサ）・lure（ルアー）
     線の色は文字の色（currentColor）。飾りなので読み上げソフトには読ませない（aria-hidden）
     読みやすさのため、アイコンにはクレヨンのざらつきをかけない
@@ -16,6 +16,7 @@ $paths = [
 'moon' => ['M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008'],
 'flag' => ['M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9', 'M5 21v-7'],
 'bucket' => ['M4 7a8 4 0 1 0 16 0a8 4 0 1 0 -16 0', 'M4 7c0 .664 .088 1.324 .263 1.965l2.737 10.035c.5 1.5 2.239 2 5 2s4.5 -.5 5 -2c.333 -1 1.246 -4.345 2.737 -10.035a7.45 7.45 0 0 0 .263 -1.965'],
+'scale' => ['M7 20l10 0', 'M6 6l6 -1l6 1', 'M12 3l0 17', 'M9 12l-3 -6l-3 6a3 3 0 0 0 6 0', 'M21 12l-3 -6l-3 6a3 3 0 0 0 6 0'],
 'worm' => ['M3 15c2 -5 4 3 6 -1s4 3 6 -1s3 2 6 -2', 'M20.5 10.5v.01'],
 'lure' => ['M3 12c3 -4 9 -4 13 0c-4 4 -10 4 -13 0z', 'M16 12l4 -3v6z', 'M7 11.5v.01', 'M9 15v4l2 -1'],
 ];
