@@ -10,6 +10,10 @@
             @endif
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <form method="GET" action="{{ route('spots.index') }}">
+                    {{-- 県を変えても、並べ方はそのまま --}}
+                    @auth
+                    <input type="hidden" name="sort" value="{{ $sort }}">
+                    @endauth
                     <x-prefecture-select name="prefecture" :selected="$prefecture" :with-all="true"
                         :placeholder="$prefecture === null" onchange="this.form.submit()" />
                 </form>
@@ -20,6 +24,24 @@
                 </a>
                 @endauth
             </div>
+            {{-- 並べ替え（PG06）。自分の記録で並べるので、ログインしている人だけ。今選んでいるほうを濃くする --}}
+            @auth
+            @if ($prefecture !== null)
+            @php
+            $sorts = ['name' => '名前順', 'last' => '最後に行った日順', 'catches' => '釣果数順'];
+            @endphp
+            <div class="flex flex-wrap rounded-md shadow-sm w-fit" role="group" aria-label="並べ方">
+                @foreach ($sorts as $value => $label)
+                <a href="{{ route('spots.index', ['prefecture' => $prefecture, 'sort' => $value]) }}"
+                    @if ($sort === $value) aria-current="true" @endif
+                    class="font-hand px-4 py-2 text-sm font-bold border border-sea {{ $loop->first ? 'rounded-l-md' : '-ml-px' }} {{ $loop->last ? 'rounded-r-md' : '' }} {{ $sort === $value ? 'bg-sea text-white' : 'bg-white text-sea hover:bg-tide' }}">
+                    {{ $label }}
+                </a>
+                @endforeach
+            </div>
+            @endif
+            @endauth
+
             @if ($prefecture === null)
             <div class="crayon-card p-6 text-center">
                 <p>見たい都道府県を選んでください。</p>
@@ -51,7 +73,7 @@
                     </div>
                     <div class="text-sm text-right">
                         @auth
-                        <p>自分の釣行 {{ $spot->my_trips_count }} 回</p>
+                        <p>自分の釣行 {{ $spot->my_trips_count }} 回・釣果 {{ $spot->my_catches_count }} 匹</p>
                         <p class="text-sand">
                             最後に行った日：{{ $spot->my_last_went_at ? \Illuminate\Support\Carbon::parse($spot->my_last_went_at)->format('Y/m/d') : 'まだありません' }}
                         </p>

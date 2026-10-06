@@ -71,4 +71,21 @@ class SpotShowTest extends TestCase
             ->assertSee($other->name)
             ->assertDontSee($other->email);
     }
+
+    public function test_spot_memo_is_shown_only_to_the_person_who_registered_it(): void
+    {
+        $me = User::factory()->create();
+        $other = User::factory()->create();
+        $spot = Spot::factory()->create(['visibility' => 'public', 'created_by' => $me->id, 'notes' => '北防波堤の先は風が強い（自分用）']);
+
+        // 登録した本人には見える（#128）
+        $this->actingAs($me)->get("/spots/{$spot->id}")
+            ->assertSeeText('北防波堤の先は風が強い（自分用）')
+            ->assertSeeText('自分のメモ');
+
+        // ほかの会員とゲストには見えない
+        $this->actingAs($other)->get("/spots/{$spot->id}")->assertDontSeeText('北防波堤の先は風が強い');
+        auth()->logout();
+        $this->get("/spots/{$spot->id}")->assertDontSeeText('北防波堤の先は風が強い');
+    }
 }

@@ -30,25 +30,36 @@ class SpotController extends Controller
             $prefecture = $user?->home_prefecture;
         }
 
+        // 並べ替え：名前順／最後に行った日順／釣果数順（PG06）。自分の記録で並べるので、ゲストは名前順だけ
+        $sort = $request->query('sort');
+        if ($user === null || ! in_array($sort, ['last', 'catches'], true)) {
+            $sort = 'name';
+        }
+
         // ゲストがまだ県を選んでいなければ、一覧は出さずに県を選んでもらう
         if ($prefecture === null) {
-            return view('spots.index', ['spots' => collect(), 'prefecture' => null]);
+            return view('spots.index', ['spots' => collect(), 'prefecture' => null, 'sort' => $sort]);
         }
 
         $spots = Spot::query()
             ->visibleTo($user) // 見てよい釣り場だけ（NF-01）
             // 県で絞る（全国なら絞らない）（FN-17）
             ->when($prefecture !== 'all', fn($query) => $query->where('prefecture', $prefecture))
-            // 自分の釣行回数と、最後に行った日（ログインしている人だけ）（FN-09）
+            // 自分の釣行回数・釣果数と、最後に行った日（ログインしている人だけ）（FN-09・PG06）
             ->when($user, fn($query) => $query
                 ->withCount(['trips as my_trips_count' => fn($query) => $query->where('user_id', $user->id)])
+                ->withCount(['catches as my_catches_count' => fn($query) => $query->where('trips.user_id', $user->id)])
                 ->withMax(['trips as my_last_went_at' => fn($query) => $query->where('user_id', $user->id)], 'went_at'))
+            // 並べ替え（PG06）。最後に行った日は新しい順（行ったことがない釣り場は後ろ）、釣果数は多い順。同じなら名前順
+            ->when($sort === 'last', fn($query) => $query->orderByDesc('my_last_went_at'))
+            ->when($sort === 'catches', fn($query) => $query->orderByDesc('my_catches_count'))
             ->orderBy('name')
             ->get();
 
         return view('spots.index', [
             'spots' => $spots,
             'prefecture' => $prefecture,
+            'sort' => $sort,
         ]);
     }
 

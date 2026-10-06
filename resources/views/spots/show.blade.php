@@ -229,6 +229,15 @@
                     <dt class="text-sand">現地のメモ</dt>
                     <dd class="whitespace-pre-line">{{ $spot->facility_note ?? '未入力' }}</dd>
                 </dl>
+                {{-- 釣り場のメモは、登録した本人にだけ見せる自分用の覚え書き（釣行のメモと同じ。#128） --}}
+                @can('updateBasic', $spot)
+                @if ($spot->notes)
+                <div class="mt-4 crayon-note p-3 text-sm">
+                    <p class="text-xs text-sand">自分のメモ（あなたにだけ表示しています）</p>
+                    <p class="mt-1 whitespace-pre-line">{{ $spot->notes }}</p>
+                </div>
+                @endif
+                @endcan
                 @if ($location)
                 <div x-data="spotMapView(@js($location))" class="mt-4">
                     <div x-ref="map" class="h-56 rounded-md border border-gray-200"></div>

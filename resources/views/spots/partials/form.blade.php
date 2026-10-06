@@ -80,9 +80,10 @@ $mapCenter = config('prefecture_centers.' . old('prefecture', $spot?->prefecture
 </div>
 
 <div>
-    <x-input-label for="notes" value="メモ" />
+    <x-input-label for="notes" value="自分のメモ" />
     <textarea id="notes" name="notes" rows="3"
         class="mt-1 block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">{{ old('notes', $spot?->notes) }}</textarea>
+    <p class="mt-1 text-sm text-sand">自分にだけ見えます（カルテで、あなたにだけ表示します）。みんなに伝えたいことは「現地情報のメモ」に書いてください。</p>
     <x-input-error :messages="$errors->get('notes')" class="mt-2" />
 </div>
 @else
