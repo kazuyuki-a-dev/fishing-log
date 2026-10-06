@@ -32,8 +32,8 @@
 <th>スマホ幅（左：釣り場カルテ、右：≡ メニュー）</th>
 </tr>
 <tr>
-<td><img src="docs/images/screen-converter.png" alt="単位変換：重さ・長さ・ラインのどれか1つに入れると、ほかの単位が出る" width="420"></td>
-<td><img src="docs/images/screen-mobile-karte.png" alt="スマホ幅の釣り場カルテ" width="200"> <img src="docs/images/screen-mobile-menu.png" alt="スマホ幅で ≡ メニューを開いたところ" width="200"></td>
+<td valign="top"><img src="docs/images/screen-converter.png" alt="単位変換：重さ・長さ・ラインのどれか1つに入れると、ほかの単位が出る" width="420"></td>
+<td valign="top"><img src="docs/images/screen-mobile-karte.png" alt="スマホ幅の釣り場カルテ" width="130"> <img src="docs/images/screen-mobile-menu.png" alt="スマホ幅で ≡ メニューを開いたところ" width="130"></td>
 </tr>
 </table>
 
