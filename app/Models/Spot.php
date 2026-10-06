@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\User;
@@ -99,6 +100,12 @@ class Spot extends Model
     public function trips(): HasMany
     {
         return $this->hasMany(Trip::class);
+    }
+
+    // この釣り場で釣れた魚（釣行を通ってたどる。釣り場一覧の釣果数に使う。#128）
+    public function catches(): HasManyThrough
+    {
+        return $this->hasManyThrough(FishCatch::class, Trip::class);
     }
 
     // この釣り場への報告（NF-04）
