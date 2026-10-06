@@ -33,7 +33,7 @@
 </tr>
 <tr>
 <td valign="top"><img src="docs/images/screen-converter.png" alt="単位変換：重さ・長さ・ラインのどれか1つに入れると、ほかの単位が出る" width="420"></td>
-<td valign="top"><img src="docs/images/screen-mobile-karte.png" alt="スマホ幅の釣り場カルテ" width="170"> <img src="docs/images/screen-mobile-menu.png" alt="スマホ幅で ≡ メニューを開いたところ" width="170"></td>
+<td valign="top"><img src="docs/images/screen-mobile-karte.png" alt="スマホ幅の釣り場カルテ" width="130"> <img src="docs/images/screen-mobile-menu.png" alt="スマホ幅で ≡ メニューを開いたところ" width="130"></td>
 </tr>
 </table>
 
