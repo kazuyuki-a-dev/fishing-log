@@ -71,6 +71,13 @@
                                 天気データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline">Open-Meteo</a>
                             </p>
                         </div>
+                        @elseif ($judge['forecastFailed'])
+                        {{-- 天気のサービスに断られた・つながらなかったとき（公開環境では、問い合わせの回数の上限で断られることがある。#144） --}}
+                        <div>
+                            <p class="text-sm text-sand">天気予報</p>
+                            <p class="font-bold">今は取得できません</p>
+                            <p class="text-xs text-sand">天気のサービスが混み合っているときなどは、取得できないことがあります。時間をおいて開き直してください。</p>
+                        </div>
                         @elseif ($spot->latitude === null)
                         <p class="text-xs text-sand">この釣り場は位置が登録されていないので、天気予報は出せません。</p>
                         @endif
