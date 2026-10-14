@@ -86,6 +86,28 @@ class CatchPhotoTest extends TestCase
         $this->assertStringNotContainsString('IMG_0001', $catch->image_path);   // 元のファイル名も使わない
     }
 
+    public function test_photo_is_saved_to_the_configured_disk(): void
+    {
+        // 公開環境では、写真を S3 の形の保存先に置く（PHOTO_DISK=s3。#136）
+        config(['fishing.photo_disk' => 's3']);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $s3 */
+        $s3 = Storage::fake('s3');
+        $me = User::factory()->create();
+        $spot = Spot::factory()->create(['created_by' => $me->id]);
+
+        $this->actingAs($me)->post('/trips', $this->tripPayload($spot, [
+            ['fish_species' => 'アジ', 'method' => 'エサ', 'photo' => $this->jpegWithExif()],
+        ]));
+
+        $catch = FishCatch::firstOrFail();
+        // S3 の形の保存先に入り、フォルダ（public）には入らない。Exif も消えている
+        $s3->assertExists($catch->image_path);
+        $this->disk->assertMissing($catch->image_path);
+        $this->assertStringNotContainsString('FishingLogSecret', $s3->get($catch->image_path));
+        // 写真の URL も、同じ保存先から作る
+        $this->assertSame($s3->url($catch->image_path), $catch->photoUrl());
+    }
+
     public function test_large_photo_is_scaled_down_to_1600px(): void
     {
         $me = User::factory()->create();
