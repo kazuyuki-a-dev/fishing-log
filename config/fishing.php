@@ -51,4 +51,15 @@ return [
         'spot_hidden' => '釣り場だけ隠す',
         'private' => '非公開',
     ],
+
+    // 写真を保存する場所（#136）。開発はサーバーの中のフォルダ（public）、公開環境は S3 の形の保存先（s3。Cloudflare R2）
+    // 公開先（Render の無料枠）は、止まるたびにサーバーの中のファイルが消えるため
+    'photo_disk' => env('PHOTO_DISK', 'public'),
+
+    // お試し用の専用アカウント（#136）。だれでもログインできるので、メール・パスワードの変更と退会はできないようにする
+    'demo_email' => env('DEMO_EMAIL', 'demo@example.com'),
+    // お試し用アカウントのパスワード。README に書く公開用のもの（本物の情報は入れないアカウント）
+    'demo_password' => env('DEMO_PASSWORD', 'fishinglog-demo'),
+    // 公開環境の管理者のパスワード（秘密。Render の環境変数にだけ入れる）。なければランダムにする
+    'admin_password' => env('ADMIN_PASSWORD'),
 ];

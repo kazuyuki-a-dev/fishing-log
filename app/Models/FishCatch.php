@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Services\PhotoStorer;
 use Illuminate\Support\Facades\Storage;
 
 class FishCatch extends Model
@@ -33,6 +34,6 @@ class FishCatch extends Model
      */
     public function photoUrl(): ?string
     {
-        return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;
+        return $this->image_path ? Storage::disk(PhotoStorer::disk())->url($this->image_path) : null;
     }
 }

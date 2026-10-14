@@ -28,6 +28,11 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        // お試し用アカウントは変更できない（だれでもログインできるため。#136）
+        if ($request->user()->isDemo()) {
+            return Redirect::route('profile.edit')->with('status', 'demo-locked');
+        }
+
         $request->user()->fill($request->validated());
 
         if ($request->user()->isDirty('email')) {
@@ -44,6 +49,11 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request, PhotoStorer $photos): RedirectResponse
     {
+        // お試し用アカウントは退会できない（ほかの人が試せなくなるため。#136）
+        if ($request->user()->isDemo()) {
+            return Redirect::route('profile.edit')->with('status', 'demo-locked');
+        }
+
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);

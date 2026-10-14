@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // 管理者だけを通す（NF-04）
         $middleware->alias(['admin' => \App\Http\Middleware\EnsureAdmin::class]);
+        // 公開先（Render）の中継（プロキシ）を信用する。利用者の通信が https かどうかを正しく受け取るため（#136）
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

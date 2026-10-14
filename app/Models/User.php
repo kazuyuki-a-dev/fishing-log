@@ -61,4 +61,13 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    /**
+     * お試し用の専用アカウントかどうか（#136）
+     * だれでもログインできるので、プロフィール・パスワードの変更と退会はさせない
+     */
+    public function isDemo(): bool
+    {
+        return $this->email === config('fishing.demo_email');
+    }
 }
