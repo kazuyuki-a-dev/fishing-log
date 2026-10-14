@@ -140,9 +140,12 @@ class SpotController extends Controller
         ];
 
         // 天気予報（FN-11）。位置がある釣り場で、今日から 15 日先までだけ
-        $judge['forecast'] = $spot->latitude !== null && $weather->isForecastable($judge['date'])
-            ? ($weather->forecastFor((float) $spot->latitude, (float) $spot->longitude, $judge['date']) ?? '取得できませんでした')
+        // 問い合わせたのに取れなかったときは forecastFailed にする（画面で理由を出す。#144）
+        $askForecast = $spot->latitude !== null && $weather->isForecastable($judge['date']);
+        $judge['forecast'] = $askForecast
+            ? $weather->forecastFor((float) $spot->latitude, (float) $spot->longitude, $judge['date'])
             : null;
+        $judge['forecastFailed'] = $askForecast && $judge['forecast'] === null;
 
         return view('spots.show', [
             'spot' => $spot->load('editor:id,name'),

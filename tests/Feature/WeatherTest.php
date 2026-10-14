@@ -124,6 +124,20 @@ class WeatherTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_karte_explains_when_the_forecast_service_refuses(): void
+    {
+        // 公開環境では、問い合わせの回数の上限で断られることがある（429）。理由と、開き直すことを出す（#144）
+        $me = User::factory()->create();
+        $spot = $this->spotWithLocation($me);
+        Http::fake(['*open-meteo.com/*' => Http::response(['error' => true, 'reason' => 'Daily API request limit exceeded.'], 429)]);
+
+        $this->actingAs($me)->get("/spots/{$spot->id}")
+            ->assertOk()
+            ->assertSeeText('今は取得できません')
+            ->assertSeeText('時間をおいて開き直してください')
+            ->assertDontSeeText('取得できませんでした');
+    }
+
     public function test_karte_without_location_explains_why_there_is_no_forecast(): void
     {
         $me = User::factory()->create();
