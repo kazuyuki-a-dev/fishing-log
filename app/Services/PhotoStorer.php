@@ -29,8 +29,10 @@ class PhotoStorer
 
         $path = 'catches/' . Str::uuid() . '.jpg';
         // いったん JPEG の中身（文字列）にしてから、保存先に置く。フォルダでも S3 の形の保存先でも同じ書き方で済む
+        // 「公開」の指定はしない。Cloudflare R2 はファイルごとの公開の指定を受け付けず、保存が失敗するため（公開はバケットの設定で行う。#140）
+        // 開発のフォルダ（public）は、config/filesystems.php の設定でもともと公開になっている
         $jpeg = $image->encodeUsingFormat(Format::JPEG, quality: 85)->toString();
-        Storage::disk(self::disk())->put($path, $jpeg, 'public');
+        Storage::disk(self::disk())->put($path, $jpeg);
 
         return $path;
     }
