@@ -113,7 +113,8 @@ class TripShowTest extends TestCase
     public function test_index_lists_only_my_trips(): void
     {
         $others = $this->tripAt($this->publicSpot, 'public');
-        $mySpot = Spot::factory()->create(['name' => '自分の港', 'visibility' => 'public']);
+        // 一覧は最初メインフィールドの県だけなので、同じ県の釣り場にする（#138）
+        $mySpot = Spot::factory()->create(['name' => '自分の港', 'visibility' => 'public', 'prefecture' => $this->viewer->home_prefecture]);
         $mine = Trip::factory()->create(['user_id' => $this->viewer->id, 'spot_id' => $mySpot->id]);
 
         // 釣り場の選択肢には公開の釣り場も出るので、画面の文字ではなく一覧に渡された釣行で確かめる

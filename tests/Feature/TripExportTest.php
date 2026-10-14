@@ -121,6 +121,17 @@ class TripExportTest extends TestCase
         $this->assertSame(['大潮', 'アジ'], [$rows[1][4], $rows[1][8]]);
     }
 
+    public function test_prefecture_filter_is_applied_like_the_list(): void
+    {
+        // 画面と同じく、最初はメインフィールドの県（秋田県）だけ。全国を選べば全部（#138）
+        $aomori = Spot::factory()->create(['prefecture' => '青森県', 'visibility' => 'public']);
+        $this->trip();
+        $this->trip(['spot_id' => $aomori->id], [['ヒラメ', 'ルアー', 50]]);
+
+        $this->assertCount(2, $this->csv(''));            // 見出し＋秋田県の1行
+        $this->assertCount(3, $this->csv('?prefecture=all'));
+    }
+
     public function test_location_is_not_included(): void
     {
         $this->trip();

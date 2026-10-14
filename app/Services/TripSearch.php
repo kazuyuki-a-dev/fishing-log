@@ -33,19 +33,23 @@ class TripSearch
         // みんな（public）か自分（mine）か。最初は「自分」
         $scope = $request->query('scope') === 'public' ? 'public' : 'mine';
 
-        // 県は「みんな」のときだけ使う。最初はメインフィールド（FN-17）
+        // 県は「自分」「みんな」の両方で使う。最初はメインフィールド（FN-17）。all は全国（#138）
         $prefecture = $request->query('prefecture', $user->home_prefecture);
         if ($prefecture !== 'all' && ! in_array($prefecture, config('prefectures'), true)) {
             $prefecture = $user->home_prefecture;
         }
 
         // 釣り場は、選べる釣り場（公開か自分のもの）だけ（NF-01）
+        // 県を選んでいるときは、その県の釣り場だけ。合わない釣り場が来たら、釣り場の指定を外す（#138）
         $spotId = $request->query('spot_id');
-        $spotId = is_numeric($spotId) && Spot::visibleTo($user)->whereKey((int) $spotId)->exists() ? (int) $spotId : null;
+        $spotId = is_numeric($spotId) && Spot::visibleTo($user)
+            ->whereKey((int) $spotId)
+            ->when($prefecture !== 'all', fn($query) => $query->where('prefecture', $prefecture))
+            ->exists() ? (int) $spotId : null;
 
         return [
             'scope' => $scope,
-            'prefecture' => $scope === 'public' ? $prefecture : null,
+            'prefecture' => $prefecture,
             'spot_id' => $spotId,
             'species' => $in('species', config('fishing.fish_species')),
             'method' => $in('method', config('fishing.methods')),
@@ -72,12 +76,12 @@ class TripSearch
             // 自分：自分の釣行すべて（非公開も）
             ->when($filters['scope'] === 'mine', fn($query) => $query->where('user_id', $user->id))
             // みんな：フィードと同じく、全体公開と「釣り場だけ隠す」（FN-13）
-            ->when($filters['scope'] === 'public', fn($query) => $query
-                ->forFeed()
-                ->when($filters['prefecture'] !== 'all', fn($query) => $query->whereHas(
-                    'spot',
-                    fn($spot) => $spot->where('prefecture', $filters['prefecture'])
-                )))
+            ->when($filters['scope'] === 'public', fn($query) => $query->forFeed())
+            // 県（自分・みんなの両方。全国なら絞らない。#138）
+            ->when($filters['prefecture'] !== 'all', fn($query) => $query->whereHas(
+                'spot',
+                fn($spot) => $spot->where('prefecture', $filters['prefecture'])
+            ))
             ->when($filters['spot_id'], function ($query) use ($filters) {
                 $query->where('spot_id', $filters['spot_id']);
                 // みんなで釣り場を指定したときは、釣り場を出してよい釣行（釣行も釣り場も全体公開）だけ

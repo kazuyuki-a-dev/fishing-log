@@ -62,7 +62,8 @@ class TripSearchTest extends TestCase
     public function test_each_condition_narrows_the_list(): void
     {
         $base = $this->trip();
-        $otherSpot = Spot::factory()->create(['visibility' => 'public']);
+        // 一覧は最初メインフィールドの県（秋田県）だけなので、同じ県の釣り場にする（#138）
+        $otherSpot = Spot::factory()->create(['visibility' => 'public', 'prefecture' => '秋田県']);
 
         $cases = [
             'spot_id' => [['spot_id' => $otherSpot->id], "?spot_id={$otherSpot->id}"],
@@ -140,7 +141,7 @@ class TripSearchTest extends TestCase
         $public = $this->trip(['user_id' => $this->other->id, 'visibility' => 'public']);
         $this->trip(['user_id' => $this->other->id, 'visibility' => 'spot_hidden']);
         // 釣行は全体公開でも、釣り場が非公開なら「釣り場だけ隠す」として扱う
-        $privateSpot = Spot::factory()->create(['visibility' => 'private', 'created_by' => $this->me->id]);
+        $privateSpot = Spot::factory()->create(['visibility' => 'private', 'created_by' => $this->me->id, 'prefecture' => '秋田県']);
         $this->trip(['visibility' => 'public', 'spot_id' => $privateSpot->id]);
 
         // 釣り場を指定すると、その釣り場での釣行だと分かってしまうので「釣り場だけ隠す」は出さない
@@ -157,6 +158,36 @@ class TripSearchTest extends TestCase
         $this->assertSame([$akitaTrip->id], $this->ids('?scope=public'));
         $this->assertSame([$aomoriTrip->id], $this->ids('?scope=public&prefecture=青森県'));
         $this->assertSame([$akitaTrip->id, $aomoriTrip->id], $this->ids('?scope=public&prefecture=all'));
+    }
+
+    public function test_mine_is_also_filtered_by_home_prefecture_by_default(): void
+    {
+        // 「自分」も、最初はメインフィールドの県（秋田県）の釣行だけ。全国も選べる（#138）
+        $aomori = Spot::factory()->create(['prefecture' => '青森県', 'visibility' => 'public']);
+        $akitaTrip = $this->trip();
+        $aomoriTrip = $this->trip(['spot_id' => $aomori->id]);
+
+        $this->assertSame([$akitaTrip->id], $this->ids(''));
+        $this->assertSame([$aomoriTrip->id], $this->ids('?prefecture=青森県'));
+        $this->assertSame([$akitaTrip->id, $aomoriTrip->id], $this->ids('?prefecture=all'));
+        // 画面には県の選択が出て、メインフィールドが選ばれている
+        $this->actingAs($this->me)->get('/trips')
+            ->assertSee('id="prefecture"', false)
+            ->assertViewHas('filters', fn(array $filters) => $filters['prefecture'] === '秋田県');
+    }
+
+    public function test_spot_outside_the_chosen_prefecture_is_ignored(): void
+    {
+        // 選んだ県と合わない釣り場が送られてきたら、釣り場の指定を外す（#138）
+        $aomori = Spot::factory()->create(['prefecture' => '青森県', 'visibility' => 'public']);
+        $akitaTrip = $this->trip();
+        $this->trip(['spot_id' => $aomori->id]);
+
+        $this->assertSame([$akitaTrip->id], $this->ids("?prefecture=秋田県&spot_id={$aomori->id}"));
+        $this->actingAs($this->me)->get("/trips?prefecture=秋田県&spot_id={$aomori->id}")
+            ->assertViewHas('filters', fn(array $filters) => $filters['spot_id'] === null);
+        // 全国なら、その釣り場で絞れる
+        $this->assertCount(1, $this->ids("?prefecture=all&spot_id={$aomori->id}"));
     }
 
     public function test_others_private_spot_cannot_be_used_as_a_filter(): void
