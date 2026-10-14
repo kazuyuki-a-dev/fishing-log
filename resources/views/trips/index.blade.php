@@ -13,7 +13,8 @@
     $scopes = ['mine' => '自分', 'public' => 'みんな'];
     // 自分／みんなを切り替えても、ほかの条件はそのまま残す
     $keep = request()->except(['page', 'scope', 'prefecture']);
-    $spotLabels = $spots->mapWithKeys(fn($spot) => [$spot->id => "{$spot->name}（{$spot->prefecture}）"])->all();
+    // 釣り場の選択に渡す、選べる釣り場（id・名前・県だけ。#138）
+    $spotOptions = $spots->map(fn($spot) => ['id' => $spot->id, 'name' => $spot->name, 'prefecture' => $spot->prefecture])->values();
     @endphp
 
     <div class="py-8">
@@ -34,21 +35,26 @@
             </div>
 
             {{-- 条件検索（FN-03）。条件は URL に残す --}}
-            <form method="GET" action="{{ route('trips.index') }}" class="crayon-card p-4 space-y-4">
+            {{-- 県を選ぶと、釣り場の選択がその県の釣り場だけに入れかわる（resources/js/app.js の tripFilter。#138） --}}
+            <form method="GET" action="{{ route('trips.index') }}" class="crayon-card p-4 space-y-4"
+                x-data="tripFilter(@js($spotOptions), @js($filters['prefecture']), @js($filters['spot_id']))">
                 <input type="hidden" name="scope" value="{{ $filters['scope'] }}">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                    @if ($filters['scope'] === 'public')
+                    {{-- 県は「自分」「みんな」の両方。最初はメインフィールド（FN-17・#138） --}}
                     <div>
                         <x-input-label for="prefecture" value="県" />
                         <x-prefecture-select id="prefecture" name="prefecture" class="mt-1 block w-full"
-                            :selected="$filters['prefecture']" :with-all="true" />
+                            :selected="$filters['prefecture']" :with-all="true" x-model="prefecture" />
                     </div>
-                    @endif
                     <div>
                         <x-input-label for="spot_id" value="釣り場" />
-                        <x-option-select id="spot_id" name="spot_id" class="mt-1 block w-full"
-                            :options="array_keys($spotLabels)" :labels="$spotLabels"
-                            :selected="$filters['spot_id']" placeholder="指定なし" />
+                        <select id="spot_id" name="spot_id" x-model="spotId"
+                            class="mt-1 block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
+                            <option value="">指定なし</option>
+                            <template x-for="spot in visibleSpots" :key="spot.id">
+                                <option :value="String(spot.id)" x-text="label(spot)" :selected="String(spot.id) === spotId"></option>
+                            </template>
+                        </select>
                     </div>
                     <div>
                         <x-input-label for="species" value="魚種" />
@@ -107,7 +113,7 @@
                 </p>
                 {{-- CSV は自分のデータだけ。「みんな」のときは出さない（FN-04） --}}
                 @if ($filters['scope'] === 'mine')
-                <a href="{{ route('trips.export', request()->except(['page', 'scope', 'prefecture'])) }}"
+                <a href="{{ route('trips.export', request()->except(['page', 'scope'])) }}"
                     class="font-hand inline-flex w-full sm:w-auto justify-center items-center px-4 py-2 bg-white border border-sea rounded-md font-bold text-sea hover:bg-tide">
                     CSV で保存
                 </a>

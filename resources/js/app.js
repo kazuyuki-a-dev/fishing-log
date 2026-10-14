@@ -363,6 +363,35 @@ Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
     };
 });
 
+// 釣行の記録の絞り込み（#138）：県を選ぶと、釣り場の選択がその県の釣り場だけに入れかわる
+// spots は選べる釣り場（公開か自分のもの）の id・名前・県だけ。ページは読みこみ直さない
+Alpine.data("tripFilter", (spots, prefecture, spotId) => ({
+    spots,
+    prefecture,
+    spotId: spotId ? String(spotId) : "",
+
+    init() {
+        // 県を変えたとき、選んでいた釣り場がその県になければ「指定なし」に戻す
+        this.$watch("prefecture", () => {
+            if (!this.visibleSpots.some((spot) => String(spot.id) === this.spotId)) {
+                this.spotId = "";
+            }
+        });
+    },
+
+    // 今の県の釣り場（全国なら全部）
+    get visibleSpots() {
+        return this.prefecture === "all"
+            ? this.spots
+            : this.spots.filter((spot) => spot.prefecture === this.prefecture);
+    },
+
+    // 全国のときは「名前（県）」、県を選んでいるときは名前だけ
+    label(spot) {
+        return this.prefecture === "all" ? `${spot.name}（${spot.prefecture}）` : spot.name;
+    },
+}));
+
 // 単位変換ツール（#122）：どれか1つの欄に入れると、ほかの欄を計算して出す
 // 入れた欄はそのまま残し、ほかの欄だけ書き換える。計算はブラウザの中だけで、何も送らない
 const COEF_STORAGE_KEY = "fishinglog.unitConverter.coef";

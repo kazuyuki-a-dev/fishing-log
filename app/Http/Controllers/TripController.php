@@ -65,7 +65,8 @@ class TripController extends Controller
         $user = $request->user();
 
         // URL で「みんな」を指定されても、必ず自分のデータだけ（ボタンを隠すだけでは足りないため）
-        $filters = ['scope' => 'mine', 'prefecture' => null] + $search->filters($request, $user);
+        // 県は画面と同じ条件を使う（#138）
+        $filters = ['scope' => 'mine'] + $search->filters($request, $user);
 
         $trips = $search->query($user, $filters)
             // 魚種・釣り方で絞っているときは、当てはまる魚だけを行にする（画面のまとめと数を合わせる）
