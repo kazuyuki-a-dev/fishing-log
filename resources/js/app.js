@@ -220,14 +220,13 @@ Alpine.data("catchRows", (initialRows, nearbyUrl) => ({
             return;
         }
 
-        // 近くの釣り場のうち、釣り場の選択欄にあるものだけを候補にする
+        // 近くの釣り場のうち、選べる釣り場（県と釣り場の選択に渡した一覧）にあるものだけを候補にする
         let spots = [];
         if (hints.lat !== null) {
+            const selectable = JSON.parse(document.getElementById("spot-picker").dataset.spotIds);
             spots = (
                 await findNearbySpots(nearbyUrl, hints.lat, hints.lng)
-            ).filter((spot) =>
-                document.querySelector(`#spot_id option[value="${spot.id}"]`),
-            );
+            ).filter((spot) => selectable.includes(spot.id));
         }
         this.hint = { takenAt: hints.takenAt, spots };
     },
@@ -238,7 +237,8 @@ Alpine.data("catchRows", (initialRows, nearbyUrl) => ({
     },
 
     useSpot(id) {
-        document.getElementById("spot_id").value = String(id);
+        // 県と釣り場の選択（spotPicker）に知らせる。県もその釣り場の県に切りかわる
+        window.dispatchEvent(new CustomEvent("select-spot", { detail: id }));
         this.photoMessage = "釣り場を選びました。";
     },
 }));
@@ -247,6 +247,7 @@ Alpine.data("catchRows", (initialRows, nearbyUrl) => ({
 function emptyBulkRow() {
     return {
         went_at: "",
+        prefecture: "",
         spot_id: "",
         time_of_day: "",
         fish_species: "",
@@ -258,14 +259,19 @@ function emptyBulkRow() {
     };
 }
 
-Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
+// spots は選べる釣り場（id・名前・県）。homePrefecture は新しい行の最初の県（メインフィールド）（#142）
+Alpine.data("bulkRows", (initialRows, nearbyUrl, spots, maxRows, homePrefecture) => {
     // 選んだ写真のファイルは Alpine の外で持つ（Alpine の中に入れると、ファイルとして送れなくなるため）
     const files = new Map();
+    // 行の最初の県：釣り場が選んであればその釣り場の県、なければメインフィールド
+    const prefectureOf = (spotId) =>
+        spots.find((spot) => String(spot.id) === String(spotId))?.prefecture ?? homePrefecture;
 
     return {
         rows: initialRows.map((row, n) => ({
             ...emptyBulkRow(),
             ...row,
+            prefecture: prefectureOf(row.spot_id),
             key: n,
         })),
         nextKey: 1000,
@@ -280,6 +286,7 @@ Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
             }
             this.rows.push({
                 ...emptyBulkRow(),
+                prefecture: homePrefecture,
                 ...values,
                 key: this.nextKey++,
             });
@@ -334,8 +341,10 @@ Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
                 if (hints.lat !== null) {
                     const spot = (
                         await findNearbySpots(nearbyUrl, hints.lat, hints.lng)
-                    ).find((candidate) => spotIds.includes(candidate.id));
+                    ).find((candidate) => spots.some((selectable) => selectable.id === candidate.id));
                     if (spot) {
+                        // 県もその釣り場の県に合わせる（#142）
+                        row.prefecture = prefectureOf(spot.id);
                         row.spot_id = String(spot.id);
                         row.spotNote = `写真の位置から「${spot.name}」（約 ${spot.distance}m）を選びました。違っていたら選び直してください。`;
                     }
@@ -347,6 +356,22 @@ Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
                 if (skipped > 0) {
                     this.message += `（${skipped}枚は変換できなかったので飛ばしました）`;
                 }
+            }
+        },
+
+        // その行の県の釣り場と、表示する名前（#142）
+        rowSpots(row) {
+            return spotsInPrefecture(spots, row.prefecture);
+        },
+
+        label(spot, row) {
+            return spotLabel(spot, row.prefecture);
+        },
+
+        // 行の県を変えたとき、選んでいた釣り場がその県になければ空に戻す
+        changePrefecture(row) {
+            if (!this.rowSpots(row).some((spot) => String(spot.id) === String(row.spot_id))) {
+                row.spot_id = "";
             }
         },
 
@@ -363,15 +388,27 @@ Alpine.data("bulkRows", (initialRows, nearbyUrl, spotIds, maxRows) => {
     };
 });
 
-// 釣行の記録の絞り込み（#138）：県を選ぶと、釣り場の選択がその県の釣り場だけに入れかわる
+// 県と釣り場の選択（#138・#142）：県を選ぶと、釣り場の選択がその県の釣り場だけに入れかわる
 // spots は選べる釣り場（公開か自分のもの）の id・名前・県だけ。ページは読みこみ直さない
-Alpine.data("tripFilter", (spots, prefecture, spotId) => ({
+// 釣行の記録の絞り込み・釣行の記録と編集で使う。まとめて登録（bulkRows）も同じ2つの関数を使う
+
+// その県の釣り場（全国なら全部）
+function spotsInPrefecture(spots, prefecture) {
+    return prefecture === "all" ? spots : spots.filter((spot) => spot.prefecture === prefecture);
+}
+
+// 全国のときは「名前（県）」、県を選んでいるときは名前だけ
+function spotLabel(spot, prefecture) {
+    return prefecture === "all" ? `${spot.name}（${spot.prefecture}）` : spot.name;
+}
+
+Alpine.data("spotPicker", (spots, prefecture, spotId) => ({
     spots,
     prefecture,
     spotId: spotId ? String(spotId) : "",
 
     init() {
-        // 県を変えたとき、選んでいた釣り場がその県になければ「指定なし」に戻す
+        // 県を変えたとき、選んでいた釣り場がその県になければ選び直してもらう（空に戻す）
         this.$watch("prefecture", () => {
             if (!this.visibleSpots.some((spot) => String(spot.id) === this.spotId)) {
                 this.spotId = "";
@@ -379,16 +416,25 @@ Alpine.data("tripFilter", (spots, prefecture, spotId) => ({
         });
     },
 
-    // 今の県の釣り場（全国なら全部）
     get visibleSpots() {
-        return this.prefecture === "all"
-            ? this.spots
-            : this.spots.filter((spot) => spot.prefecture === this.prefecture);
+        return spotsInPrefecture(this.spots, this.prefecture);
     },
 
-    // 全国のときは「名前（県）」、県を選んでいるときは名前だけ
     label(spot) {
-        return this.prefecture === "all" ? `${spot.name}（${spot.prefecture}）` : spot.name;
+        return spotLabel(spot, this.prefecture);
+    },
+
+    // ほかの部品（写真の「この釣り場を選ぶ」）から選ばれたとき。県もその釣り場の県に切りかえる
+    selectSpot(id) {
+        const spot = this.spots.find((candidate) => String(candidate.id) === String(id));
+        if (!spot) {
+            return;
+        }
+        this.prefecture = spot.prefecture;
+        // 県を切りかえて釣り場の一覧が入れかわったあとで選ぶ
+        this.$nextTick(() => {
+            this.spotId = String(spot.id);
+        });
     },
 }));
 

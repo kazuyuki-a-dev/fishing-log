@@ -18,19 +18,37 @@ return [
 })->all() ?? []);
 $catchRows = array_values($initialCatches);
 $nearbyUrl = route('spots.nearby');
+
+// 県と釣り場の選択（#142）。選べる釣り場は id・名前・県だけ渡す
+// 最初の県：選んである釣り場（入力のまちがいで戻ったとき・編集・カルテから来たとき）の県、なければメインフィールド
+$spotOptions = $spots->map(fn($spot) => ['id' => $spot->id, 'name' => $spot->name, 'prefecture' => $spot->prefecture])->values();
+$pickerSpotId = old('spot_id', $trip?->spot_id ?? $selectedSpotId ?? null);
+$pickerPrefecture = $spots->firstWhere('id', (int) $pickerSpotId)?->prefecture ?? auth()->user()->home_prefecture;
 @endphp
 
-<div>
-    <x-input-label for="spot_id" value="釣り場" />
-    <select id="spot_id" name="spot_id" required
-        class="mt-1 block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
-        <option value="">選択してください</option>
-        @foreach ($spots as $spot)
-        <option value="{{ $spot->id }}" @selected((string) old('spot_id', $trip?->spot_id ?? $selectedSpotId ?? '') === (string) $spot->id)>
-            {{ $spot->name }}（{{ $spot->prefecture }}）
-        </option>
-        @endforeach
-    </select>
+{{-- 県を選ぶと、釣り場の選択がその県の釣り場だけに入れかわる（resources/js/app.js の spotPicker。#142） --}}
+{{-- 写真の「この釣り場を選ぶ」からは select-spot で知らせが来て、県もその釣り場の県に切りかわる --}}
+<div id="spot-picker" data-spot-ids="{{ $spotOptions->pluck('id')->toJson() }}"
+    x-data="spotPicker(@js($spotOptions), @js($pickerPrefecture), @js($pickerSpotId))"
+    @select-spot.window="selectSpot($event.detail)">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+            <x-input-label for="spot_prefecture" value="県" />
+            {{-- 県は釣り場を選ぶためだけに使う（送らない） --}}
+            <x-prefecture-select id="spot_prefecture" class="mt-1 block w-full"
+                :selected="$pickerPrefecture" :with-all="true" x-model="prefecture" />
+        </div>
+        <div class="sm:col-span-2">
+            <x-input-label for="spot_id" value="釣り場" />
+            <select id="spot_id" name="spot_id" required x-model="spotId"
+                class="mt-1 block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
+                <option value="">選択してください</option>
+                <template x-for="spot in visibleSpots" :key="spot.id">
+                    <option :value="String(spot.id)" x-text="label(spot)" :selected="String(spot.id) === spotId"></option>
+                </template>
+            </select>
+        </div>
+    </div>
     <p class="mt-1 text-sm text-sand">
         一覧にない場合は <a href="{{ route('spots.create') }}" class="underline">釣り場を登録</a> してください。
     </p>
