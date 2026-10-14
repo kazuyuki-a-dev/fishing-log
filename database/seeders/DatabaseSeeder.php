@@ -10,6 +10,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * 開発用のデータ（NF-07）
@@ -17,6 +18,8 @@ use Illuminate\Support\Collection;
  * - 釣行と釣果は開発用のダミー。プランナー（FN-16）とカルテ（FN-09）を確かめられるだけの記録を、秋田県に集めて入れる
  * - ダミーの釣行は、国が釣りができると案内している「釣り文化振興モデル港」にだけ付ける
  *   （ふつうの港は立入禁止・釣り禁止の場所が多く、そこに釣果があるように見せないため）
+ * - 公開環境（APP_ENV=production）では、だれでもログインできないようにパスワードを変える（#136）
+ *   管理者は秘密のパスワード、メインの釣り人はお試し用アカウント（README に書く）、ほかのダミーの釣り人はランダム
  */
 class DatabaseSeeder extends Seeder
 {
@@ -47,12 +50,18 @@ class DatabaseSeeder extends Seeder
         // 毎回同じダミーデータになるように、でたらめの元（シード）を固定する
         fake()->seed(2026);
 
+        // 公開環境かどうか。公開環境では、README に書いた「password」でログインできないようにする（#136）
+        $public = app()->environment('production');
+        // ほかの人がログインできないパスワード（公開環境のダミーの釣り人用）
+        $locked = fn() => ['password' => Str::random(40)];
+
         // ---- 管理者（NF-04）。実在の釣り場の登録者にする。釣行は持たせない ----
         $admin = User::factory()->admin()->create([
             'name' => '管理者',
             'email' => 'admin@example.com',
             'home_prefecture' => '東京都',
             'notify_enabled' => false,
+            ...($public ? ['password' => config('fishing.admin_password') ?: Str::random(40)] : []),
         ]);
 
         // ---- 全国の実在する釣り場 ----
@@ -61,18 +70,26 @@ class DatabaseSeeder extends Seeder
         // ---- 秋田県（メインのダミーデータ） ----
 
         // 自分でログインして確かめるためのユーザー（パスワードは password）
-        $me = User::factory()->create([
-            'name' => 'テストユーザー',
-            'email' => 'test@example.com',
-            'home_prefecture' => '秋田県',
-        ]);
+        // 公開環境では、お試し用の専用アカウント（メール・パスワードは config/fishing.php。README に書く）
+        $me = User::factory()->create($public
+            ? [
+                'name' => 'お試しユーザー',
+                'email' => config('fishing.demo_email'),
+                'password' => config('fishing.demo_password'),
+                'home_prefecture' => '秋田県',
+            ]
+            : [
+                'name' => 'テストユーザー',
+                'email' => 'test@example.com',
+                'home_prefecture' => '秋田県',
+            ]);
 
         // ほかの釣り人3人（メインフィールドは同じ県）
         $others = collect([
             ['name' => '港の釣り人', 'email' => 'minato@example.com'],
             ['name' => 'サーフ好き', 'email' => 'surf@example.com'],
             ['name' => '磯の常連', 'email' => 'iso@example.com'],
-        ])->map(fn(array $user) => User::factory()->create([...$user, 'home_prefecture' => '秋田県']));
+        ])->map(fn(array $user) => User::factory()->create([...$user, 'home_prefecture' => '秋田県', ...($public ? $locked() : [])]));
 
         // 釣行50件。自分が15件、ほかの3人で35件。秋田県のモデル港に付ける
         $akitaModelPorts = $spots->filter(fn(array $row) => $row['data']['prefecture'] === '秋田県' && $row['data']['model'])
@@ -86,6 +103,7 @@ class DatabaseSeeder extends Seeder
             'name' => '湾奥アングラー',
             'email' => 'wanoku@example.com',
             'home_prefecture' => '神奈川県',
+            ...($public ? $locked() : []),
         ]);
     }
 

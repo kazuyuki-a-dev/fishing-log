@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Report;
 use App\Services\NotificationPresenter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // 公開環境では、リンクや写真の URL を https で作る（Render は https で受けて、中では http で渡してくるため。#136）
+        URL::forceHttps($this->app->isProduction());
+
         // どの画面のナビにも、ベルマークの未読件数を渡す（FN-18）
         View::composer('layouts.navigation', function ($view) {
             $user = auth()->user();

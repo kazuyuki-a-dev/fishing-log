@@ -13,7 +13,8 @@ class PhotoStorer
 {
     /**
      * 写真を、Exif（撮影日時・位置など）を消して保存する（NF-01・FN-08）
-     * 保存した場所（storage/app/public から見たパス）を返す
+     * 保存した場所（保存先の中のパス）を返す
+     * 保存先は config('fishing.photo_disk')。開発はフォルダ、公開環境は S3 の形の保存先（#136）
      */
     public function store(UploadedFile $file): string
     {
@@ -27,9 +28,9 @@ class PhotoStorer
         $image->scaleDown(width: 1600, height: 1600);
 
         $path = 'catches/' . Str::uuid() . '.jpg';
-        Storage::disk('public')->makeDirectory('catches');
-        $image->encodeUsingFormat(Format::JPEG, quality: 85)
-            ->save(Storage::disk('public')->path($path));
+        // いったん JPEG の中身（文字列）にしてから、保存先に置く。フォルダでも S3 の形の保存先でも同じ書き方で済む
+        $jpeg = $image->encodeUsingFormat(Format::JPEG, quality: 85)->toString();
+        Storage::disk(self::disk())->put($path, $jpeg, 'public');
 
         return $path;
     }
@@ -40,7 +41,15 @@ class PhotoStorer
     public function delete(?string $path): void
     {
         if ($path) {
-            Storage::disk('public')->delete($path);
+            Storage::disk(self::disk())->delete($path);
         }
+    }
+
+    /**
+     * 写真を保存する場所の名前（config/filesystems.php の disks のどれか）
+     */
+    public static function disk(): string
+    {
+        return config('fishing.photo_disk');
     }
 }

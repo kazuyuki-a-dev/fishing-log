@@ -1,0 +1,19 @@
+# Docker の箱に入れないもの（#136）
+.git
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+storage/app/public/catches
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+backups
+docs
+tests
+.phpunit.cache
