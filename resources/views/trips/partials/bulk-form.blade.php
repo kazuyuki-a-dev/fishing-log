@@ -1,7 +1,9 @@
 {{-- 過去の釣行のまとめて登録（PG15）。1行＝釣った魚1匹。魚種が空の行は坊主 --}}
 @php
 $bulkRows = array_values(old('rows', []));
-$spotIds = $spots->pluck('id')->all();
+// 選べる釣り場（id・名前・県）。行ごとに県を選ぶと、その県の釣り場だけを出す（#142）
+$spotOptions = $spots->map(fn($spot) => ['id' => $spot->id, 'name' => $spot->name, 'prefecture' => $spot->prefecture])->values();
+$homePrefecture = auth()->user()->home_prefecture;
 $nearbyUrl = route('spots.nearby');
 $maxRows = \App\Http\Requests\BulkTripRequest::MAX_ROWS;
 @endphp
@@ -21,7 +23,7 @@ $maxRows = \App\Http\Requests\BulkTripRequest::MAX_ROWS;
 </div>
 
 <div class="border-t border-gray-100 pt-6 space-y-4"
-    x-data="bulkRows(@js($bulkRows), @js($nearbyUrl), @js($spotIds), @js($maxRows))">
+    x-data="bulkRows(@js($bulkRows), @js($nearbyUrl), @js($spotOptions), @js($maxRows), @js($homePrefecture))">
 
     <label class="block rounded-md border-2 border-dashed border-sea-100 p-4 text-center cursor-pointer hover:bg-sea-50">
         <span class="font-bold text-sea">写真をまとめて選ぶ</span>
@@ -61,22 +63,30 @@ $maxRows = \App\Http\Requests\BulkTripRequest::MAX_ROWS;
                 <button type="button" @click="remove(i)" class="text-sm underline text-sand">この行を消す</button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input type="datetime-local" :name="`rows[${i}][went_at]`" x-model="row.went_at" required
                     class="block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
-                <select :name="`rows[${i}][spot_id]`" x-model="row.spot_id" required
-                    class="block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
-                    <option value="">釣り場を選ぶ</option>
-                    @foreach ($spots as $spot)
-                    <option value="{{ $spot->id }}">{{ $spot->name }}（{{ $spot->prefecture }}）</option>
-                    @endforeach
-                </select>
                 <select :name="`rows[${i}][time_of_day]`" x-model="row.time_of_day" required
                     class="block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
                     <option value="">時間帯を選ぶ</option>
                     @foreach (config('fishing.times_of_day') as $time)
                     <option value="{{ $time }}">{{ $time }}</option>
                     @endforeach
+                </select>
+                {{-- 行ごとの県と釣り場（#142）。県は釣り場を選ぶためだけに使う（送らない） --}}
+                <select x-model="row.prefecture" @change="changePrefecture(row)" aria-label="県"
+                    class="block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
+                    <option value="all">全国</option>
+                    @foreach (config('prefectures') as $prefecture)
+                    <option value="{{ $prefecture }}">{{ $prefecture }}</option>
+                    @endforeach
+                </select>
+                <select :name="`rows[${i}][spot_id]`" x-model="row.spot_id" required aria-label="釣り場"
+                    class="block w-full border-gray-300 focus:border-sea-500 focus:ring-sea-500 rounded-md shadow-sm">
+                    <option value="">釣り場を選ぶ</option>
+                    <template x-for="spot in rowSpots(row)" :key="spot.id">
+                        <option :value="String(spot.id)" x-text="label(spot, row)" :selected="String(spot.id) === String(row.spot_id)"></option>
+                    </template>
                 </select>
             </div>
             <p x-show="row.spotNote" x-text="row.spotNote" class="text-sm text-sea"></p>

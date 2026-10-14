@@ -35,9 +35,9 @@
             </div>
 
             {{-- 条件検索（FN-03）。条件は URL に残す --}}
-            {{-- 県を選ぶと、釣り場の選択がその県の釣り場だけに入れかわる（resources/js/app.js の tripFilter。#138） --}}
+            {{-- 県を選ぶと、釣り場の選択がその県の釣り場だけに入れかわる（resources/js/app.js の spotPicker。#138） --}}
             <form method="GET" action="{{ route('trips.index') }}" class="crayon-card p-4 space-y-4"
-                x-data="tripFilter(@js($spotOptions), @js($filters['prefecture']), @js($filters['spot_id']))">
+                x-data="spotPicker(@js($spotOptions), @js($filters['prefecture']), @js($filters['spot_id']))">
                 <input type="hidden" name="scope" value="{{ $filters['scope'] }}">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                     {{-- 県は「自分」「みんな」の両方。最初はメインフィールド（FN-17・#138） --}}
