@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class WeatherService
@@ -98,9 +99,18 @@ class WeatherService
     {
         try {
             $response = Http::timeout(5)->get($url, $query);
+            if (! $response->successful()) {
+                // 断られたときは、理由をログに残す（公開環境で原因を調べるため。#140）
+                Log::warning('天気のサービスに断られました', ['url' => $url, 'status' => $response->status(), 'body' => mb_substr($response->body(), 0, 200)]);
 
-            return $response->successful() ? ($response->json() ?? []) : [];
-        } catch (Throwable) {
+                return [];
+            }
+
+            return $response->json() ?? [];
+        } catch (Throwable $e) {
+            // 返事がない・つながらないときも、理由をログに残す（#140）
+            Log::warning('天気のサービスにつながりませんでした', ['url' => $url, 'error' => $e->getMessage()]);
+
             return [];
         }
     }
