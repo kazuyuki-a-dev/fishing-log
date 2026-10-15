@@ -32,7 +32,9 @@ class NotificationSendTest extends TestCase
         $this->author = User::factory()->create(['home_prefecture' => '秋田県']);
         $this->neighbor = User::factory()->create(['home_prefecture' => '秋田県']);
         // 秋田県の公開の釣り場（位置なし＝天気は取りに行かない）
+        // 登録者は投稿する人にする。指定しないとランダムな県の人が作られ、秋田県になるとその人にもお知らせが届いてしまう（#152）
         $this->spot = Spot::factory()->create([
+            'created_by' => $this->author->id,
             'prefecture' => '秋田県',
             'visibility' => 'public',
             'latitude' => null,
