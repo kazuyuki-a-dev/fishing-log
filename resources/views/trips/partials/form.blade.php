@@ -17,6 +17,8 @@ return [
 ];
 })->all() ?? []);
 $catchRows = array_values($initialCatches);
+// 今の写真を出すときの URL の頭。写真の保存先（開発はフォルダ、公開環境は Cloudflare R2）に合わせる（#150）
+$photoBaseUrl = rtrim(Storage::disk(\App\Services\PhotoStorer::disk())->url(''), '/');
 $nearbyUrl = route('spots.nearby');
 
 // 県と釣り場の選択（#142）。選べる釣り場は id・名前・県だけ渡す
@@ -186,7 +188,7 @@ $pickerPrefecture = $spots->firstWhere('id', (int) $pickerSpotId)?->prefecture ?
             <div class="space-y-2">
                 <template x-if="row.keep_photo">
                     <div class="flex items-center gap-3">
-                        <img :src="`{{ asset('storage') }}/${row.keep_photo}`" alt="今の写真"
+                        <img :src="`{{ $photoBaseUrl }}/${row.keep_photo}`" alt="今の写真"
                             class="h-20 w-20 rounded-md object-cover">
                         <button type="button" @click="row.keep_photo = ''" class="text-sm underline text-sand">この写真を外す</button>
                     </div>
