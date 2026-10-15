@@ -139,7 +139,7 @@ class SpotController extends Controller
             'matchedIds' => $matched->pluck('id'),
         ];
 
-        // 天気予報（FN-11）。位置がある釣り場で、今日から 15 日先までだけ
+        // 天気予報（FN-11）。位置がある釣り場で、今日から 8 日先までだけ（MET Norway。#146）
         // 問い合わせたのに取れなかったときは forecastFailed にする（画面で理由を出す。#144）
         $askForecast = $spot->latitude !== null && $weather->isForecastable($judge['date']);
         $judge['forecast'] = $askForecast

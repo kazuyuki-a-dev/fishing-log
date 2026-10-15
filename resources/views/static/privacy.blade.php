@@ -52,7 +52,8 @@
             <section class="crayon-card p-5 space-y-2">
                 <h3 class="crayon-subheading">6. 外部のサービス</h3>
                 <ul class="list-disc pl-5 space-y-1">
-                    <li>天気予報と、釣行の日時の天候を調べるために、釣り場の位置（緯度・経度）と日付を <a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline text-sea">Open-Meteo</a> に送ります。名前やメールアドレスは送りません。</li>
+                    <li>カルテの天気予報を調べるために、釣り場の位置（約1km にまるめた緯度・経度）を <a href="https://www.met.no/en" target="_blank" rel="noopener" class="underline text-sea">MET Norway</a>（ノルウェー気象局）に送ります。名前やメールアドレスは送りません。</li>
+                    <li>釣行の日時の天候を調べるために、釣り場の位置（緯度・経度）と日付を <a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline text-sea">Open-Meteo</a> に送ります。名前やメールアドレスは送りません。</li>
                     <li>地図は <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" class="underline text-sea">OpenStreetMap</a> の地図の画像を、見る人のブラウザから読み込みます。</li>
                     <li>文字の形（フォント）を Google Fonts から読み込みます。</li>
                     <li>インターネットに公開している環境では、アプリを <a href="https://render.com/" target="_blank" rel="noopener" class="underline text-sea">Render</a>、データベースを <a href="https://aiven.io/" target="_blank" rel="noopener" class="underline text-sea">Aiven</a>、写真を <a href="https://www.cloudflare.com/developer-platform/products/r2/" target="_blank" rel="noopener" class="underline text-sea">Cloudflare R2</a> に置いています。登録された情報は、これらのサービスのサーバーに保存されます。</li>
@@ -82,7 +83,7 @@
                 </ul>
             </section>
 
-            <p class="text-xs text-sand text-right">2026年10月14日</p>
+            <p class="text-xs text-sand text-right">2026年10月15日</p>
         </div>
     </div>
 </x-app-layout>
