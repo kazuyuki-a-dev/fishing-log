@@ -39,6 +39,22 @@ class WeatherTest extends TestCase
         ])]);
     }
 
+    /** MET Norway の天気予報の、偽物の返事（時刻は UTC → 記号） */
+    private function fakeMet(array $symbols): void
+    {
+        $timeseries = [];
+        foreach ($symbols as $time => $symbol) {
+            $timeseries[] = ['time' => $time, 'data' => ['next_1_hours' => ['summary' => ['symbol_code' => $symbol]]]];
+        }
+        Http::fake(['*api.met.no/*' => Http::response(['properties' => ['timeseries' => $timeseries]])]);
+    }
+
+    /** 日本時間のある日の正午を、UTC の時刻の文字列にする */
+    private function utcNoonOf(\Illuminate\Support\Carbon $day): string
+    {
+        return $day->copy()->timezone('Asia/Tokyo')->setTime(12, 0)->utc()->format('Y-m-d\TH:i:s\Z');
+    }
+
     public function test_weather_codes_become_four_labels(): void
     {
         $this->assertSame('晴れ', WeatherService::labelFor(0));
@@ -108,28 +124,81 @@ class WeatherTest extends TestCase
         Http::assertSent(fn($request) => str_contains($request->url(), 'archive-api.open-meteo.com'));
     }
 
+    public function test_met_symbols_become_four_labels(): void
+    {
+        // MET Norway の記号（#146）。昼・夜の印が付いていても読める
+        $this->assertSame('晴れ', WeatherService::labelForSymbol('clearsky_day'));
+        $this->assertSame('晴れ', WeatherService::labelForSymbol('fair_night'));
+        $this->assertSame('曇り', WeatherService::labelForSymbol('partlycloudy_polartwilight'));
+        $this->assertSame('曇り', WeatherService::labelForSymbol('fog'));
+        $this->assertSame('雨', WeatherService::labelForSymbol('heavyrainshowers_night'));
+        $this->assertSame('雨', WeatherService::labelForSymbol('lightsleet'));
+        $this->assertSame('雨', WeatherService::labelForSymbol('rainandthunder'));
+        $this->assertSame('雪', WeatherService::labelForSymbol('snowshowersandthunder_day'));
+        $this->assertNull(WeatherService::labelForSymbol(null));
+    }
+
     public function test_karte_shows_forecast_and_caches_it(): void
     {
         $me = User::factory()->create();
         $spot = $this->spotWithLocation($me);
-        Http::fake(['*open-meteo.com/*' => Http::response(['daily' => ['weather_code' => [3]]])]);
+        $this->fakeMet([$this->utcNoonOf(now()) => 'cloudy']);
 
         $this->actingAs($me)->get("/spots/{$spot->id}")
             ->assertSee('天気予報')
             ->assertSee('曇り')
-            ->assertSee('Open-Meteo');
+            ->assertSee('MET Norway');
+
+        // MET Norway の決まりで、アプリの名前と連絡先を名乗る。位置は小数第2位まで
+        Http::assertSent(fn($request) => str_contains($request->url(), 'api.met.no')
+            && str_starts_with($request->header('User-Agent')[0] ?? '', 'FishingLog/')
+            && $request['lat'] == 39.72 && $request['lon'] == 140.10);
 
         // 2回目は覚えておいた予報を使い、問い合わせない
         $this->actingAs($me)->get("/spots/{$spot->id}");
         Http::assertSentCount(1);
     }
 
-    public function test_karte_explains_when_the_forecast_service_refuses(): void
+    public function test_forecast_is_the_worst_weather_of_the_day(): void
     {
-        // 公開環境では、問い合わせの回数の上限で断られることがある（429）。理由と、開き直すことを出す（#144）
+        // 同じ日に晴れと雨があれば「雨」（#146）
         $me = User::factory()->create();
         $spot = $this->spotWithLocation($me);
-        Http::fake(['*open-meteo.com/*' => Http::response(['error' => true, 'reason' => 'Daily API request limit exceeded.'], 429)]);
+        $today = now('Asia/Tokyo')->startOfDay();
+        $this->fakeMet([
+            $today->copy()->setTime(9, 0)->utc()->format('Y-m-d\TH:i:s\Z') => 'clearsky_day',
+            $today->copy()->setTime(15, 0)->utc()->format('Y-m-d\TH:i:s\Z') => 'lightrain',
+            $today->copy()->setTime(18, 0)->utc()->format('Y-m-d\TH:i:s\Z') => 'partlycloudy_night',
+        ]);
+
+        $this->actingAs($me)->get("/spots/{$spot->id}")->assertSeeText('雨');
+    }
+
+    public function test_forecast_days_are_counted_in_japan_time(): void
+    {
+        // UTC の 15 時は、日本では次の日の 0 時。今日の予報に入れない
+        $me = User::factory()->create();
+        $spot = $this->spotWithLocation($me);
+        $tomorrow = now('Asia/Tokyo')->addDay()->startOfDay();
+        $this->fakeMet([
+            $this->utcNoonOf(now()) => 'clearsky_day',
+            $tomorrow->copy()->utc()->format('Y-m-d\TH:i:s\Z') => 'heavysnow',
+        ]);
+
+        $this->actingAs($me)->get("/spots/{$spot->id}")
+            ->assertSeeText('晴れ')
+            ->assertDontSeeText('雪');
+
+        $this->actingAs($me)->get("/spots/{$spot->id}?date={$tomorrow->format('Y-m-d')}")
+            ->assertSeeText('雪');
+    }
+
+    public function test_karte_explains_when_the_forecast_service_refuses(): void
+    {
+        // 天気のサービスに断られたときは、理由と、開き直すことを出す（#144）
+        $me = User::factory()->create();
+        $spot = $this->spotWithLocation($me);
+        Http::fake(['*api.met.no/*' => Http::response(['error' => true], 429)]);
 
         $this->actingAs($me)->get("/spots/{$spot->id}")
             ->assertOk()
@@ -156,9 +225,11 @@ class WeatherTest extends TestCase
         $spot = $this->spotWithLocation($me);
         Http::fake();
 
-        $date = now('Asia/Tokyo')->addDays(20)->format('Y-m-d');
+        // 予報が出るのは今日を入れて 9 日分（8 日先まで。#146）
+        $date = now('Asia/Tokyo')->addDays(9)->format('Y-m-d');
         $this->actingAs($me)->get("/spots/{$spot->id}?date={$date}")
-            ->assertDontSee('Open-Meteo');
+            ->assertDontSee('MET Norway')
+            ->assertDontSeeText('今は取得できません');
 
         Http::assertNothingSent();
     }
