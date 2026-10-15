@@ -22,7 +22,7 @@
 - 釣果の写真のうち、左下に「サンプル」のスタンプがあるものは、自作の魚のイラストです（写真がどう表示されるかを見られるように、全体公開の釣果のいくつかに付けています）
 - パスワードの再設定のメールは送られません（メールを送る設定をしていないため）
 - **釣行を記録するときの天候の自動入力は、取得できないことがあります**。無料の公開先では、過去の天気のサービス（Open-Meteo）への問い合わせの回数を、ほかのアプリと合わせて数えられ、上限を超えると断られるためです。天候は手で選べます（カルテの天気予報は、別のサービスの MET Norway から取っています）
-- 公開先：アプリは [Render](https://render.com/)、データベースは [Aiven](https://aiven.io/)（MySQL）、写真は [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)。どれも無料の枠で使っています
+- 公開先：アプリは [Render](https://render.com/)、データベースは [Aiven](https://aiven.io/)（MySQL）、写真は [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)。どれも無料の枠で使っています。無料のデータベースは使われていないと止められるので、GitHub Actions で3時間に1回お試し環境を開いています（`.github/workflows/keep-alive.yml`）
 
 ## 画面
 

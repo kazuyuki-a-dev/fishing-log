@@ -1,0 +1,29 @@
+# お試し環境を定期的に開く（#154）
+# Aiven の無料のデータベースは、使われていないと止められる（2026-10-15 に止められた）。
+# 3時間に1回、データベースを使うページ（釣り場の一覧）を開いて、使われている状態にする。
+# 止めたいときは、GitHub の「Actions」→「お試し環境を開く」→「…」→「Disable workflow」。
+# リポジトリに60日間変更がないと、GitHub が自動で止める（同じ画面で再開できる）。
+name: お試し環境を開く
+
+on:
+  schedule:
+    # 3時間ごと（UTC の 0:17、3:17 …。日本時間では 9:17、12:17 …）。ちょうどの時刻は GitHub が混むので 17 分にする
+    - cron: '17 */3 * * *'
+  # Actions の画面から、手で動かすこともできる
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 釣り場の一覧を開く
+        run: |
+          # アプリが止まっているときは、起き上がるのに1分ほどかかるので、2分待つ。だめなら3回までやり直す
+          # 開けなかったとき（200 以外）は失敗にする（Actions の画面に赤く出る）
+          curl --fail --silent --show-error --output /dev/null \
+            --max-time 120 --retry 3 --retry-delay 30 --retry-all-errors \
+            --write-out '%{http_code} %{time_total}s\n' \
+            https://fishing-log-hasx.onrender.com/spots
