@@ -68,7 +68,7 @@
                             <p class="text-sm text-sand">天気予報</p>
                             <p class="text-xl font-bold">{{ $judge['forecast'] }}</p>
                             <p class="text-xs text-sand">
-                                天気データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline">Open-Meteo</a>
+                                天気データ：<a href="https://www.met.no/en" target="_blank" rel="noopener" class="underline">MET Norway</a>
                             </p>
                         </div>
                         @elseif ($judge['forecastFailed'])
