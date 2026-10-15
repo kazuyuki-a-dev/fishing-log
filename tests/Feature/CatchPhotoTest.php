@@ -160,6 +160,23 @@ class CatchPhotoTest extends TestCase
         $this->disk->assertExists('catches/mine.jpg');
     }
 
+    public function test_edit_form_shows_current_photo_from_the_configured_disk(): void
+    {
+        // 公開環境では、写真は R2 にある。編集画面の今の写真も、そこから出す（#150）
+        // URL を作るだけなので、外にはつながらない
+        config([
+            'fishing.photo_disk' => 's3',
+            'filesystems.disks.s3' => ['driver' => 's3', 'key' => 'test', 'secret' => 'test', 'region' => 'auto', 'bucket' => 'photos', 'url' => 'https://photos.example.com'],
+        ]);
+        $me = User::factory()->create();
+        $trip = $this->tripWithPhoto($me, 'catches/mine.jpg');
+
+        $this->actingAs($me)->get("/trips/{$trip->id}/edit")
+            ->assertOk()
+            ->assertSee('https://photos.example.com/${row.keep_photo}', false)
+            ->assertDontSee('/storage/${row.keep_photo}', false);
+    }
+
     public function test_others_photo_cannot_be_taken_over(): void
     {
         $me = User::factory()->create();
