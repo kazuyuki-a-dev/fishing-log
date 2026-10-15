@@ -20,7 +20,7 @@
 - お試し用アカウントは、ニックネーム・メールアドレス・パスワードの変更と、退会ができません。釣行の記録・編集・削除は自由に試せます
 - ログインしなくても、トップ・釣果フィード・釣り場カルテ・単位変換・使い方は見られます
 - パスワードの再設定のメールは送られません（メールを送る設定をしていないため）
-- **天気予報と、釣行を記録するときの天候の自動入力は、取得できないことがあります**。無料の公開先では、天気のサービス（Open-Meteo）への問い合わせの回数を、ほかのアプリと合わせて数えられ、上限を超えると断られるためです。天候は手で選べます
+- **釣行を記録するときの天候の自動入力は、取得できないことがあります**。無料の公開先では、過去の天気のサービス（Open-Meteo）への問い合わせの回数を、ほかのアプリと合わせて数えられ、上限を超えると断られるためです。天候は手で選べます（カルテの天気予報は、別のサービスの MET Norway から取っています）
 - 公開先：アプリは [Render](https://render.com/)、データベースは [Aiven](https://aiven.io/)（MySQL）、写真は [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)。どれも無料の枠で使っています
 
 ## 画面
@@ -155,7 +155,7 @@
 | 開発環境 | WSL2（Ubuntu）＋ Docker ＋ Laravel Sail                                                                                                               |
 | 写真     | Intervention Image v4（保存するときに描き直して Exif を消す）、ExifReader（ブラウザで撮影日時と位置を読む）、heic-to（iPhone の HEIC を JPEG に変換） |
 | 地図     | Leaflet ＋ OpenStreetMap                                                                                                                              |
-| 天気     | Open-Meteo（API キー不要）                                                                                                                            |
+| 天気     | 天気予報は [MET Norway](https://api.met.no/)（ノルウェー気象局、CC BY 4.0）、釣行の日時の天候は Open-Meteo（どちらも API キー不要）                   |
 | フォント | Google Fonts の BIZ UDPGothic・Yomogi（どちらも SIL Open Font License）                                                                               |
 | アイコン | [Tabler Icons](https://tabler.io/icons)（MIT ライセンス、Copyright (c) 2020-2026 Paweł Kuna）の魚・釣り針・灯台など。エサとルアーの絵は自作           |
 
