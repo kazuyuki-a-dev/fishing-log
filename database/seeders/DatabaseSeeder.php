@@ -10,6 +10,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 
 /**
@@ -105,6 +106,9 @@ class DatabaseSeeder extends Seeder
             'home_prefecture' => '神奈川県',
             ...($public ? $locked() : []),
         ]);
+
+        // ---- 全体公開の釣果のいくつかに、サンプルの魚のイラストを付ける（#148） ----
+        Artisan::call('app:attach-sample-photos');
     }
 
     /**

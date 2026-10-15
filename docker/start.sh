@@ -25,5 +25,8 @@ php artisan migrate --force
 # データがまだ空のとき（最初の1回）だけ、お試しデータを入れる（routes/console.php の app:seed-if-empty）
 php artisan app:seed-if-empty
 
+# 全体公開の釣果のいくつかに、サンプルの魚のイラストを付ける。もう付いていれば何もしない（#148）
+php artisan app:attach-sample-photos
+
 chown -R www-data:www-data storage bootstrap/cache
 exec apache2-foreground
