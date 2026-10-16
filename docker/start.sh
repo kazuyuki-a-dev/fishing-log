@@ -22,6 +22,9 @@ php artisan view:cache
 # データベースの表を作る・最新にする
 php artisan migrate --force
 
+# 入れ直しの合図（環境変数 DEMO_RESEED_TOKEN）が新しいときだけ、お試しデータと写真を消して入れ直す（#160）
+php artisan app:reset-demo-if-requested
+
 # データがまだ空のとき（最初の1回）だけ、お試しデータを入れる（routes/console.php の app:seed-if-empty）
 php artisan app:seed-if-empty
 
