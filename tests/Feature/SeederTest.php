@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\FishCatch;
 use App\Models\Spot;
 use App\Models\Trip;
 use App\Models\User;
@@ -54,17 +55,47 @@ class SeederTest extends TestCase
         $this->assertStringContainsString('遊漁券', Spot::where('name', '中禅寺湖')->first()->facility_note);
     }
 
-    public function test_dummy_trips_are_only_at_model_port_in_akita(): void
+    public function test_dummy_trips_are_at_model_ports_and_akita_ports(): void
     {
-        // ダミーの釣行は、秋田県のモデル港（秋田港）にだけ。ふつうの港と湖には付けない
-        $this->assertSame(50, Trip::count());
-        $this->assertSame(['秋田港'], Trip::with('spot')->get()->pluck('spot.name')->unique()->values()->all());
+        // ダミーの釣行は、全国のモデル港21か所と、秋田県の船川港・能代港にだけ（#160）。湖には付けない
+        $this->assertSame(120 + 60 + 60 + 20 * 30, Trip::count());
+        $spots = Spot::whereHas('trips')->get();
+        $this->assertCount(23, $spots);
+        $models = collect(require database_path('seeders/data/real_spots.php'))->where('model', true)->pluck('name');
+        $notModel = $spots->pluck('name')->diff($models)->values()->all();
+        $this->assertEqualsCanonicalizing(['船川港', '能代港'], $notModel);
         $this->assertSame(4, User::where('home_prefecture', '秋田県')->count());
+    }
+
+    public function test_trips_at_other_model_ports_belong_to_local_anglers(): void
+    {
+        // ほかの県のモデル港の釣行は、その県の地元の釣り人のもの
+        $trips = Trip::with(['spot', 'user'])->whereHas('spot', fn($spot) => $spot->where('prefecture', '!=', '秋田県'))->get();
+        $this->assertTrue($trips->every(fn($trip) => $trip->user->home_prefecture === $trip->spot->prefecture));
+    }
+
+    public function test_catches_follow_the_season(): void
+    {
+        // メバルは夏（7〜10月）、アイナメは春〜夏（4〜9月）、サバは冬〜春（12〜5月）には釣れない（#160）
+        $months = fn(string $fish) => FishCatch::where('fish_species', $fish)->with('trip')->get()->map(fn($catch) => $catch->trip->went_at->month)->unique();
+        $this->assertEmpty($months('メバル')->intersect([7, 8, 9, 10]));
+        $this->assertEmpty($months('アイナメ')->intersect([4, 5, 6, 7, 8, 9]));
+        $this->assertEmpty($months('サバ')->intersect([12, 1, 2, 3, 4, 5]));
+    }
+
+    public function test_winter_has_more_bozu_than_summer(): void
+    {
+        $bozuRate = function (array $months) {
+            $trips = Trip::withCount('catches')->get()->filter(fn($trip) => in_array($trip->went_at->month, $months, true));
+
+            return $trips->where('catches_count', 0)->count() / $trips->count();
+        };
+        $this->assertGreaterThan($bozuRate([6, 7, 8, 9, 10]), $bozuRate([12, 1, 2]));
     }
 
     public function test_user_in_another_prefecture_has_no_trips(): void
     {
-        // 神奈川県にはモデル港がないので、県の切り替えを確かめる人の釣行はない
+        // 神奈川県にはモデル港がないので、県の切り替えを確かめる人の釣行はない（地元の釣り人もいない）
         $visitor = User::where('email', 'wanoku@example.com')->first();
         $this->assertSame('神奈川県', $visitor->home_prefecture);
         $this->assertSame(0, $visitor->trips()->count());
@@ -85,7 +116,7 @@ class SeederTest extends TestCase
     public function test_test_user_has_enough_trips(): void
     {
         $me = User::where('email', 'test@example.com')->first();
-        $this->assertSame(15, $me->trips()->count());
+        $this->assertSame(45, $me->trips()->count());
     }
 
     public function test_all_visibilities_are_mixed(): void
