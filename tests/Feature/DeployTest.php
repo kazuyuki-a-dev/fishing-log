@@ -78,11 +78,11 @@ class DeployTest extends TestCase
         // お試し用アカウントは、README に書く公開用のパスワード
         $demo = User::where('email', config('fishing.demo_email'))->firstOrFail();
         $this->assertTrue(Hash::check(config('fishing.demo_password'), $demo->password));
-        $this->assertSame(15, $demo->trips()->count());
+        $this->assertSame(45, $demo->trips()->count());
 
         // 開発用の test@ は作らない。ほかのダミーの釣り人も「password」ではログインできない
         $this->assertNull(User::where('email', 'test@example.com')->first());
-        foreach (['minato@example.com', 'surf@example.com', 'iso@example.com', 'wanoku@example.com'] as $email) {
+        foreach (['minato@example.com', 'surf@example.com', 'iso@example.com', 'wanoku@example.com', 'angler1@example.com'] as $email) {
             $this->assertFalse(Hash::check('password', User::where('email', $email)->firstOrFail()->password), $email);
         }
     }
