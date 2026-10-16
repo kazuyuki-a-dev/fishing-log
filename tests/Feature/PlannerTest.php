@@ -6,7 +6,9 @@ use App\Models\FishCatch;
 use App\Models\Spot;
 use App\Models\Trip;
 use App\Models\User;
+use App\Services\TideCalculator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class PlannerTest extends TestCase
@@ -115,8 +117,8 @@ class PlannerTest extends TestCase
 
     public function test_exact_match_comes_before_relaxed_matches(): void
     {
-        // 釣り場C：小潮では坊主だけ、ほかの1月の日に3回釣れた → 月だけ一致
-        $spotC = Spot::factory()->create(['name' => '月だけの磯', 'prefecture' => '秋田県', 'visibility' => 'public']);
+        // 釣り場C：小潮では坊主だけ、ほかの1月の日に3回釣れた → 時期だけ一致（#158）
+        $spotC = Spot::factory()->create(['name' => '時期だけの磯', 'prefecture' => '秋田県', 'visibility' => 'public']);
         Trip::factory()->create(['user_id' => $this->me->id, 'spot_id' => $spotC->id, 'went_at' => '2024-01-19 06:00']);
         foreach (['2024-01-10 06:00', '2024-01-11 06:00', '2024-01-12 06:00'] as $wentAt) {
             $this->caughtTrip($this->me, $spotC, $wentAt);
@@ -124,12 +126,30 @@ class PlannerTest extends TestCase
 
         // 釣れた回数は C の3回が多いが、ぴったり一致の A・B が上
         $this->actingAs($this->me)->get('/planner?date=2024-01-19&scope=mine')
-            ->assertSeeInOrder(['大漁の堤防', 'ぼちぼちの港', '月だけの磯'])
-            ->assertSee('ぴったり一致')
-            ->assertSee('月だけ一致')
-            ->assertSee('1月（潮は問わない）の日：')
+            ->assertSeeInOrder(['大漁の堤防', 'ぼちぼちの港', '時期だけの磯'])
+            // 時期だけ一致は、時期のハンコだけがオレンジで、潮は青（#158）
+            ->assertSee('時期 12〜2月（行く日と同じ）、潮 ', false)
+            ->assertSee('（違う。釣れたときに多かった値）', false)
             // ゆるめたときも、ぴったりの条件の坊主の記録を出す
-            ->assertSee('ぴったりの条件（小潮）では 1回行って 0回釣れた');
+            ->assertSee('同じ時期・潮では 1回行って 0回釣れた');
+    }
+
+    public function test_same_tide_in_another_season_is_not_counted(): void
+    {
+        // 釣り場D：8月の小潮に何度も釣れていても、1月の計画では数えない（#158）
+        $spotD = Spot::factory()->create(['name' => '夏だけの浜', 'prefecture' => '秋田県', 'visibility' => 'public']);
+        $day = Carbon::parse('2023-08-01 06:00');
+        for ($n = 0; $n < 3; $day->addDay()) {
+            if ((new TideCalculator())->tideFor($day) === '小潮') {
+                $this->caughtTrip($this->me, $spotD, $day->format('Y-m-d H:i'));
+                $n++;
+            }
+        }
+
+        // 記録のない釣り場と同じく、いちばん下で「記録なし」
+        $this->actingAs($this->me)->get('/planner?date=2024-01-19&scope=mine')
+            ->assertSeeInOrder(['大漁の堤防', 'ぼちぼちの港', '夏だけの浜'])
+            ->assertDontSee('3回行って 3回釣れた');
     }
 
     public function test_spot_without_any_catch_is_listed_last(): void
