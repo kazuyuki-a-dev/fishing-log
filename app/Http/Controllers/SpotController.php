@@ -130,6 +130,7 @@ class SpotController extends Controller
             'label' => $match['label'],
             'condition' => $match['condition'],
             'exact' => $match['exact'],
+            'stamps' => $match['stamps'],
             'visits' => $match['visits'],
             'caught' => $match['caught'],
             'methods' => $matchedCatches->countBy('method'),

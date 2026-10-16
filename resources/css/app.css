@@ -224,6 +224,30 @@
         border-style: dashed;
     }
 
+    /*
+     * 一致のハンコ（#158）。プランナーとカルテで、時期・時間帯・潮のうち行く日と同じ条件はオレンジ、
+     * 違う条件は青（中には、釣れたときにいちばん多かった値）。少しずつ傾けて、押した感じを出す
+     */
+    .crayon-match-stamp {
+        @apply h-16 w-16 text-[11px];
+    }
+
+    .crayon-match-stamp:nth-child(2) {
+        transform: rotate(6deg);
+    }
+
+    .crayon-match-stamp:nth-child(3) {
+        transform: rotate(-4deg);
+    }
+
+    .crayon-match-stamp-blue {
+        @apply text-sea;
+    }
+
+    .crayon-match-stamp-blue::after {
+        @apply border-sea;
+    }
+
     /* 黄色のマーカー（#100）。字の下半分にだけ引く */
     .crayon-marker {
         @apply px-0.5;

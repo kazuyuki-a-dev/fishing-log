@@ -84,27 +84,40 @@ class SpotJudgeTest extends TestCase
             ->assertSee(now('Asia/Tokyo')->format('Y年n月j日'));
     }
 
-    public function test_relaxes_to_tide_when_exact_has_no_catch(): void
+    public function test_relaxes_to_season_and_time_when_exact_has_no_record(): void
     {
-        // 小潮・夜は坊主の1回だけ → 小潮（時間帯は問わない）にゆるめる
-        $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-19&time_of_day=夜")
-            ->assertSee('潮だけ一致')
-            ->assertSee('この釣り場で「小潮（時間帯は問わない）」だった日')
-            ->assertSee('2回行って 1回釣れた')
-            ->assertSee('ぴったりの条件（小潮・夜）では 1回行って 0回釣れた');
+        // 2024-01-10 は中潮。中潮・朝マズメの記録はないので、12〜2月の朝マズメ（潮は問わない）にゆるめる（#158）
+        $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-10&time_of_day=朝マズメ")
+            ->assertSee('2回行って 2回釣れた')
+            // ハンコ（#158）：時期・時間帯は行く日と同じ、潮は違い、釣れたのは大潮と小潮が1回ずつ → 先に見つかったほう
+            ->assertSee('時期 12〜2月（行く日と同じ）、時間帯 朝マズメ（行く日と同じ）、潮 ', false)
+            ->assertSee('crayon-match-stamp-blue', false);
     }
 
-    public function test_relaxes_to_month_and_history_badge_shows_the_level(): void
+    public function test_relaxes_to_season_and_shows_bozu_of_exact(): void
     {
-        // 2024-01-10 は中潮。中潮の記録はないので、1月（潮は問わない）にゆるめる
-        $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-10")
-            ->assertSee('この釣り場で「1月（潮は問わない）」だった日')
+        // 小潮・夜は坊主の1回だけ。夜もその1回だけ → 12〜2月（時間帯・潮は問わない）にゆるめる
+        $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-19&time_of_day=夜")
             ->assertSee('3回行って 2回釣れた')
-            // 履歴のバッジもレベルの名前（見出しと履歴3件で4つ）
-            ->assertSee('月だけ一致');
-        $this->assertSame(4, substr_count(
+            ->assertSee('同じ時期・時間帯・潮では 1回行って 0回釣れた')
+            // 時間帯は違い、釣れたのは朝マズメ（2回とも）
+            ->assertSee('時間帯 朝マズメ（違う。釣れたときに多かった値）', false);
+    }
+
+    public function test_relaxes_to_season_and_history_badge_shows_the_level(): void
+    {
+        // 時期の外（7月）の釣行は数えない
+        $summer = Trip::factory()->create(['user_id' => $this->me->id, 'spot_id' => $this->spot->id, 'went_at' => '2023-07-10 06:00']);
+        FishCatch::factory()->create(['trip_id' => $summer->id]);
+
+        // 2024-01-10 は中潮。中潮の記録はないので、12〜2月（時間帯・潮は問わない）にゆるめる
+        $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-10")
+            ->assertSee('3回行って 2回釣れた')
+            // 履歴のバッジはレベルの名前（履歴3件で3つ。7月の釣行には付かない）
+            ->assertSee('時期だけ一致');
+        $this->assertSame(3, substr_count(
             $this->actingAs($this->me)->get("/spots/{$this->spot->id}?date=2024-01-10")->getContent(),
-            '月だけ一致'
+            '時期だけ一致'
         ));
     }
 }
