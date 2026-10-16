@@ -50,9 +50,10 @@
                 </div>
             </div>
             @else
+            <x-match-stamps-legend />
             <ol class="space-y-3">
                 @foreach ($plans as $plan)
-                <li class="crayon-card p-4 flex gap-4">
+                <li class="crayon-card p-4 flex flex-wrap sm:flex-nowrap gap-4">
                     {{-- 順位の数字にクレヨンの下線（#100） --}}
                     <span class="crayon-underline w-8 shrink-0 self-start text-center font-hand text-2xl text-sea">{{ $loop->iteration }}</span>
 
@@ -71,17 +72,12 @@
                         </div>
 
                         @if ($plan['visits'] > 0)
-                        <p class="flex flex-wrap items-center gap-2">
-                            <x-match-level :level="$plan['level']" :label="$plan['label']" />
-                            <span>
-                                {{ $plan['condition'] }}の日：
-                                <span class="font-bold">{{ $plan['visits'] }}回行って {{ $plan['caught'] }}回釣れた</span>
-                            </span>
-                        </p>
+                        {{-- どの条件で数えたかは、右のハンコで出す（#158） --}}
+                        <p class="text-lg font-bold">{{ $plan['visits'] }}回行って {{ $plan['caught'] }}回釣れた</p>
                         {{-- 条件をゆるめたときも、ぴったりの条件の結果（坊主の記録）を隠さない --}}
                         @if ($plan['level'] !== 'exact' && $plan['exact']['visits'] > 0)
                         <p class="text-xs text-sand">
-                            ぴったりの条件（{{ $plan['exact']['condition'] }}）では {{ $plan['exact']['visits'] }}回行って {{ $plan['exact']['caught'] }}回釣れた
+                            同じ{{ $plan['exact']['names'] }}では {{ $plan['exact']['visits'] }}回行って {{ $plan['exact']['caught'] }}回釣れた
                         </p>
                         @endif
                         @if ($plan['caught'] > 0)
@@ -108,6 +104,11 @@
                         <p class="text-sm text-sand">この条件で釣れた記録はまだありません。</p>
                         @endif
                     </div>
+
+                    {{-- 一致のハンコ（#158）。記録があるときだけ --}}
+                    @if ($plan['visits'] > 0)
+                    <x-match-stamps :stamps="$plan['stamps']" class="self-center" />
+                    @endif
                 </li>
                 @endforeach
             </ol>

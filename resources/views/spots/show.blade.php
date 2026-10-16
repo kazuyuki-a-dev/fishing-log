@@ -88,18 +88,18 @@
                 </div>
 
                 <div class="border-t-2 border-dashed border-sea/30 pt-4 space-y-2">
-                    <p class="flex flex-wrap items-center gap-2 text-sm text-sand">
-                        @if ($judge['visits'] > 0)
-                        <x-match-level :level="$judge['level']" :label="$judge['label']" />
-                        @endif
-                        この釣り場で「{{ $judge['condition'] }}」だった日
-                    </p>
+                    <p class="text-sm text-sand">この釣り場の、行く日に近い記録</p>
                     @if ($judge['visits'] > 0)
-                    <p class="text-2xl font-bold">{{ $judge['visits'] }}回行って {{ $judge['caught'] }}回釣れた</p>
+                    {{-- どの条件で数えたかは、横のハンコで出す（#158） --}}
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-2xl font-bold">{{ $judge['visits'] }}回行って {{ $judge['caught'] }}回釣れた</p>
+                        <x-match-stamps :stamps="$judge['stamps']" />
+                    </div>
+                    <x-match-stamps-legend />
                     {{-- 条件をゆるめたときも、ぴったりの条件の結果（坊主の記録）を隠さない --}}
                     @if ($judge['level'] !== 'exact' && $judge['exact']['visits'] > 0)
                     <p class="text-xs text-sand">
-                        ぴったりの条件（{{ $judge['exact']['condition'] }}）では {{ $judge['exact']['visits'] }}回行って {{ $judge['exact']['caught'] }}回釣れた
+                        同じ{{ $judge['exact']['names'] }}では {{ $judge['exact']['visits'] }}回行って {{ $judge['exact']['caught'] }}回釣れた
                     </p>
                     @endif
                     @if ($judge['methods']->isNotEmpty())

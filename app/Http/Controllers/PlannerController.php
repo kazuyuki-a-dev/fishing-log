@@ -58,7 +58,7 @@ class PlannerController extends Controller
                 'maxSize' => $catches->max('length_cm'),
             ];
         })
-            // 一致のレベルが先（ぴったり → 潮だけ → 月だけ → 記録なし）。同じレベルなら釣れた回数 → 行った回数の多い順
+            // 一致のレベルが先（ぴったり → 時期と時間帯 → 時期だけ → 記録なし）。同じレベルなら釣れた回数 → 行った回数の多い順
             ->sortBy([['rank', 'asc'], ['caught', 'desc'], ['visits', 'desc']])
             ->values();
 
