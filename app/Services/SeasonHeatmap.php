@@ -39,35 +39,28 @@ class SeasonHeatmap
     }
 
     /**
-     * 釣り場カルテの小さな表（PG07）：もう読み込んである釣行（catches 付き）から作る
+     * 釣り場カルテの小さな表（PG07）：見てよい釣行のクエリから、データベースで数える（#166）
      * どの釣行を入れてよいかは、呼ぶ側で絞っておく（カルテでは Trip::scopeVisibleWithSpotTo()）
      *
-     * @param  Collection<int, \App\Models\Trip>  $trips
+     * @param  \Illuminate\Database\Eloquent\Builder  $trips  見てよい釣行のクエリ
      * @return array{rows: array<string, array<int, array{fish: int, trips: int, level: int}>>, tripCount: int}
      */
-    public function forTrips(Collection $trips): array
+    public function forQuery(\Illuminate\Database\Eloquent\Builder $trips): array
     {
-        $caught = $trips->filter(fn($trip) => $trip->catches->isNotEmpty());
+        // 見てよい釣行で釣れた釣果。表と件数で同じ条件を使う
+        $base = fn() => FishCatch::query()
+            ->join('trips', 'trips.id', '=', 'catches.trip_id')
+            ->whereIn('catches.trip_id', (clone $trips)->reorder()->select('trips.id'));
 
-        // 釣行ごと・魚種ごとに「何匹」を出し、月×魚種でまとめる（DB の集計と同じ形にする）
-        $counts = $caught
-            ->flatMap(fn($trip) => $trip->catches->countBy('fish_species')->map(fn(int $fish, string $species) => [
-                'species' => $species,
-                'month' => $trip->went_at->month,
-                'fish' => $fish,
-            ])->values())
-            ->groupBy(fn(array $record) => $record['species'] . '|' . $record['month'])
-            ->map(fn(Collection $group) => [
-                'species' => $group->first()['species'],
-                'month' => $group->first()['month'],
-                'fish_count' => $group->sum('fish'),
-                'trip_count' => $group->count(),
-            ])
-            ->values();
+        $counts = $base()
+            ->selectRaw('catches.fish_species as species, MONTH(trips.went_at) as month, COUNT(*) as fish_count, COUNT(DISTINCT trips.id) as trip_count')
+            ->groupBy('species', 'month')
+            ->get();
 
         return [
             'rows' => $this->rows($counts),
-            'tripCount' => $caught->count(),
+            // 釣れた釣行の数
+            'tripCount' => $base()->distinct()->count('trips.id'),
         ];
     }
 

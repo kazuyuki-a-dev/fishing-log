@@ -109,11 +109,12 @@ class TripSearch
      */
     public function summary(Builder $query, array $filters): array
     {
-        $tripIds = (clone $query)->pluck('id');
+        // 当てはまる釣行の番号を読み込まず、データベースの中で数える（サブクエリ。記録が増えても重くならないように。#166）
+        $tripIds = (clone $query)->reorder()->select('trips.id');
 
         return [
-            'visits' => $tripIds->count(),
-            'caught' => Trip::whereKey($tripIds)->has('catches')->count(),
+            'visits' => (clone $query)->reorder()->count(),
+            'caught' => (clone $query)->reorder()->has('catches')->count(),
             'methods' => $this->catchConditions(FishCatch::whereIn('trip_id', $tripIds), $filters)
                 ->selectRaw('method, COUNT(*) as fish')
                 ->groupBy('method')
