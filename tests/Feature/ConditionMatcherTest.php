@@ -45,9 +45,8 @@ class ConditionMatcherTest extends TestCase
     // 小潮の 2024-01-19 で照合する
     private function match(?string $timeOfDay): array
     {
-        $trips = $this->spot->trips()->with('catches')->get();
-
-        return app(ConditionMatcher::class)->match($trips, Carbon::parse('2024-01-19'), '小潮', $timeOfDay);
+        // データベースで数える（#166・#168）
+        return app(ConditionMatcher::class)->matchQuery(Trip::where('trips.spot_id', $this->spot->id), Carbon::parse('2024-01-19'), '小潮', $timeOfDay);
     }
 
     public function test_season_is_the_month_and_one_month_before_and_after(): void
@@ -151,6 +150,30 @@ class ConditionMatcherTest extends TestCase
         // 時間帯のハンコは出さない。潮は青で大潮
         $this->assertSame(['時期', '潮'], array_column($result['stamps'], 'name'));
         $this->assertSame(['name' => '潮', 'value' => '大潮', 'same' => false], $result['stamps'][1]);
+    }
+
+    public function test_match_by_spot_chooses_the_level_for_each_spot(): void
+    {
+        // 釣り場ごとにデータベースでまとめて数える（プランナー用。#168）
+        $this->trip('2024-01-17 06:00', '朝マズメ', true);              // この釣り場：ぴったり一致
+        $other = Spot::factory()->create(['visibility' => 'public']);
+        $otherTrip = Trip::factory()->create(['spot_id' => $other->id, 'went_at' => '2024-01-11 20:00', 'time_of_day' => '夜']);
+        FishCatch::factory()->create(['trip_id' => $otherTrip->id]);    // ほかの釣り場：時期だけ一致（大潮の夜）
+        $empty = Spot::factory()->create(['visibility' => 'public']);   // 記録なし
+
+        $results = app(ConditionMatcher::class)->matchBySpot(
+            Trip::query(),
+            [$this->spot->id, $other->id, $empty->id],
+            Carbon::parse('2024-01-19'),
+            '小潮',
+            '朝マズメ',
+        );
+
+        $this->assertSame(['exact', 0, '朝マズメ'], [$results[$this->spot->id]['level'], $results[$this->spot->id]['rank'], $results[$this->spot->id]['bestTimeOfDay']]);
+        $this->assertSame(['season', 2], [$results[$other->id]['level'], $results[$other->id]['rank']]);
+        // 時間帯と潮のハンコは青で、釣れたときの値（夜・大潮）
+        $this->assertSame(['夜', '大潮'], [$results[$other->id]['stamps'][1]['value'], $results[$other->id]['stamps'][2]['value']]);
+        $this->assertSame([0, ConditionMatcher::NO_CATCH_RANK], [$results[$empty->id]['visits'], $results[$empty->id]['rank']]);
     }
 
     public function test_no_catch_at_any_level_stays_exact_with_lowest_rank(): void
