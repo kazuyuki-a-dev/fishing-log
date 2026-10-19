@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\AnalysisController;
+use App\Http\Controllers\BestController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
@@ -37,6 +38,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/trips/bulk', [TripController::class, 'storeBulk'])->name('trips.bulk-store');
     Route::resource('trips', TripController::class);
     Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
+
+    // 魚種ごとの自己ベスト（#170）
+    Route::get('/bests', [BestController::class, 'index'])->name('bests.index');
 
     // シーズンヒートマップ（PG16）
     Route::get('/analysis/heatmap', [AnalysisController::class, 'heatmap'])->name('analysis.heatmap');

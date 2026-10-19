@@ -6,12 +6,13 @@ use App\Models\FishCatch;
 use App\Models\Spot;
 use App\Models\Trip;
 use App\Services\KeepRecording;
+use App\Services\PersonalBests;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, KeepRecording $keepRecording): View
+    public function index(Request $request, KeepRecording $keepRecording, PersonalBests $personalBests): View
     {
         $user = $request->user();
 
@@ -23,8 +24,12 @@ class DashboardController extends Controller
             'catchCount' => $myCatches()->count(),
             'speciesCount' => $myCatches()->distinct()->count('fish_species'),
             'tripDays' => (int) $user->trips()->selectRaw('COUNT(DISTINCT DATE(went_at)) as days')->value('days'),
-            'biggest' => $myCatches()->whereNotNull('length_cm')->orderByDesc('length_cm')->first(),
         ];
+
+        // 魚種ごとの自己ベスト（#170）。ダッシュボードには大きい順に3つ。いちばん上が「自分の最大サイズ」
+        $bests = $personalBests->forUser($user, 3);
+        $summary['biggest'] = $bests->first();
+        $bestSpeciesCount = $personalBests->speciesCount($user);
 
         // 継続カウンタと気づきカード（FN-10）
         $keep = $keepRecording->build($user, today());
@@ -57,6 +62,6 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('dashboard', compact('summary', 'keep', 'recentTrips', 'mySpots', 'feedTrips'));
+        return view('dashboard', compact('summary', 'keep', 'recentTrips', 'mySpots', 'feedTrips', 'bests', 'bestSpeciesCount'));
     }
 }
