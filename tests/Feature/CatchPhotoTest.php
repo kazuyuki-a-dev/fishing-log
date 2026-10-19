@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Filesystem\FilesystemAdapter;
+use RuntimeException;
 
 class CatchPhotoTest extends TestCase
 {
@@ -145,6 +146,75 @@ class CatchPhotoTest extends TestCase
         $this->disk->put($path, 'photo');
 
         return $trip;
+    }
+
+    /**
+     * 釣果を2匹目から保存できなくする（データベースの保存が途中で失敗したことにする。#164）
+     * 1匹目の写真は、もう保存先に置かれている
+     */
+    private function failFromSecondCatch(): void
+    {
+        $count = 0;
+        FishCatch::creating(function () use (&$count) {
+            if (++$count >= 2) {
+                throw new RuntimeException('データベースの保存に失敗した');
+            }
+        });
+    }
+
+    public function test_photos_are_removed_when_saving_a_trip_fails(): void
+    {
+        $me = User::factory()->create();
+        $spot = Spot::factory()->create(['created_by' => $me->id]);
+        $this->failFromSecondCatch();
+
+        $this->actingAs($me)->post('/trips', $this->tripPayload($spot, [
+            ['fish_species' => 'アジ', 'method' => 'エサ', 'photo' => $this->jpegWithExif()],
+            ['fish_species' => 'サバ', 'method' => 'エサ', 'photo' => $this->jpegWithExif()],
+        ]))->assertServerError();
+
+        // データベースは元に戻り、保存した写真のファイルも残らない
+        $this->assertSame(0, Trip::count());
+        $this->assertSame([], $this->disk->allFiles('catches'));
+    }
+
+    public function test_photos_are_removed_when_bulk_saving_fails(): void
+    {
+        $me = User::factory()->create();
+        $spot = Spot::factory()->create(['created_by' => $me->id]);
+        $this->failFromSecondCatch();
+        $row = fn(string $wentAt) => [
+            'went_at' => $wentAt,
+            'spot_id' => $spot->id,
+            'time_of_day' => '朝マズメ',
+            'fish_species' => 'アジ',
+            'method' => 'エサ',
+            'photo' => $this->jpegWithExif(),
+        ];
+
+        $this->actingAs($me)->post(route('trips.bulk-store'), [
+            'visibility' => 'private',
+            'rows' => [$row('2026-05-03T06:00'), $row('2026-05-04T06:00')],
+        ])->assertServerError();
+
+        $this->assertSame(0, Trip::count());
+        $this->assertSame([], $this->disk->allFiles('catches'));
+    }
+
+    public function test_old_photo_stays_and_new_photo_is_removed_when_editing_fails(): void
+    {
+        $me = User::factory()->create();
+        $trip = $this->tripWithPhoto($me, 'catches/mine.jpg');
+        $this->failFromSecondCatch();
+
+        $this->actingAs($me)->put("/trips/{$trip->id}", $this->tripPayload($trip->spot, [
+            ['fish_species' => 'アジ', 'method' => 'エサ', 'photo' => $this->jpegWithExif()],
+            ['fish_species' => 'サバ', 'method' => 'エサ', 'keep_photo' => 'catches/mine.jpg'],
+        ]))->assertServerError();
+
+        // 古い写真とその釣果は残り（ロールバック）、新しく保存した写真は消える
+        $this->assertSame('catches/mine.jpg', $trip->catches()->first()->image_path);
+        $this->assertSame(['catches/mine.jpg'], $this->disk->allFiles('catches'));
     }
 
     public function test_current_photo_can_be_kept_when_editing(): void
