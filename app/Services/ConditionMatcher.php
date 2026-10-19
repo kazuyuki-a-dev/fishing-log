@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
  * 時期（選んだ日の月と前後1か月）はいつも条件に入れる。魚種ごとに釣れる季節があるため（#158）
  * ぴったり一致（時期＋時間帯＋潮）に釣れた記録がなければ、時期と時間帯 → 時期だけ と少しずつ条件をゆるめる
  * プランナーとカルテの判断ビューで同じ決まりにするため、ここ1か所で決める
- * 数え方は2つ：読み込み済みの釣行で数える match() と、データベースで数える matchQuery()（#166）
+ * どれもデータベースで数える：1つの釣り場（カルテ）は matchQuery()、釣り場ごと（プランナー）は matchBySpot()（#166・#168）
  */
 class ConditionMatcher
 {
@@ -87,38 +87,8 @@ class ConditionMatcher
     }
 
     /**
-     * 読み込み済みの釣行（catches 付き）で数える。プランナーで使う（#166 のあと、プランナーもデータベースで数える形に変える予定）
-     *
-     * @param  Collection<int, Trip>  $trips  見てよい釣行（catches 付き）。どれを入れてよいかは呼ぶ側で絞っておく
-     * @return array{level: string, label: string, condition: string, matched: Collection, visits: int, caught: int,
-     *               exact: array{condition: string, names: string, visits: int, caught: int}, rank: int,
-     *               stamps: list<array{name: string, value: string, same: bool}>}
-     */
-    public function match(Collection $trips, Carbon $date, string $tide, ?string $timeOfDay): array
-    {
-        $results = collect($this->levels($date, $tide, $timeOfDay))->map(function (array $level, string $name) use ($trips) {
-            $matched = $trips->filter($level['test'])->values();
-
-            return [
-                'level' => $name,
-                'label' => self::LABELS[$name],
-                'condition' => $level['condition'],
-                'matched' => $matched,
-                'visits' => $matched->count(),
-                'caught' => $matched->filter(fn(Trip $trip) => $trip->catches->isNotEmpty())->count(),
-            ];
-        });
-
-        // いちばん多い値。同じ数なら先に見つかったもの。釣れた記録がなければ空
-        return $this->choose($results, $date, $tide, $timeOfDay, function (array $used, string $column) {
-            return (string) $used['matched']->filter(fn(Trip $trip) => $trip->catches->isNotEmpty())
-                ->countBy($column)->sortDesc()->keys()->first();
-        });
-    }
-
-    /**
      * データベースで数える（#166）。釣行を読み込まないので、記録が増えても重くならない
-     * 返す中身は match() と同じ形。ただし matched は、選んだレベルの釣行を取り出すクエリ、test は釣行1件がそのレベルに当てはまるか
+     * matched は選んだレベルの釣行を取り出すクエリ、test は釣行1件がそのレベルに当てはまるか（カルテの履歴の印に使う）
      *
      * @param  Builder  $trips  見てよい釣行のクエリ。どれを入れてよいかは呼ぶ側で絞っておく
      */
@@ -138,7 +108,7 @@ class ConditionMatcher
             ];
         });
 
-        // いちばん多い値。同じ数なら新しい釣行に出てきたもの（カルテは新しい順に並ぶので、match() の「先に見つかった」と同じ）
+        // いちばん多い値。同じ数なら新しい釣行に出てきたもの
         return $this->choose($results, $date, $tide, $timeOfDay, function (array $used, string $column) {
             return (string) (clone $used['matched'])->has('catches')
                 ->reorder()
@@ -148,6 +118,90 @@ class ConditionMatcher
                 ->orderByDesc('last_went_at')
                 ->value('value');
         });
+    }
+
+    /**
+     * 釣り場ごとにデータベースで数える（プランナー用。#168）
+     * レベルごとに「釣り場ごとの回数・釣れた回数」を GROUP BY でまとめて数え、釣り場ごとに使うレベルを選ぶ
+     * 返す中身は、釣り場の番号 => matchQuery() と同じ形（matched は持たない）。記録がない釣り場も入る
+     *
+     * @param  Builder  $trips  見てよい釣行のクエリ（どの釣り場・どの記録を入れてよいかは呼ぶ側で絞っておく）
+     * @param  list<int>  $spotIds  並べる釣り場の番号
+     * @return array<int, array>
+     */
+    public function matchBySpot(Builder $trips, array $spotIds, Carbon $date, string $tide, ?string $timeOfDay): array
+    {
+        $levels = $this->levels($date, $tide, $timeOfDay);
+
+        // レベルごと・釣り場ごとの回数と釣れた回数（1レベル1回の問い合わせ）
+        $counts = [];
+        foreach ($levels as $name => $level) {
+            $counts[$name] = $level['scope'](clone $trips)
+                ->reorder()
+                ->toBase()
+                ->selectRaw('trips.spot_id, COUNT(*) as visits, COUNT(CASE WHEN EXISTS (SELECT 1 FROM catches WHERE catches.trip_id = trips.id) THEN 1 END) as caught')
+                ->groupBy('trips.spot_id')
+                ->get()
+                ->keyBy('spot_id');
+        }
+
+        // 釣り場ごとに、どのレベルを使うか（釣れた記録がある、いちばん厳しいレベル）
+        $chosenLevel = [];
+        foreach ($spotIds as $spotId) {
+            $chosenLevel[$spotId] = collect(array_keys($levels))
+                ->first(fn(string $name) => (int) data_get($counts[$name]->get($spotId), 'caught', 0) > 0) ?? 'exact';
+        }
+
+        // ハンコの青の値：使うレベルの、釣れた釣行でいちばん多い値（同じ数なら新しい釣行に出てきたもの）
+        $mostCommon = [];
+        foreach ($levels as $name => $level) {
+            $spots = array_keys(array_filter($chosenLevel, fn(string $chosen) => $chosen === $name));
+            if ($spots === []) {
+                continue;
+            }
+            foreach (['time_of_day', 'tide'] as $column) {
+                $rows = $this->matchedQuery($trips, $name, $date, $tide, $timeOfDay)
+                    ->whereIn('trips.spot_id', $spots)
+                    ->has('catches')
+                    ->reorder()
+                    ->toBase()
+                    ->selectRaw("trips.spot_id, trips.{$column} as value, COUNT(*) as trip_count, MAX(trips.went_at) as last_went_at")
+                    ->groupBy('trips.spot_id', "trips.{$column}")
+                    ->orderByDesc('trip_count')
+                    ->orderByDesc('last_went_at')
+                    ->get();
+                foreach ($rows as $row) {
+                    $mostCommon[$row->spot_id][$column] ??= (string) $row->value;
+                }
+            }
+        }
+
+        $results = [];
+        foreach ($spotIds as $spotId) {
+            $perLevel = collect($levels)->map(fn(array $level, string $name) => [
+                'level' => $name,
+                'label' => self::LABELS[$name],
+                'condition' => $level['condition'],
+                'test' => $level['test'],
+                'visits' => (int) data_get($counts[$name]->get($spotId), 'visits', 0),
+                'caught' => (int) data_get($counts[$name]->get($spotId), 'caught', 0),
+            ]);
+            $results[$spotId] = $this->choose($perLevel, $date, $tide, $timeOfDay,
+                fn(array $used, string $column) => $mostCommon[$spotId][$column] ?? '') + [
+                    // 釣れたときにいちばん多かった時間帯（プランナーの「よく釣れた時間帯」）
+                    'bestTimeOfDay' => ($mostCommon[$spotId]['time_of_day'] ?? '') ?: null,
+                ];
+        }
+
+        return $results;
+    }
+
+    /**
+     * そのレベルに当てはまる釣行のクエリ（プランナーで、使うレベルの釣行だけを集計するため。#168）
+     */
+    public function matchedQuery(Builder $trips, string $level, Carbon $date, string $tide, ?string $timeOfDay): Builder
+    {
+        return $this->levels($date, $tide, $timeOfDay)[$level]['scope'](clone $trips);
     }
 
     /**
