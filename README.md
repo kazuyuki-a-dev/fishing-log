@@ -171,7 +171,7 @@
 | 地図     | Leaflet ＋ OpenStreetMap                                                                                                                              |
 | 天気     | 天気予報は [MET Norway](https://api.met.no/)（ノルウェー気象局、CC BY 4.0）、釣行の日時の天候は Open-Meteo（どちらも API キー不要）                   |
 | フォント | Google Fonts の BIZ UDPGothic・Yomogi（どちらも SIL Open Font License）                                                                               |
-| アイコン | [Tabler Icons](https://tabler.io/icons)（MIT ライセンス、Copyright (c) 2020-2026 Paweł Kuna）の魚・釣り針・灯台など。エサとルアーの絵は自作           |
+| アイコン | [Tabler Icons](https://tabler.io/icons)（MIT ライセンス、Copyright (c) 2020-2026 Paweł Kuna）の魚・釣り針・灯台・王冠など。エサとルアーの絵は自作          |
 
 ## データベース（ER 図）
 

@@ -118,6 +118,12 @@
                         @if ($catch->length_cm)
                         <span class="ml-2">{{ $catch->length_cm }} cm</span>
                         @endif
+                        {{-- 釣った本人の、その魚種の自己ベストなら印（#174）。ほかの人が見ても出る --}}
+                        @if ($bestCatchIds->contains($catch->id))
+                        <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-[#FFF1C2] px-2 py-0.5 align-middle text-xs font-bold text-[#6B4A00]">
+                            <x-crown class="h-4 w-4" />自己ベスト
+                        </span>
+                        @endif
                         @if ($catch->weight_g)
                         <span class="ml-2 text-sm font-normal">{{ $catch->weight_g }} g</span>
                         @endif

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use App\Services\CatchHighlighter;
 use App\Services\PhotoStorer;
+use App\Services\PersonalBests;
 use App\Services\WeatherService;
 use App\Http\Requests\BulkTripRequest;
 use App\Services\NewPostNotifier;
@@ -29,6 +30,7 @@ class TripController extends Controller
     // 写真・天気・お知らせの係。コントローラが作られるときに、Laravel が用意して渡してくれる
     public function __construct(
         private PhotoStorer $photos,
+        private PersonalBests $bests,
         private WeatherService $weather,
         private NewPostNotifier $notifier,
     ) {}
@@ -186,6 +188,10 @@ class TripController extends Controller
         return view('trips.show', [
             'trip' => $trip,
             'isOwner' => $isOwner,
+            // 釣った本人の、魚種ごとの自己ベストの釣果（王冠の印を付ける。#174）
+            'bestCatchIds' => $trip->catches->whereNotNull('length_cm')->isNotEmpty()
+                ? $this->bests->forUser($trip->user)->pluck('id')
+                : collect(),
             'visibility' => $trip->effectiveVisibility(),
             // ほかの人が見ていて「釣り場だけ隠す」なら、釣り場名を出さない（FN-12）
             'hideSpot' => ! $isOwner && $trip->effectiveVisibility() === 'spot_hidden',

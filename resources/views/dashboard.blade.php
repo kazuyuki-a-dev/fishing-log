@@ -31,7 +31,7 @@
                         <dd>
                             @if ($summary['biggest'])
                             {{-- 押すと、その釣果の釣行詳細へ（#170） --}}
-                            <a href="{{ route('trips.show', $summary['biggest']->trip_id) }}" class="underline decoration-dotted underline-offset-4 hover:text-sea">{{ $summary['biggest']->length_cm }}<span class="ml-0.5 text-sm font-normal">cm</span></a>
+                            <x-crown class="mr-1 h-5 w-5 align-[-0.2em]" /><a href="{{ route('trips.show', $summary['biggest']->trip_id) }}" class="underline decoration-dotted underline-offset-4 hover:text-sea">{{ $summary['biggest']->length_cm }}<span class="ml-0.5 text-sm font-normal">cm</span></a>
                             <span class="block text-xs font-normal text-sand">{{ $summary['biggest']->fish_species }}</span>
                             @else
                             <span class="text-sm font-normal">記録なし</span>
@@ -82,7 +82,7 @@
                         @foreach ($bests as $best)
                         <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2">
                             <span class="w-24 font-bold">{{ $best->fish_species }}</span>
-                            <span class="font-bold"><span class="crayon-marker">{{ $best->length_cm }} cm</span></span>
+                            <span class="font-bold"><x-crown class="mr-1 h-4 w-4 align-[-0.15em]" /><span class="crayon-marker">{{ $best->length_cm }} cm</span></span>
                             <span class="text-xs text-sand">{{ $best->trip->went_at->format('Y/m/d') }}・{{ $best->trip->spot->name }}</span>
                             <a href="{{ route('trips.show', $best->trip_id) }}" class="ml-auto text-sm underline text-sea">見る</a>
                         </li>
