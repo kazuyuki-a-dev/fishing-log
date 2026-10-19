@@ -17,7 +17,11 @@
             <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach ($bests as $best)
                 <li>
-                    <a href="{{ route('trips.show', $best->trip_id) }}" class="crayon-card block overflow-hidden hover:opacity-90">
+                    <a href="{{ route('trips.show', $best->trip_id) }}" class="crayon-card relative block overflow-hidden hover:opacity-90">
+                        {{-- 写真の左上に王冠（#174） --}}
+                        <span class="absolute left-2 top-2 z-10 inline-flex rounded-full bg-white/90 px-1.5 py-1">
+                            <x-crown class="!h-6 !w-6" />
+                        </span>
                         @if ($best->photoUrl())
                         <img src="{{ $best->photoUrl() }}" alt="{{ $best->fish_species }}の自己ベストの写真" loading="lazy"
                             class="aspect-[4/3] w-full object-cover">
