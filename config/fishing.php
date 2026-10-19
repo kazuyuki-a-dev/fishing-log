@@ -64,6 +64,9 @@ return [
     // お試しデータを入れ直す合図（#160）。公開環境の Render の環境変数に好きな文字を入れて公開し直すと、
     // 起動のときにお試しデータと写真を消して入れ直す。同じ合図では1回だけ（app:reset-demo-if-requested）
     'demo_reseed_token' => env('DEMO_RESEED_TOKEN'),
+
+    // 起動時の処理（お試しデータの投入・入れ直し・イラスト付け）で、ほかのインスタンスが作業中のときに待つ秒数（#172）
+    'startup_lock_wait' => (int) env('STARTUP_LOCK_WAIT', 600),
     // 公開環境の管理者のパスワード（秘密。Render の環境変数にだけ入れる）。なければランダムにする
     'admin_password' => env('ADMIN_PASSWORD'),
 ];
