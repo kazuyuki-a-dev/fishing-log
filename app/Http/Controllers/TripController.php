@@ -22,6 +22,7 @@ use App\Services\NewPostNotifier;
 use App\Services\TripSearch;
 use App\Services\TripCsvExporter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class TripController extends Controller
 {
@@ -99,10 +100,10 @@ class TripController extends Controller
 
     public function store(TripRequest $request, TideCalculator $tides, CatchHighlighter $highlighter): RedirectResponse
     {
-        $trip = DB::transaction(function () use ($request, $tides) {
+        $trip = $this->transactionWithPhotos(function (array &$stored) use ($request, $tides) {
             // 釣行を保存（持ち主はログイン中の本人）
             $trip = $request->user()->trips()->create($this->tripData($request, $tides));
-            $this->saveCatches($trip, $request->validated('catches') ?? []);
+            $this->saveCatches($trip, $request->validated('catches') ?? [], $stored);
 
             return $trip;
         });
@@ -134,7 +135,7 @@ class TripController extends Controller
         // 登録した釣行（あとでまとめてお知らせするために集めておく）
         $created = new Collection();
 
-        $catchCount = DB::transaction(function () use ($request, $tides, $groups, $visibility, $created) {
+        $catchCount = $this->transactionWithPhotos(function (array &$stored) use ($request, $tides, $groups, $visibility, $created) {
             $fetchWeather = true;
             $catchCount = 0;
 
@@ -159,7 +160,7 @@ class TripController extends Controller
 
                 // 魚種が空の行は坊主なので、釣果にはしない
                 $catches = $group->filter(fn(array $row) => ! empty($row['fish_species']))->all();
-                $this->saveCatches($trip, $catches);
+                $this->saveCatches($trip, $catches, $stored);
                 $catchCount += count($catches);
             }
 
@@ -218,16 +219,16 @@ class TripController extends Controller
         // 今ついている写真（引き継いでよい写真の一覧）
         $oldPhotos = $trip->catches()->whereNotNull('image_path')->pluck('image_path')->all();
 
-        DB::transaction(function () use ($request, $trip, $tides, $oldPhotos) {
+        $this->transactionWithPhotos(function (array &$stored) use ($request, $trip, $tides, $oldPhotos) {
             // 釣行を書き換える（日時が変わったら潮も計算し直す）
             $trip->update($this->tripData($request, $tides));
 
             // 釣果は、今あるものを全部消して、送られてきたものを入れ直す（写真は引き継げる）
             $trip->catches()->delete();
-            $this->saveCatches($trip, $request->validated('catches') ?? [], $oldPhotos);
+            $this->saveCatches($trip, $request->validated('catches') ?? [], $stored, $oldPhotos);
         });
 
-        // 引き継がれなかった写真のファイルを消す
+        // 引き継がれなかった写真のファイルを消す（保存が成功したあとだけ。失敗したら古い写真はそのまま）
         $usedPhotos = $trip->catches()->whereNotNull('image_path')->pluck('image_path')->all();
         foreach (array_diff($oldPhotos, $usedPhotos) as $path) {
             $this->photos->delete($path);
@@ -313,14 +314,39 @@ class TripController extends Controller
     }
 
     /**
+     * 写真の保存を含むトランザクション（#164）
+     * 写真のファイルはデータベースのロールバックでは元に戻らないので、途中で失敗したら、
+     * その中で新しく保存した写真を消してから、エラーをそのまま上に伝える
+     * $work には、保存した写真の場所を足していく配列（$stored）を渡す
+     */
+    private function transactionWithPhotos(callable $work): mixed
+    {
+        $stored = [];
+
+        try {
+            return DB::transaction(function () use ($work, &$stored) {
+                return $work($stored);
+            });
+        } catch (Throwable $e) {
+            foreach ($stored as $path) {
+                $this->photos->delete($path);
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
      * 釣果を1匹ずつ保存する。「その他」は入力した魚の名前で保存（FN-01）
      * 写真は、新しく選ばれたものを保存するか、今の写真（$keepable の中にあるもの）を引き継ぐ
+     * 新しく保存した写真の場所は $stored に足していく（失敗したときに消すため。#164）
      */
-    private function saveCatches(Trip $trip, array $catches, array $keepable = []): void
+    private function saveCatches(Trip $trip, array $catches, array &$stored, array $keepable = []): void
     {
         foreach ($catches as $catch) {
             if (isset($catch['photo'])) {
                 $imagePath = $this->photos->store($catch['photo']);
+                $stored[] = $imagePath;
             } elseif (in_array($catch['keep_photo'] ?? null, $keepable, true)) {
                 $imagePath = $catch['keep_photo'];
             } else {
