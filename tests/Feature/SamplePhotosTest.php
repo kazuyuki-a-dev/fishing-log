@@ -7,6 +7,7 @@ use App\Models\FishCatch;
 use App\Models\Spot;
 use App\Models\Trip;
 use App\Models\User;
+use App\Services\PersonalBests;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -131,9 +132,81 @@ class SamplePhotosTest extends TestCase
     {
         $this->seed();
 
-        $samples = FishCatch::where('image_path', 'like', AttachSamplePhotos::PREFIX . '%')->with('trip.spot')->get();
-        $this->assertGreaterThan(0, $samples->count());
-        $this->assertLessThanOrEqual(10, $samples->count());
-        $this->assertTrue($samples->every(fn($catch) => $catch->trip->effectiveVisibility() === 'public'));
+        // お試し用アカウント（開発環境は test@）の自己ベストは、アイナメ以外すべてイラストつき。アイナメは写真なしの例（#176）
+        $me = User::where('email', 'test@example.com')->firstOrFail();
+        $bests = app(PersonalBests::class)->forUser($me);
+        foreach ($bests as $best) {
+            $hasSample = str_starts_with((string) $best->image_path, AttachSamplePhotos::PREFIX);
+            $this->assertSame($best->fish_species !== AttachSamplePhotos::NO_PHOTO_EXAMPLE, $hasSample, $best->fish_species);
+        }
+
+        // それ以外のサンプルは、全体公開の釣果の10件まで
+        $bestIds = $bests->pluck('id')->all();
+        $others = FishCatch::where('image_path', 'like', AttachSamplePhotos::PREFIX . '%')->whereNotIn('id', $bestIds)->with('trip.spot')->get();
+        $this->assertLessThanOrEqual(10, $others->count());
+        $this->assertTrue($others->every(fn($catch) => $catch->trip->effectiveVisibility() === 'public'));
+    }
+
+    /** お試し用アカウントの釣果（private でもよい） */
+    private function mainUserCatch(User $me, string $fish, float $length, ?string $imagePath = null): FishCatch
+    {
+        $spot = Spot::factory()->create(['created_by' => $me->id]);
+        $trip = Trip::factory()->create(['user_id' => $me->id, 'spot_id' => $spot->id, 'visibility' => 'private']);
+
+        return FishCatch::factory()->for($trip)->create(['fish_species' => $fish, 'length_cm' => $length, 'image_path' => $imagePath]);
+    }
+
+    public function test_personal_bests_of_the_demo_account_get_illustrations_except_ainame(): void
+    {
+        $me = User::factory()->create(['email' => 'test@example.com']);
+        $bestAji = $this->mainUserCatch($me, 'アジ', 30.0);
+        $smallAji = $this->mainUserCatch($me, 'アジ', 20.0);
+        $ainame = $this->mainUserCatch($me, 'アイナメ', 40.0);
+        $withPhoto = $this->mainUserCatch($me, 'サバ', 35.0, 'catches/mine.jpg');
+        $otherUser = User::factory()->create();
+        $othersBest = $this->mainUserCatch($otherUser, 'メバル', 25.0);
+
+        $this->artisan('app:attach-sample-photos')->assertSuccessful();
+
+        // 自己ベストのアジだけに付く。小さいアジ・アイナメ・写真があるサバ・ほかの人には付かない
+        $this->assertStringStartsWith(AttachSamplePhotos::PREFIX, $bestAji->fresh()->image_path);
+        Storage::disk('public')->assertExists($bestAji->fresh()->image_path);
+        $this->assertNull($smallAji->fresh()->image_path);
+        $this->assertNull($ainame->fresh()->image_path);
+        $this->assertSame('catches/mine.jpg', $withPhoto->fresh()->image_path);
+        $this->assertNull($othersBest->fresh()->image_path);
+    }
+
+    public function test_personal_best_illustrations_are_added_even_after_public_ones_and_only_once(): void
+    {
+        // 公開環境では、全体公開の分はもう付いている。そのあとでも、自己ベストの分だけ付く（#176）
+        $this->catchOn('public', 'アジ');
+        $this->artisan('app:attach-sample-photos')->assertSuccessful();
+        $me = User::factory()->create(['email' => config('fishing.demo_email')]);
+        $best = $this->mainUserCatch($me, 'クロダイ', 48.0);
+
+        $this->artisan('app:attach-sample-photos')->assertSuccessful();
+        $path = $best->fresh()->image_path;
+        $this->assertStringStartsWith(AttachSamplePhotos::PREFIX, $path);
+
+        // もう一度動かしても、付け直さない
+        $this->artisan('app:attach-sample-photos')->assertSuccessful();
+        $this->assertSame($path, $best->fresh()->image_path);
+    }
+
+    public function test_stops_when_the_file_cannot_be_saved(): void
+    {
+        // 保存先に書き込めない（put が false を返す）ときは止める。ファイルがないのに場所だけ入らないように（#176）
+        $catch = $this->catchOn('public', 'アジ');
+        $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+        $disk->shouldReceive('put')->andReturn(false);
+        Storage::shouldReceive('disk')->andReturn($disk);
+
+        $this->expectException(\RuntimeException::class);
+        try {
+            $this->artisan('app:attach-sample-photos')->run();
+        } finally {
+            $this->assertNull($catch->fresh()->image_path);
+        }
     }
 }
