@@ -7,6 +7,7 @@ use App\Services\PhotoStorer;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -39,6 +40,13 @@ class AttachSamplePhotos extends Command
     public const PREFIX = 'catches/sample-';
 
     public function handle(): int
+    {
+        // 複数のインスタンスが同時に起動しても2回付けないように、ロックを取ってから確かめる（#172）
+        // シーダーの中からも呼ばれるので、お試しデータのロック（demo-data）とは別の名前にする
+        return Cache::lock('sample-photos', 300)->block(config('fishing.startup_lock_wait'), fn() => $this->attach());
+    }
+
+    private function attach(): int
     {
         if (FishCatch::where('image_path', 'like', self::PREFIX . '%')->exists()) {
             $this->info('サンプルのイラストは、もう付いています。');

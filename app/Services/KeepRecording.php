@@ -19,6 +19,9 @@ class KeepRecording
     /** 気づきカードにする条件で、最低限行っている回数（1回だけの当たりを「よく釣れる」と言わないため） */
     public const INSIGHT_MIN_VISITS = 2;
 
+    /** この回数より少ないうちは「参考程度」と添えて、言い切らない（#172） */
+    public const INSIGHT_CONFIDENT_VISITS = 5;
+
     /** 気づきカードで見る条件（列の名前 => 画面に出す名前） */
     public const INSIGHT_FIELDS = [
         'tide' => '潮',
@@ -34,18 +37,22 @@ class KeepRecording
     ];
 
     /**
+     * 自分の釣行を読み込まず、データベースで数える（記録が増えても重くならないように。#172）
+     *
      * @return array{counter: array, insights: array}
      */
     public function build(User $user, Carbon $today): array
     {
-        // 自分の釣行を、数えるのに要る列だけ取り出す。caught は「1匹以上釣れたか」
-        $trips = $user->trips()
-            ->withExists('catches as caught')
-            ->get(['id', 'went_at', 'tide', 'time_of_day', 'weather']);
+        // 月ごとの釣行の回数（例：'2026-10' => 3）
+        $months = $user->trips()->toBase()
+            ->selectRaw("DATE_FORMAT(went_at, '%Y-%m') as month, COUNT(*) as trip_count")
+            ->groupBy('month')
+            ->pluck('trip_count', 'month')
+            ->map(fn($count) => (int) $count);
 
         return [
-            'counter' => $this->counter($trips, $today),
-            'insights' => $this->insights($trips),
+            'counter' => $this->counter($months, $today),
+            'insights' => $this->insights($user, $months->sum()),
         ];
     }
 
@@ -55,11 +62,9 @@ class KeepRecording
      * @return array{month: int, thisMonth: int, lastYear: int, streak: int, recordedThisMonth: bool}
      *         streak は連続で記録している月数。今月まだ記録がなければ、先月までの続きの数
      */
-    public function counter(Collection $trips, Carbon $today): array
+    public function counter(Collection $months, Carbon $today): array
     {
-        // 記録のある月の一覧（例：'2026-10'）
-        $months = $trips->map(fn($trip) => $trip->went_at->format('Y-m'))->countBy();
-
+        // $months は、記録のある月ごとの回数（例：'2026-10' => 3）
         $thisMonth = $months->get($today->format('Y-m'), 0);
 
         // 今月まだ記録がなくても、今月が終わるまでは途切れにしない。先月からさかのぼって数える
@@ -86,12 +91,11 @@ class KeepRecording
      * 気づきカード
      * 潮・時間帯・天候のそれぞれで「釣れた割合」がいちばん高いものを1枚ずつ（最大3枚）
      *
-     * @return array{tripCount: int, remaining: int, cards: array<int, array{field: string, label: string, value: string, visits: int, caught: int}>}
+     * @return array{tripCount: int, remaining: int, cards: array<int, array{field: string, label: string, value: string, visits: int, caught: int, confident: bool}>}
      *         remaining は、カードが出るまであと何件か（出せるときは 0）
      */
-    public function insights(Collection $trips): array
+    public function insights(User $user, int $tripCount): array
     {
-        $tripCount = $trips->count();
         $remaining = max(0, self::INSIGHT_MIN_TRIPS - $tripCount);
         if ($remaining > 0) {
             return ['tripCount' => $tripCount, 'remaining' => $remaining, 'cards' => []];
@@ -101,16 +105,20 @@ class KeepRecording
         foreach (self::INSIGHT_FIELDS as $field => $label) {
             $order = array_flip(config(self::FIELD_OPTIONS[$field]));
 
-            $best = $trips
-                // 空欄の釣行は、この条件の計算に入れない
-                ->filter(fn($trip) => $trip->{$field} !== null)
+            // 条件の値ごとの、行った回数と釣れた回数（データベースで数える。空欄の釣行は入れない）
+            $best = $user->trips()->toBase()
+                ->whereNotNull($field)
+                ->selectRaw("{$field} as value, COUNT(*) as visits, COUNT(CASE WHEN EXISTS (SELECT 1 FROM catches WHERE catches.trip_id = trips.id) THEN 1 END) as caught")
                 ->groupBy($field)
-                ->map(fn(Collection $group, string $value) => [
+                ->get()
+                ->map(fn($row) => [
                     'field' => $field,
                     'label' => $label,
-                    'value' => $value,
-                    'visits' => $group->count(),
-                    'caught' => $group->where('caught', true)->count(),
+                    'value' => $row->value,
+                    'visits' => (int) $row->visits,
+                    'caught' => (int) $row->caught,
+                    // 行った回数が少ないうちは、言い切らない（#172）
+                    'confident' => (int) $row->visits >= self::INSIGHT_CONFIDENT_VISITS,
                 ])
                 // 2回以上行って、1回でも釣れた条件だけ
                 ->filter(fn(array $row) => $row['visits'] >= self::INSIGHT_MIN_VISITS && $row['caught'] > 0)

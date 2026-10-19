@@ -32,6 +32,14 @@ class ResetDemoIfRequested extends Command
         if ($token === '') {
             return self::SUCCESS;
         }
+
+        // 複数のインスタンスが同時に起動しても、入れ直しが2回走らないように、ロックを取ってから確かめる（#172）
+        // app:seed-if-empty と同じロック。ほかが作業中なら、終わるまで待つ
+        return Cache::lock('demo-data', 900)->block(config('fishing.startup_lock_wait'), fn() => $this->reset($token));
+    }
+
+    private function reset(string $token): int
+    {
         if (Cache::get(self::CACHE_KEY) === $token) {
             $this->info('この合図では、もう入れ直しています。');
 

@@ -20,7 +20,8 @@ php artisan route:cache
 php artisan view:cache
 
 # データベースの表を作る・最新にする
-php artisan migrate --force
+# --isolated：複数のインスタンスが同時に起動しても、マイグレーションは1つだけが動く（ほかは待たずに終わる。#172）
+php artisan migrate --force --isolated
 
 # 入れ直しの合図（環境変数 DEMO_RESEED_TOKEN）が新しいときだけ、お試しデータと写真を消して入れ直す（#160）
 php artisan app:reset-demo-if-requested

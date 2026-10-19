@@ -108,12 +108,17 @@
                     {{-- オレンジの手書きのひとことと、数字に黄色のマーカー（#100） --}}
                     <li class="crayon-card p-4 text-sm space-y-1">
                         <p class="text-xs text-sand">{{ $card['label'] }}</p>
-                        <p class="crayon-scrawl"><span aria-hidden="true">→ </span>{{ $card['value'] }}のときに釣れているようです</p>
-                        <p>{{ $card['value'] }}で <span class="crayon-marker">{{ $card['visits'] }}回行って {{ $card['caught'] }}回釣れた</span></p>
+                        {{-- 行った回数が少ないうちは言い切らず、「参考程度」と添える（#172） --}}
+                        <p class="crayon-scrawl"><span aria-hidden="true">→ </span>{{ $card['value'] }}のときに{{ $card['confident'] ? '釣れているようです' : '釣れているかもしれません' }}</p>
+                        {{-- 母数が目に入るように、回数を大きく出す --}}
+                        <p>{{ $card['value'] }}で <span class="crayon-marker text-base font-bold">{{ $card['visits'] }}回行って {{ $card['caught'] }}回釣れた</span></p>
+                        @if (! $card['confident'])
+                        <p class="text-xs text-sand">まだ記録が少ないので、参考程度です</p>
+                        @endif
                     </li>
                     @endforeach
                 </ul>
-                <p class="text-xs text-sand text-right">自分の釣行 {{ $insights['tripCount'] }}件から。記録が増えるほど確かになります。</p>
+                <p class="text-xs text-sand text-right">自分の釣行 {{ $insights['tripCount'] }}件から。釣り場や季節の違いは考えに入れていません。同じ条件で行った回数が多いほど確かになります。</p>
                 @endif
             </section>
 

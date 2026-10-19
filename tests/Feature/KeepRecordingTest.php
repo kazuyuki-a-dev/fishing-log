@@ -126,6 +126,21 @@ class KeepRecordingTest extends TestCase
             ->assertSeeText('釣行をあと 1件記録すると');
     }
 
+    public function test_insight_with_enough_visits_is_stated_plainly(): void
+    {
+        // 大潮で5回行って4回釣れた → 5回以上なので「〜ようです」と言い、「参考程度」は付けない（#172）
+        foreach (['2026-01-11', '2026-02-10', '2026-03-11', '2026-04-09', '2026-05-09'] as $i => $day) {
+            $this->trip("{$day} 06:00", $i < 4, ['tide' => '大潮']);
+        }
+
+        $card = $this->build()['insights']['cards'][0];
+        $this->assertSame(['大潮', 5, 4, true], [$card['value'], $card['visits'], $card['caught'], $card['confident']]);
+
+        $this->actingAs($this->me)->get('/dashboard')
+            ->assertSeeText('大潮のときに釣れているようです')
+            ->assertDontSeeText('参考程度です');
+    }
+
     public function test_insights_pick_the_best_rate_for_each_condition(): void
     {
         // 潮：大潮 3回中2回（67%）、中潮 2回中2回（100%）→ 中潮
@@ -157,8 +172,11 @@ class KeepRecordingTest extends TestCase
 
         $this->actingAs($this->me)->get('/dashboard')
             ->assertOk()
-            ->assertSeeText('中潮のときに釣れているようです')
+            // 行った回数が5回未満なので言い切らず、「参考程度」と添える（#172）
+            ->assertSeeText('中潮のときに釣れているかもしれません')
+            ->assertSeeText('まだ記録が少ないので、参考程度です')
             ->assertSeeText('中潮で 2回行って 2回釣れた')
+            ->assertSeeText('釣り場や季節の違いは考えに入れていません')
             ->assertSeeText('自分の釣行 7件から');
     }
 
