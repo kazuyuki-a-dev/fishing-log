@@ -30,7 +30,8 @@
                         <dt>自分の最大サイズ</dt>
                         <dd>
                             @if ($summary['biggest'])
-                            {{ $summary['biggest']->length_cm }}<span class="ml-0.5 text-sm font-normal">cm</span>
+                            {{-- 押すと、その釣果の釣行詳細へ（#170） --}}
+                            <a href="{{ route('trips.show', $summary['biggest']->trip_id) }}" class="underline decoration-dotted underline-offset-4 hover:text-sea">{{ $summary['biggest']->length_cm }}<span class="ml-0.5 text-sm font-normal">cm</span></a>
                             <span class="block text-xs font-normal text-sand">{{ $summary['biggest']->fish_species }}</span>
                             @else
                             <span class="text-sm font-normal">記録なし</span>
@@ -68,6 +69,28 @@
                     @endif
                 </div>
             </section>
+
+            {{-- 魚種ごとの自己ベスト（#170）。大きい順に3つ。「すべて見る」で写真つきのページへ --}}
+            @if ($bests->isNotEmpty())
+            <section class="space-y-3">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 class="crayon-subheading">自己ベスト</h3>
+                    <a href="{{ route('bests.index') }}" class="text-sm underline text-sea">すべて見る（{{ $bestSpeciesCount }}種類）</a>
+                </div>
+                <div class="crayon-card p-4">
+                    <ul class="divide-y divide-dashed divide-gray-300">
+                        @foreach ($bests as $best)
+                        <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2">
+                            <span class="w-24 font-bold">{{ $best->fish_species }}</span>
+                            <span class="font-bold"><span class="crayon-marker">{{ $best->length_cm }} cm</span></span>
+                            <span class="text-xs text-sand">{{ $best->trip->went_at->format('Y/m/d') }}・{{ $best->trip->spot->name }}</span>
+                            <a href="{{ route('trips.show', $best->trip_id) }}" class="ml-auto text-sm underline text-sea">見る</a>
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </section>
+            @endif
 
             {{-- 気づきカード（FN-10）。何件の記録から言っているかを必ず出す --}}
             @php

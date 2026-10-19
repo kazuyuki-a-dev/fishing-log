@@ -15,7 +15,8 @@ return [
         'label' => 'ダッシュボード',
         'icon' => 'notebook',
         'link' => 'dashboard',
-        'routes' => ['dashboard'],
+        // 自己ベストのページはダッシュボードから開くので、ダッシュボードの付箋を手前にする（#170）
+        'routes' => ['dashboard', 'bests.index'],
         'who' => 'auth',
         'tab' => '#FFE58A',
         'paper' => '#FFF8D6',
