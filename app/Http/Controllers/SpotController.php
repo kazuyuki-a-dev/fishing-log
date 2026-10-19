@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SpotRequest;
 use App\Models\Spot;
+use App\Models\Trip;
+use App\Models\FishCatch;
 use App\Services\TideCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,15 +95,32 @@ class SpotController extends Controller
 
         Gate::authorize('view', $spot);
 
-        $trips = $spot->trips()
-            ->visibleWithSpotTo($user) // 自分のもの ＋ ほかの人の「全体公開かつ釣り場も公開」のもの（FN-12）
-            ->with(['catches', 'user:id,name'])
-            ->orderByDesc('went_at')
-            ->get();
+        // 見てよい釣行：自分のもの ＋ ほかの人の「全体公開かつ釣り場も公開」のもの（FN-12）
+        // 読み込まずにクエリのまま使い、回数や表はデータベースで数える（記録が増えても重くならないように。#166）
+        $visible = fn() => Trip::where('trips.spot_id', $spot->id)->visibleWithSpotTo($user);
 
-        // ゲストには「自分の実績」はなく、見える釣行はすべて「ほかの人の公開実績」
-        $mine = $user ? $trips->where('user_id', $user->id) : collect();
-        $others = $user ? $trips->where('user_id', '!=', $user->id) : $trips;
+        // 実績（FN-09）。ゲストには「自分の実績」はなく、見える釣行はすべて「ほかの人の公開実績」
+        // 回数・釣れた回数・最後に行った日を、1回の問い合わせでまとめて数える（#166）
+        $userId = $user?->id ?? 0;
+        $caughtSql = 'EXISTS (SELECT 1 FROM catches WHERE catches.trip_id = trips.id)';
+        $stats = $visible()->toBase()->selectRaw(
+            "COUNT(CASE WHEN trips.user_id = ? THEN 1 END) as mine_visits,
+             COUNT(CASE WHEN trips.user_id = ? AND {$caughtSql} THEN 1 END) as mine_caught,
+             MAX(CASE WHEN trips.user_id = ? THEN trips.went_at END) as mine_last,
+             COUNT(CASE WHEN trips.user_id <> ? THEN 1 END) as others_visits,
+             COUNT(CASE WHEN trips.user_id <> ? AND {$caughtSql} THEN 1 END) as others_caught",
+            array_fill(0, 5, $userId)
+        )->first();
+        $mine = [
+            'visits' => (int) $stats->mine_visits,
+            'caught' => (int) $stats->mine_caught,
+            'maxSize' => $user ? FishCatch::whereIn('trip_id', $visible()->where('trips.user_id', $user->id)->select('trips.id'))->max('length_cm') : null,
+            'lastWentAt' => $stats->mine_last ? Carbon::parse($stats->mine_last) : null,
+        ];
+        $others = [
+            'visits' => (int) $stats->others_visits,
+            'caught' => (int) $stats->others_caught,
+        ];
 
         // ---- 釣行判断（FN-11） ----
         // 日付：指定がない・おかしい値なら今日
@@ -116,11 +135,18 @@ class SpotController extends Controller
         // 次の大潮（選んだ日の翌日から数えて最初の大潮の日）と、そこまでの日数（FN-11・#130）
         $nextBigTide = $tides->nextDateWithTide($date->copy()->addDay(), '大潮');
 
-        // 条件に合う釣行。釣れた記録がなければ、プランナーと同じく少しずつゆるめる（FN-16）
-        $match = $matcher->match($trips, $date, $tide, $timeOfDay);
-        $matched = $match['matched'];
+        // 条件に合う釣行。釣れた記録がなければ、プランナーと同じく少しずつゆるめる（FN-16）。データベースで数える（#166）
+        $match = $matcher->matchQuery($visible(), $date, $tide, $timeOfDay);
+        // 当てはまった釣行の釣果（釣り方・魚種を数える）
+        $matchedCatches = fn() => FishCatch::whereIn('trip_id', (clone $match['matched'])->select('trips.id'));
 
-        $matchedCatches = $matched->flatMap->catches;
+        // 釣行の履歴（FN-09）。新しい順に10件ずつ（全部は出さない。#166）
+        $trips = $visible()
+            ->with(['catches', 'user:id,name'])
+            ->orderByDesc('went_at')
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->withQueryString();
 
         $judge = [
             'date' => $date,
@@ -133,11 +159,13 @@ class SpotController extends Controller
             'stamps' => $match['stamps'],
             'visits' => $match['visits'],
             'caught' => $match['caught'],
-            'methods' => $matchedCatches->countBy('method'),
-            'species' => $matchedCatches->countBy('fish_species')->sortDesc()->take(3),
+            'methods' => $matchedCatches()->selectRaw('method, COUNT(*) as fish')->groupBy('method')->orderBy('method')->pluck('fish', 'method'),
+            'species' => $matchedCatches()->selectRaw('fish_species, COUNT(*) as fish')->groupBy('fish_species')
+                ->orderByDesc('fish')->orderBy('fish_species')->limit(3)->pluck('fish', 'fish_species'),
             'nextBigTide' => $nextBigTide,
             'daysToBigTide' => (int) round($date->copy()->startOfDay()->diffInDays($nextBigTide->copy()->startOfDay())),
-            'matchedIds' => $matched->pluck('id'),
+            // 履歴のこのページのうち、条件が一致した釣行（チェックの印を付ける）
+            'matchedIds' => $match['visits'] > 0 ? $trips->getCollection()->filter($match['test'])->pluck('id') : collect(),
         ];
 
         // 天気予報（FN-11）。位置がある釣り場で、今日から 8 日先までだけ（MET Norway。#146）
@@ -151,19 +179,11 @@ class SpotController extends Controller
         return view('spots.show', [
             'spot' => $spot->load('editor:id,name'),
             'trips' => $trips,
-            'mine' => [
-                'visits' => $mine->count(),
-                'caught' => $mine->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
-                'maxSize' => $mine->flatMap->catches->max('length_cm'),
-                'lastWentAt' => $mine->first()?->went_at,
-            ],
-            'others' => [
-                'visits' => $others->count(),
-                'caught' => $others->filter(fn($trip) => $trip->catches->isNotEmpty())->count(),
-            ],
+            'mine' => $mine,
+            'others' => $others,
             'judge' => $judge,
-            // 月別×魚種の小さな表（PG07）。履歴と同じ、見てよい釣行だけから作る
-            'season' => $heatmap->forTrips($trips),
+            // 月別×魚種の小さな表（PG07）。履歴と同じ、見てよい釣行だけから、データベースで数える（#166）
+            'season' => $heatmap->forQuery($visible()),
             'location' => $spot->locationFor($request->user()),
         ]);
     }
