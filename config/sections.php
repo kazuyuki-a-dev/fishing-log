@@ -15,8 +15,8 @@ return [
         'label' => 'ダッシュボード',
         'icon' => 'notebook',
         'link' => 'dashboard',
-        // 自己ベストのページはダッシュボードから開くので、ダッシュボードの付箋を手前にする（#170）
-        'routes' => ['dashboard', 'bests.index'],
+        // 自己ベスト（#170）とシーズンヒートマップ（#180）のページはダッシュボードから開くので、ダッシュボードの付箋を手前にする
+        'routes' => ['dashboard', 'bests.index', 'analysis.heatmap'],
         'who' => 'auth',
         'tab' => '#FFE58A',
         'paper' => '#FFF8D6',
