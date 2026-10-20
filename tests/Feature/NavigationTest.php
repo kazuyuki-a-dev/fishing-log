@@ -74,4 +74,13 @@ class NavigationTest extends TestCase
             ->assertSee('<span class="xl:hidden">報告 0</span>', false)
             ->assertSee('title="報告（未対応 0件）"', false);
     }
+
+    public function test_heatmap_page_brings_the_dashboard_tab_forward(): void
+    {
+        // ヒートマップへのリンクはダッシュボードにだけあるので、ダッシュボードの付箋が手前になる（#180）
+        $html = $this->actingAs(User::factory()->create())->get('/analysis/heatmap')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/title="ダッシュボード"[^>]*aria-current="page"/', $html);
+        $this->assertSame(1, substr_count($html, 'aria-current="page"'));
+    }
 }
