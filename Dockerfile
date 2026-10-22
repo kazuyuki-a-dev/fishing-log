@@ -8,7 +8,9 @@ COPY . .
 RUN npm run build
 
 # 2. 動かす箱。PHP 8.5（開発の Sail と同じ版）＋ Apache
-FROM php:8.5-apache
+# 版は細かい番号まで書き切る。8.5 だけだと、前に作った箱が使い回されて古い版のまま動くことがあるため。
+# 8.5.12 は緊急のセキュリティ修正（CVE-2026-109618・CVE-2026-109619）の入った版。次の修正が出たら、ここを上げる（#184）
+FROM php:8.5.12-apache
 # 写真（GD・Exif）、MySQL、そのほか Laravel に要る部品（opcache は PHP 8.5 から最初から入っている）
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev libzip-dev \
