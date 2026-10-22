@@ -15,6 +15,8 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
+  # composer と npm も、大きな版（Laravel 14・Tailwind CSS 4 など）は書き方が大きく変わるので知らせてもらわず、出たら手で決める
+
   # Laravel などの PHP の部品（composer.json）。PR が増えすぎないように、まとめて1つにする
   - package-ecosystem: "composer"
     directory: "/"
@@ -26,6 +28,9 @@ updates:
     groups:
       composer:
         patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # 画面の部品（package.json）。こちらもまとめて1つにする
   - package-ecosystem: "npm"
@@ -38,3 +43,6 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
