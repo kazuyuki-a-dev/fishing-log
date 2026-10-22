@@ -26,7 +26,7 @@
 
 ### Dependabot の PR が来たとき（#186）
 
-- `.github/dependabot.yml` で、毎週月曜 9 時に新しい版を確かめ、PR を自動で作る（Docker は細かい番号の修正だけ、composer と npm は種類ごとに1つの PR にまとめる）。GitHub の「Dependabot alerts」（弱点の知らせ）も ON
+- `.github/dependabot.yml` で、毎週月曜 9 時に新しい版を確かめ、PR を自動で作る（Docker は細かい番号の修正だけ、composer と npm は大きな版を知らせず、種類ごとに1つの PR にまとめる）。**Tailwind CSS 4 には上げない**（書き方が大きく変わり見た目がくずれる。上げるなら別の Issue で相談）。GitHub の「Dependabot alerts」（弱点の知らせ）も ON
 - **自動のテスト（CI）はないので、手元で確かめてからマージする**：`gh pr checkout <PR番号>` → composer なら `sail composer install`、npm なら `sail npm install && sail npm run build`、Docker の PHP なら `sail build --no-cache && sail up -d` → `sail artisan test` → 画面を少し開く
 - Dependabot の PR は Issue がなく、タイトルとコミットは英語のまま。記録として decisions.md に1行書く必要はない（セキュリティ修正などで判断したときだけ書く）
 - マージすると Render が自動で公開し直すので、Render の Events で Live になったかを見る
