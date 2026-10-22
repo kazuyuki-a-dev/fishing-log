@@ -1,0 +1,40 @@
+# Dependabot：新しい版が出たら、版を上げる PR を自動で作ってもらう（#186）
+# 届いた PR は、手元でテストしてからマージする（手順は CLAUDE.md）
+version: 2
+updates:
+  # Dockerfile の箱（PHP・Node）。セキュリティ修正の入った細かい版（8.5.12 → 8.5.13 など）だけを知らせてもらう
+  # 大きな版（PHP 8.6・Node 26 など）は動かなくなることがあるので、出たら手で決める
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  # Laravel などの PHP の部品（composer.json）。PR が増えすぎないように、まとめて1つにする
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    groups:
+      composer:
+        patterns: ["*"]
+
+  # 画面の部品（package.json）。こちらもまとめて1つにする
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    groups:
+      npm:
+        patterns: ["*"]
