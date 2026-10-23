@@ -1,6 +1,7 @@
 # FishingLog 定義書（Excel「フィッシングログ.xlsx」を Markdown にしたもの）
 
 > 元の Excel をそのまま書き写したものです。開発中に決めた違いは `docs/decisions.md` を見てください。
+> 要件ごとの状態・受け入れの条件・確かめ方・結果は `docs/requirements.md` の対応表を見てください。
 
 
 ## 案件定義書
