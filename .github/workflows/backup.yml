@@ -45,7 +45,8 @@ jobs:
           --health-retries=20
 
     env:
-      DB_HOST: ${{ secrets.BACKUP_DB_HOST }}
+      # 確かめのあいだだけ：わざと住所を間違えて、失敗のメールが届くかを見る（元に戻す）
+      DB_HOST: wrong-host.invalid
       DB_PORT: ${{ secrets.BACKUP_DB_PORT }}
       DB_USER: ${{ secrets.BACKUP_DB_USERNAME }}
       DB_NAME: ${{ secrets.BACKUP_DB_DATABASE }}
