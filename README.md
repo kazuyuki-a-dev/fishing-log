@@ -35,9 +35,9 @@
 - お試し用アカウントは、ニックネーム・メールアドレス・パスワードの変更と、退会ができません。釣行の記録・編集・削除は自由に試せます
 - ログインしなくても、トップ・釣果フィード・釣り場カルテ・単位変換・使い方は見られます
 - 釣果の写真のうち、左下に「サンプル」のスタンプがあるものは、自作の魚のイラストです（写真がどう表示されるかを見られるように、全体公開の釣果のいくつかに付けています）
-- パスワードの再設定のメールは送られません（メールを送る設定をしていないため）
+- パスワードの再設定のメールは、メール送信サービス [Brevo](https://www.brevo.com/) から届きます（送り主は FishingLog <fishinglog.dev@gmail.com>）。無料のアドレスから送っているので、迷惑メールのフォルダに入ることがあります。お試し用アカウントは `example.com` のアドレスなので、再設定のメールは届きません
 - **釣行を記録するときの天候の自動入力は、取得できないことがあります**。無料の公開先では、過去の天気のサービス（Open-Meteo）への問い合わせの回数を、ほかのアプリと合わせて数えられ、上限を超えると断られるためです。天候は手で選べます（カルテの天気予報は、別のサービスの MET Norway から取っています）
-- 公開先：アプリは [Render](https://render.com/)、データベースは [Aiven](https://aiven.io/)（MySQL）、写真は [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)。どれも無料の枠で使っています。死活監視（[UptimeRobot](https://uptimerobot.com/)）で5分おきに応答を確かめていて、止まったときは知らせが届きます。無料の枠はしばらく使われないとアプリやデータベースが止まりますが、この見回りで止まらないようにしています（予備として GitHub Actions でも3時間に1回開いています。`.github/workflows/keep-alive.yml`）。本番で使うときは、止まらない有料のプランにします
+- 公開先：アプリは [Render](https://render.com/)、データベースは [Aiven](https://aiven.io/)（MySQL）、写真は [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)、メールは [Brevo](https://www.brevo.com/)（SMTP）。どれも無料の枠で使っています。死活監視（[UptimeRobot](https://uptimerobot.com/)）で5分おきに応答を確かめていて、止まったときは知らせが届きます。無料の枠はしばらく使われないとアプリやデータベースが止まりますが、この見回りで止まらないようにしています（予備として GitHub Actions でも3時間に1回開いています。`.github/workflows/keep-alive.yml`）。本番で使うときは、止まらない有料のプランにします
 - 起動のたびに、マイグレーションとお試しデータの準備をしています（`docker/start.sh`）。複数のインスタンスで同時に起動しても重ならないように、マイグレーションは `--isolated`、お試しデータの準備はロックで1つずつ動かしています。規模を広げるときは、マイグレーションなどをデプロイのときに1回だけ動く処理（Render の Pre-Deploy Command など）に分けます
 
 ## 画面
@@ -309,6 +309,8 @@ cp .env.example .env
 
 ブラウザで http://localhost を開きます。
 
+開発環境で送ったメール（パスワード再設定など）は本物には届かず、Mailpit（届くはずのメールを受け止めて見せる道具）が受け止めます。http://localhost:8025 で中身を見られます。
+
 以下では、`./vendor/bin/sail` を `sail` と書いています（`alias sail='./vendor/bin/sail'` を設定すると短く打てます）。
 
 ### 気をつけること
@@ -353,7 +355,7 @@ cp .env.example .env
 sail artisan test
 ```
 
-- 370 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
+- 374 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
 - **GitHub Actions で自動で流しています**（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）。push のたびに、GitHub のサーバーで MySQL 8.4・PHP 8.5 を用意して、全部のテストを流します。手元に PHP や Docker がなくても、結果を確かめられます
   - 結果の見方：GitHub の [Actions → テスト](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で実行を1つ開くと、Summary に「全部・成功・失敗・エラー」の件数、「テストを流す」の行に1件ずつの結果（ログ）が出ます。結果のファイル（JUnit 形式）も、同じ画面の Artifacts からダウンロードできます
   - いちばん上のバッジが緑（passing）なら、main のテストはすべて成功しています。PR の画面でも「Checks」に結果が出ます
