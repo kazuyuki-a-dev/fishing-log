@@ -7,6 +7,7 @@
 
 - 主役は **釣行プランナー**（行く日と県を選ぶと、過去の記録から釣り場を提案）と **釣り場カルテ**（その釣り場で、選んだ日の条件のときにどうだったか）
 - 定義書は [`docs/spec.md`](docs/spec.md)、定義書と違うことをしたときの判断と理由は [`docs/decisions.md`](docs/decisions.md) にすべて記録しています
+- 定義書の要件ごとの状態（完了・一部対応など）・受け入れの条件・確かめ方・結果は [`docs/requirements.md`](docs/requirements.md) の対応表にまとめています
 
 ## お試し環境
 
@@ -260,7 +261,7 @@ cp .env.example .env
 sail artisan test
 ```
 
-- 351 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
+- 355 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
 - **GitHub Actions で自動で流しています**（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）。push のたびに、GitHub のサーバーで MySQL 8.4・PHP 8.5 を用意して、全部のテストを流します。手元に PHP や Docker がなくても、結果を確かめられます
   - 結果の見方：GitHub の [Actions → テスト](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で実行を1つ開くと、Summary に「全部・成功・失敗・エラー」の件数、「テストを流す」の行に1件ずつの結果（ログ）が出ます。結果のファイル（JUnit 形式）も、同じ画面の Artifacts からダウンロードできます
   - いちばん上のバッジが緑（passing）なら、main のテストはすべて成功しています。PR の画面でも「Checks」に結果が出ます
