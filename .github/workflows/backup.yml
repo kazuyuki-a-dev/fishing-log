@@ -1,0 +1,138 @@
+# 公開環境のデータベースと写真を、毎日バックアップする（#204）
+# 1. Aiven の MySQL を書き出して圧縮し、Cloudflare R2 の非公開のバケットに置く（30日より古いものは R2 の決まりで自動で消す）
+# 2. 写真のバケットを、同じバックアップのバケットの photos/ に写す（写す側では消さないので、消した写真も残る）
+# 3. 取ったバックアップを、この中の別の MySQL に戻してみて、テーブルと件数を確かめる（戻せなければ失敗にする）
+# 失敗すると、GitHub からメールが届く。戻し方は docs/backup.md
+# 接続の情報は、リポジトリの Settings → Secrets and variables → Actions にだけ入れる
+name: バックアップ
+
+on:
+  schedule:
+    # 毎日 UTC の 19:07（日本時間の朝 4:07）。ちょうどの時刻は GitHub が混むので 7 分にする
+    - cron: '7 19 * * *'
+  # Actions の画面から、手で動かすこともできる
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 2つ同時に動かない
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    # 戻す試しに使う、空の MySQL（本番と同じ 8.4）
+    services:
+      restore:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: restore
+          MYSQL_DATABASE: restore_check
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -prestore"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DB_HOST: ${{ secrets.BACKUP_DB_HOST }}
+      DB_PORT: ${{ secrets.BACKUP_DB_PORT }}
+      DB_USER: ${{ secrets.BACKUP_DB_USERNAME }}
+      DB_NAME: ${{ secrets.BACKUP_DB_DATABASE }}
+      # パスワードは MYSQL_PWD で渡す（コマンドの文字に入れると、ほかから見えることがあるため）
+      MYSQL_PWD: ${{ secrets.BACKUP_DB_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      # R2 は新しい aws コマンドの自動の確かめ（チェックサム）に対応していないので、必要なときだけにする
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      R2_ENDPOINT: ${{ secrets.BACKUP_R2_ENDPOINT }}
+      PHOTOS_BUCKET: ${{ secrets.BACKUP_R2_PHOTOS_BUCKET }}
+      BACKUP_BUCKET: ${{ secrets.BACKUP_R2_BACKUP_BUCKET }}
+
+    steps:
+      - name: Aiven の証明書をファイルにする
+        env:
+          DB_CA: ${{ secrets.BACKUP_DB_CA }}
+        run: |
+          mkdir -p work
+          printf '%s\n' "$DB_CA" > work/ca.pem
+          echo "STAMP=$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)" >> "$GITHUB_ENV"
+
+      # mysqldump は本番と同じ版（8.4）のものを使う
+      - name: データベースを書き出す
+        run: |
+          docker run --rm --network host -e MYSQL_PWD -v "$PWD/work:/work" mysql:8.4 \
+            mysqldump --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" \
+              --ssl-mode=VERIFY_CA --ssl-ca=/work/ca.pem \
+              --single-transaction --routines --triggers --set-gtid-purged=OFF --no-tablespaces \
+              "$DB_NAME" > work/db.sql
+          gzip -9 work/db.sql
+          ls -lh work/db.sql.gz
+
+      - name: 本番の件数を数える（戻したものと比べるため）
+        run: |
+          docker run --rm --network host -e MYSQL_PWD -v "$PWD/work:/work" mysql:8.4 \
+            mysql --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" \
+              --ssl-mode=VERIFY_CA --ssl-ca=/work/ca.pem --batch --skip-column-names "$DB_NAME" \
+              -e "SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'spots', COUNT(*) FROM spots UNION ALL SELECT 'trips', COUNT(*) FROM trips UNION ALL SELECT 'catches', COUNT(*) FROM catches" \
+            > work/source-counts.txt
+          cat work/source-counts.txt
+
+      - name: 戻せるかを試す（空の MySQL に戻して数える）
+        run: |
+          gunzip -c work/db.sql.gz | docker run --rm -i --network host -e MYSQL_PWD=restore mysql:8.4 \
+            mysql --host=127.0.0.1 --port=3307 --user=root restore_check
+          docker run --rm --network host -e MYSQL_PWD=restore mysql:8.4 \
+            mysql --host=127.0.0.1 --port=3307 --user=root --batch --skip-column-names restore_check \
+              -e "SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'spots', COUNT(*) FROM spots UNION ALL SELECT 'trips', COUNT(*) FROM trips UNION ALL SELECT 'catches', COUNT(*) FROM catches" \
+            > work/restored-counts.txt
+          docker run --rm --network host -e MYSQL_PWD=restore mysql:8.4 \
+            mysql --host=127.0.0.1 --port=3307 --user=root --batch --skip-column-names restore_check \
+              -e "SHOW TABLES" > work/restored-tables.txt
+          cat work/restored-counts.txt
+          # アプリのテーブルが全部あること
+          for table in users spots trips catches reports notifications password_reset_tokens spot_local_info_changes migrations; do
+            grep -qx "$table" work/restored-tables.txt || { echo "::error::戻したデータベースに $table がありません"; exit 1; }
+          done
+          # 会員と釣り場が1件以上あること（空のバックアップを見逃さない）
+          awk '($1=="users" || $1=="spots") && $2 < 1 { print "::error::" $1 " が0件です"; bad=1 } END { exit bad }' work/restored-counts.txt
+
+      - name: データベースのバックアップを R2 に置く
+        run: |
+          aws s3 cp work/db.sql.gz "s3://$BACKUP_BUCKET/db/fishinglog_$STAMP.sql.gz" --endpoint-url "$R2_ENDPOINT" --no-progress
+
+      # 写す側では消さない（--delete を付けない）ので、間違って消した写真も残る
+      - name: 写真を写す
+        run: |
+          aws s3 sync "s3://$PHOTOS_BUCKET" "s3://$BACKUP_BUCKET/photos" --endpoint-url "$R2_ENDPOINT" --no-progress --only-show-errors
+          src=$(aws s3 ls "s3://$PHOTOS_BUCKET" --recursive --endpoint-url "$R2_ENDPOINT" | wc -l)
+          dst=$(aws s3 ls "s3://$BACKUP_BUCKET/photos/" --recursive --endpoint-url "$R2_ENDPOINT" | wc -l)
+          echo "PHOTOS_SRC=$src" >> "$GITHUB_ENV"
+          echo "PHOTOS_DST=$dst" >> "$GITHUB_ENV"
+          [ "$dst" -ge "$src" ] || { echo "::error::写真の写しが足りません（元 $src 枚、写し $dst 枚）"; exit 1; }
+
+      - name: 結果を書く
+        if: always()
+        run: |
+          {
+            echo "## バックアップの結果（$STAMP）"
+            echo ""
+            echo "| テーブル | 本番 | 戻したもの |"
+            echo "|---|---|---|"
+            if [ -f work/source-counts.txt ] && [ -f work/restored-counts.txt ]; then
+              paste work/source-counts.txt work/restored-counts.txt | awk '{ print "| " $1 " | " $2 " | " $4 " |" }'
+            fi
+            echo ""
+            # 途中で止まったときもこの手順は失敗にしない（if で書く。[ ] && だと、ないときに失敗の合図になる）
+            if [ -f work/db.sql.gz ]; then echo "- データベースのファイル：db/fishinglog_$STAMP.sql.gz（$(du -h work/db.sql.gz | cut -f1)）"; fi
+            if [ -n "$PHOTOS_SRC" ]; then echo "- 写真：元 $PHOTOS_SRC 枚、写し $PHOTOS_DST 枚"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
