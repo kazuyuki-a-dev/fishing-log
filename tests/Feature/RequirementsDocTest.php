@@ -45,6 +45,23 @@ class RequirementsDocTest extends TestCase
         }
     }
 
+    public function test_every_row_has_a_method_result_and_date(): void
+    {
+        // 欄：番号 | 要件 | 状態 | 受け入れの条件 | 確認方法 | テスト・手順 | 結果 | 確認日 | 備考
+        preg_match_all('/^\| ((?:FN-|NF-|PG)\d{2}) \|(.*)\|$/mu', $this->doc(), $rows, PREG_SET_ORDER);
+        $this->assertCount(50, $rows, 'FN 18・NF 7・PG 25 の行がない');
+
+        foreach ($rows as [, $number, $rest]) {
+            $cells = array_map('trim', explode('|', $rest));
+            $this->assertCount(8, $cells, "{$number} の欄の数");
+            [, , , $method, $procedure, $result, $date] = $cells;
+            $this->assertContains($method, ['自動テスト', '画面', '自動テスト＋画面', '手作業'], "{$number} の確認方法");
+            $this->assertNotSame('', $procedure, "{$number} のテスト・手順が空");
+            $this->assertNotSame('', $result, "{$number} の結果が空");
+            $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $date, "{$number} の確認日");
+        }
+    }
+
     public function test_summary_counts_match_the_tables(): void
     {
         $rows = ['FN' => '機能要件（FN-01〜18）', 'NF' => '非機能要件（NF-01〜07）', 'PG' => '画面（PG01〜25）'];
