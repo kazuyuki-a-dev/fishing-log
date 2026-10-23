@@ -24,7 +24,7 @@ class ResetDemoIfRequested extends Command
     public const CACHE_KEY = 'demo_reseed_token';
 
     // 中身を消す表。ほかの表から参照されているもの（users・spots）は最後に消す
-    private const TABLES = ['reports', 'notifications', 'catches', 'trips', 'spots', 'sessions', 'password_reset_tokens', 'users'];
+    private const TABLES = ['reports', 'notifications', 'spot_local_info_changes', 'catches', 'trips', 'spots', 'sessions', 'password_reset_tokens', 'users'];
 
     public function handle(): int
     {

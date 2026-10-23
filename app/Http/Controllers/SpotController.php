@@ -18,6 +18,7 @@ use App\Services\WeatherService;
 use App\Services\NewPostNotifier;
 use App\Services\SeasonHeatmap;
 use App\Services\ConditionMatcher;
+use App\Services\LocalInfoHistory;
 
 class SpotController extends Controller
 {
@@ -72,12 +73,14 @@ class SpotController extends Controller
         ]);
     }
 
-    public function store(SpotRequest $request, NewPostNotifier $notifier): RedirectResponse
+    public function store(SpotRequest $request, NewPostNotifier $notifier, LocalInfoHistory $history): RedirectResponse
     {
         $spot = new Spot($request->validated());
         $spot->created_by = $request->user()->id;
         $spot->updated_by = $request->user()->id;
         $spot->save();
+        // 登録のときに入れた現地の情報も、履歴の最初の行として残す（#200）
+        $history->record($spot, $request->user(), [], 'create');
 
         // 公開の釣り場なら、同じ県の会員にお知らせする（FN-18）
         $notifier->spot($request->user(), $spot);
@@ -178,6 +181,8 @@ class SpotController extends Controller
 
         return view('spots.show', [
             'spot' => $spot->load('editor:id,name'),
+            // 現地の情報の変更の履歴は、ログインした会員にだけ見せる（ゲストは最終更新だけ。#200）
+            'localInfoChanges' => $user ? $spot->localInfoChanges()->with('user:id,name')->limit(5)->get() : collect(),
             'trips' => $trips,
             'mine' => $mine,
             'others' => $others,
@@ -200,9 +205,12 @@ class SpotController extends Controller
         ]);
     }
 
-    public function update(SpotRequest $request, Spot $spot, NewPostNotifier $notifier): RedirectResponse
+    public function update(SpotRequest $request, Spot $spot, NewPostNotifier $notifier, LocalInfoHistory $history): RedirectResponse
     {
         Gate::authorize('update', $spot);
+
+        // 変更の履歴のために、保存する前の現地の情報を取っておく（#200）
+        $before = $history->snapshot($spot);
 
         // 更新する前は非公開だったか（非公開から公開にしたときだけ、お知らせする）
         $wasPrivate = $spot->visibility === 'private';
@@ -212,6 +220,7 @@ class SpotController extends Controller
         // 最後に更新した人を記録する（FN-14）
         $spot->updated_by = $request->user()->id;
         $spot->save();
+        $history->record($spot, $request->user(), $before, 'edit');
 
         // 非公開から公開に変えたら、お知らせする。1回だけ（FN-18）
         if ($wasPrivate) {
@@ -224,10 +233,26 @@ class SpotController extends Controller
     }
 
     /**
+     * 現地の情報の変更の履歴（#200）。ログインした会員のうち、カルテを見られる人と管理者が見られる
+     * 非公開の釣り場は、カルテと同じくほかの人には「ない」ことにする
+     */
+    public function history(Request $request, Spot $spot): View
+    {
+        if (! $request->user()->isAdmin()) {
+            Gate::authorize('view', $spot);
+        }
+
+        return view('spots.history', [
+            'spot' => $spot,
+            'changes' => $spot->localInfoChanges()->with('user:id,name')->paginate(20),
+        ]);
+    }
+
+    /**
      * 釣行を登録した直後の質問から、現地の情報だけを保存する（FN-14）
      * 釣り場名などの基本の情報は受け取らない
      */
-    public function updateLocalInfo(Request $request, Spot $spot): RedirectResponse
+    public function updateLocalInfo(Request $request, Spot $spot, LocalInfoHistory $history): RedirectResponse
     {
         Gate::authorize('update', $spot);
 
@@ -250,9 +275,11 @@ class SpotController extends Controller
             return back();
         }
 
+        $before = $history->snapshot($spot);
         $spot->fill($answers);
         $spot->updated_by = $request->user()->id;
         $spot->save();
+        $history->record($spot, $request->user(), $before, 'edit');
 
         return back()->with('status', '現地の情報を追加しました。ありがとうございます！');
     }

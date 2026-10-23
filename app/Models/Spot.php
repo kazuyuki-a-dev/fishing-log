@@ -96,6 +96,12 @@ class Spot extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    // 現地の情報の変更の履歴（新しい順。#200）
+    public function localInfoChanges(): HasMany
+    {
+        return $this->hasMany(SpotLocalInfoChange::class)->latest('created_at')->latest('id');
+    }
+
     // この釣り場での釣行
     public function trips(): HasMany
     {
