@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Admin\SpotChangeController as AdminSpotChangeController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\BestController;
 use App\Http\Controllers\DashboardController;
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/spots/nearby', [SpotController::class, 'nearby'])->name('spots.nearby');
     Route::resource('spots', SpotController::class)->only(['create', 'store', 'edit', 'update']);
     Route::patch('/spots/{spot}/local-info', [SpotController::class, 'updateLocalInfo'])->name('spots.local-info');
+    // 現地の情報の変更の履歴（#200）。会員だけ
+    Route::get('/spots/{spot}/history', [SpotController::class, 'history'])->name('spots.history');
 
     // CSV 出力（PG17）。/trips/{trip} より先に書く（export が釣行の番号と間違えられないように）
     Route::get('/trips/export', [TripController::class, 'export'])->name('trips.export');
@@ -56,6 +59,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::patch('/reports/{report}', [AdminReportController::class, 'update'])->name('reports.update');
         Route::post('/reports/{report}/hide', [AdminReportController::class, 'hide'])->name('reports.hide');
+        // 現地の情報の変更を、前の値に戻す（#200）
+        Route::post('/spot-changes/{change}/revert', [AdminSpotChangeController::class, 'revert'])->name('spot-changes.revert');
     });
 });
 

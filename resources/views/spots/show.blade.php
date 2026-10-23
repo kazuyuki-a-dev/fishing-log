@@ -266,6 +266,22 @@
                     最終更新：{{ $spot->editor?->name ?? '退会したユーザー' }}（{{ $spot->updated_at->format('Y/m/d') }}）
                     ・現地の情報は参考情報です。
                 </p>
+                {{-- 現地の情報の変更の履歴（最新5件）。ログインした会員にだけ見せる（ゲストは上の最終更新だけ。#200） --}}
+                @auth
+                <div class="mt-4 border-t border-dashed border-gray-300 pt-3">
+                    <h4 class="text-sm font-bold">変更の履歴</h4>
+                    @if ($localInfoChanges->isEmpty())
+                    <p class="mt-2 text-xs text-sand">まだ変更の履歴はありません。</p>
+                    @else
+                    <div class="mt-1">
+                        @include('spots.partials.local-info-changes', ['changes' => $localInfoChanges])
+                    </div>
+                    <p class="mt-2 text-right">
+                        <a href="{{ route('spots.history', $spot) }}" class="text-sm underline text-sea">すべての履歴を見る</a>
+                    </p>
+                    @endif
+                </div>
+                @endauth
                 @auth
                 <div class="mt-4 text-right">
                     <a href="{{ route('spots.edit', $spot) }}" class="text-sm underline text-sea">

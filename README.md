@@ -94,7 +94,7 @@
 | FN-08 | 写真から自動で入力       | 写真の撮影日時と位置から、日時と近くの釣り場を候補に出す。潮は旧暦から計算し、天気は Open-Meteo から取得     |
 | FN-15 | 釣り方の記録             | 魚1匹ごとに、エサかルアーかと、その詳しい内容を記録                                                          |
 | FN-07 | 釣果ハイライト           | 登録した直後に「自分の最大サイズを更新！」「初めて釣った魚」「この釣り場で初めて釣れました！」などを知らせる |
-| FN-14 | 現地の情報               | 注意区分・駐車場・トイレ・コンビニまでの距離。登録の直後に、まだ空いている項目を1〜2問だけ聞く               |
+| FN-14 | 現地の情報               | 注意区分・駐車場・トイレ・コンビニまでの距離。登録の直後に、まだ空いている項目を1〜2問だけ聞く。変更の履歴（だれが・いつ・何を何に）を会員に見せ、管理者が前の値に戻せる |
 
 ### 行く前に決める（主役）
 
@@ -178,18 +178,110 @@
 
 ## データベース（ER 図）
 
-アプリで使うテーブルは7つです（users・spots・trips・catches・reports・notifications・password_reset_tokens）。ほかに、Laravel が最初から作るセッション・キャッシュ・ジョブ用のテーブルがあります。各テーブルの列の説明は、定義書（`docs/spec.md`）のテーブル一覧にあります。
+アプリで使うテーブルは8つです（users・spots・trips・catches・reports・notifications・password_reset_tokens・spot_local_info_changes）。ほかに、Laravel が最初から作るセッション・キャッシュ・ジョブ用のテーブルがあります。各テーブルの列の説明は、定義書（`docs/spec.md`）のテーブル一覧とマイグレーション（`database/migrations/`）にあります。
 
 <details>
 <summary>ER 図を開く</summary>
 
-![FishingLog の ER 図](docs/images/er-diagram.png)
+```mermaid
+erDiagram
+    users ||--o{ trips : "記録する"
+    trips ||--o{ catches : "の釣果"
+    spots ||--o{ trips : "で釣る"
+    users ||--o{ spots : "登録する（created_by）"
+    users |o--o{ spots : "現地の情報を最後に更新（updated_by）"
+    spots ||--o{ spot_local_info_changes : "の変更の履歴"
+    users |o--o{ spot_local_info_changes : "が変えた"
+    users ||--o{ reports : "報告する（reporter_id）"
+    trips |o--o{ reports : "を報告"
+    spots |o--o{ reports : "を報告"
+    users ||--o{ notifications : "受け取る（notifiable）"
+    users ||..o{ password_reset_tokens : "メールアドレスでつながる"
 
-- 図は設計のとき（2026-09-25）に作ったものです。そのあと、次のことを変えています
-    - `users.role` を足した（一般／管理者。図では「Phase 3 で role を追加」のメモ）
-    - `trips.notified_at`・`spots.notified_at` を足した（県内新着のお知らせを送ったかの印）
-    - `notifications.data` の中身：図では「公開範囲を再判定して作る」だが、実際は釣行・釣り場の番号だけを保存し、表示するたびにその時点の公開範囲をチェックして文章を作る（あとで非公開に戻しても、釣り場名が残らないように）
-- ★ はあとから足した列、点線は外部キーの制約を張っていない（論理的な）つながりです
+    users {
+        bigint id PK
+        varchar name "ニックネーム"
+        varchar home_prefecture "メインフィールド（県）"
+        boolean notify_enabled "お知らせ ON／OFF"
+        varchar role "user／admin"
+        varchar email UK
+        varchar password "ハッシュ化"
+    }
+    spots {
+        bigint id PK
+        bigint created_by FK "登録した人"
+        varchar name
+        varchar prefecture
+        decimal latitude "正確な位置は本人だけ"
+        decimal longitude
+        varchar visibility "public／private"
+        varchar caution_type "注意区分"
+        varchar parking_type "駐車場"
+        varchar toilet_available "トイレ"
+        int convenience_distance_m "コンビニまで（m）"
+        text facility_note "現地のメモ"
+        text notes "本人だけのメモ"
+        bigint updated_by FK "現地の情報を最後に更新した人"
+    }
+    trips {
+        bigint id PK
+        bigint user_id FK
+        bigint spot_id FK
+        datetime went_at
+        varchar time_of_day "時間帯"
+        varchar visibility "public／spot_hidden／private"
+        varchar tide "潮"
+        varchar weather "天候"
+        text notes "本人だけのメモ"
+    }
+    catches {
+        bigint id PK
+        bigint trip_id FK
+        varchar fish_species "魚種"
+        varchar method "エサ／ルアー"
+        decimal length_cm
+        int weight_g
+        varchar image_path "Exif を消した写真"
+    }
+    reports {
+        bigint id PK
+        bigint reporter_id FK
+        bigint trip_id FK "どちらか一方"
+        bigint spot_id FK "どちらか一方"
+        varchar reason
+        varchar status "未対応／確認済み／対応完了"
+    }
+    notifications {
+        uuid id PK
+        varchar notifiable_type
+        bigint notifiable_id "受け取る会員"
+        text data "釣行・釣り場の番号だけ"
+        timestamp read_at
+    }
+    spot_local_info_changes {
+        bigint id PK
+        bigint spot_id FK
+        bigint user_id FK "退会したら空"
+        varchar field "変えた項目"
+        text old_value "前の値"
+        text new_value "後の値"
+        varchar action "create／edit／revert"
+        bigint reverted_change_id FK "戻した元の変更（この表の id）"
+        timestamp created_at
+    }
+    password_reset_tokens {
+        varchar email PK
+        varchar token
+        timestamp created_at
+    }
+```
+
+- 図は Mermaid（文字で書く図）で、GitHub がそのまま絵にして表示します。テーブルを足したら、この図も直します（直し忘れは `ErDiagramDocTest` で気づけます）
+- 説明に要る列だけを載せています。省いた列：`created_at`・`updated_at`、`spots.parking_note`・`toilet_note`・`notified_at`、`trips.notified_at`、`catches.method_detail`・`notes`、`reports.detail`、`users.email_verified_at`・`remember_token` など
+- 線の見方：`||--o{` は「1 対 たくさん」、`|o--o{` は「つながりが空のこともある（退会したら空になる、など）」、点線は外部キーの制約を張っていない（メールアドレスでつながる）つながり
+- `notifications.data` には文章を保存せず、釣行・釣り場の番号だけを保存し、表示するたびにその時点の公開範囲をチェックして文章を作ります（あとで非公開に戻しても、釣り場名が残らないように）
+- `spot_local_info_changes.reverted_change_id` は、管理者が戻したときの「戻した元の変更」（同じ表の id）です（#200）
+- 設計のとき（2026-09-25）に draw.io で描いた初版の図は、Git の履歴（`docs/images/er-diagram.png`、2026-10-23 まで）にあります
 
 </details>
 
@@ -261,7 +353,7 @@ cp .env.example .env
 sail artisan test
 ```
 
-- 357 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
+- 370 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
 - **GitHub Actions で自動で流しています**（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）。push のたびに、GitHub のサーバーで MySQL 8.4・PHP 8.5 を用意して、全部のテストを流します。手元に PHP や Docker がなくても、結果を確かめられます
   - 結果の見方：GitHub の [Actions → テスト](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で実行を1つ開くと、Summary に「全部・成功・失敗・エラー」の件数、「テストを流す」の行に1件ずつの結果（ログ）が出ます。結果のファイル（JUnit 形式）も、同じ画面の Artifacts からダウンロードできます
   - いちばん上のバッジが緑（passing）なら、main のテストはすべて成功しています。PR の画面でも「Checks」に結果が出ます

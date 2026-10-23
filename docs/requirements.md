@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 要件ごとの対応表 |
-| 版 | 1.0 |
+| 版 | 1.1 |
 | 作成日 | 2026-10-23 |
 | 最終更新日 | 2026-10-23 |
 | 作成者 | kazuyuki-a-dev |
@@ -19,6 +19,7 @@
 | 版 | 日付 | 変更内容 | Issue |
 |---|---|---|---|
 | 1.0 | 2026-10-23 | 初版（一覧の表と、要件ごとの詳しい内容に分けた形） | #198 |
+| 1.1 | 2026-10-23 | FN-14 に現地の情報の変更の履歴（受け入れの条件 5）を足した。定義書にない画面に「変更の履歴」を足した | #200 |
 
 ## 確認した環境
 
@@ -27,7 +28,7 @@
 | 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、MySQL 8.4、Node 24）。push のたびに全部のテストを流す（`.github/workflows/tests.yml`） |
 | 画面 | 開発環境（Laravel Sail、Chrome）。スマホ幅は Chrome の開発者ツールで 360px |
 
-**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#39910911088](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/39910911088)（2026-10-23、357 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
+**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#39915276259](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/39915276259)（2026-10-23、370 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
 
 ## 見方
 
@@ -71,7 +72,7 @@
 | [FN-11](#fn-11) | 釣行判断ビュー | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-12](#fn-12) | 公開範囲の3段階 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-13](#fn-13) | 公開釣果フィード | 一部対応 | 自動テスト | 一部成功 | 2026-10-23 |
-| [FN-14](#fn-14) | 釣り場の現地情報 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
+| [FN-14](#fn-14) | 釣り場の現地情報 | 完了 | 自動テスト＋画面 | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-15](#fn-15) | 釣り方（エサ／ルアー）の記録 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-16](#fn-16) | 釣行プランナー（主役） | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-17](#fn-17) | メインフィールドとエリア絞り込み | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
@@ -408,7 +409,7 @@
 
 **釣り場の現地情報**
 
-- 状態：完了　／　確認方法：自動テスト　／　確認日：2026-10-23
+- 状態：完了　／　確認方法：自動テスト＋画面　／　確認日：2026-10-23
 
 受け入れの条件
 
@@ -416,6 +417,7 @@
 2. 登録した直後に空欄を1〜2問だけ聞く
 3. 全員が編集でき、最後に更新した人と日付を出す
 4. 基本の情報（名前・位置）は登録した本人だけ
+5. 現地の情報の変更の履歴（だれが・いつ・どの項目を・何から何に）を残し、ログインした会員が見られ、管理者が前の値に戻せる（定義書にない追加。#200）
 
 テスト・手順
 
@@ -423,10 +425,17 @@
 - `SpotUpdateTest::test_others_can_update_only_local_info_even_if_they_send_basic_info`
 - `LocalInfoQuestionsTest::test_first_two_empty_items_are_asked_right_after_recording`
 - `LocalInfoQuestionsTest::test_answers_are_saved_without_erasing_other_items`
+- `LocalInfoHistoryTest::test_only_changed_items_are_recorded_one_row_each`
+- `LocalInfoHistoryTest::test_basic_info_and_private_memo_are_not_recorded`
+- `LocalInfoHistoryTest::test_member_sees_the_history_on_the_karte_but_guest_does_not`
+- `LocalInfoHistoryTest::test_history_of_others_private_spot_is_not_found`
+- `LocalInfoHistoryTest::test_admin_can_revert_a_change_and_the_revert_is_recorded`
+- `LocalInfoHistoryTest::test_only_admin_can_revert`
+- 画面：会員で現地の情報を2回直し、カルテの「変更の履歴」と「すべての履歴を見る」を確かめる。ログアウトすると出ないこと。admin@example.com で「この変更の前に戻す」を押すと値が戻ること
 
-結果：成功（GitHub Actions）
+結果：成功（GitHub Actions）。画面も確認済み（開発環境）
 
-備考：変更の履歴（訂正履歴）を残す機能を足す予定（手順③）
+備考：変更の履歴は会員に見せ、元に戻すのは管理者だけ（#200）
 
 ### FN-15
 
@@ -685,7 +694,7 @@
 
 結果：成功（GitHub Actions）
 
-備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（357件）
+備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（370件）
 
 ### NF-07
 
@@ -1186,4 +1195,5 @@
 | 使い方 `/guide` | 使う流れの順に画面とボタンの名前で説明（#116） | 自動テスト | `GuideTest::test_guest_can_open_the_guide` | 成功（GitHub Actions） | 2026-10-23 |
 | 単位変換 `/tools/converter` | 重さ・長さ・ラインの号と lb（#122） | 自動テスト | `UnitConverterTest::test_guest_can_open_the_converter`、`UnitConverterTest::test_nylon_table_goes_up_in_order` | 成功（GitHub Actions） | 2026-10-23 |
 | 管理画面 `/admin/reports` | 報告の一覧・対応状況・非表示（#94。NF-04） | 自動テスト | `AdminReportTest::test_only_admin_can_use_admin_pages`、`AdminReportTest::test_list_shows_report_and_post_without_private_notes` | 成功（GitHub Actions） | 2026-10-23 |
+| 変更の履歴 `/spots/{spot}/history` | 現地の情報の変更の履歴（会員だけ）。管理者は前の値に戻せる（`POST /admin/spot-changes/{change}/revert`。#200） | 自動テスト＋画面 | `LocalInfoHistoryTest::test_history_page_shows_all_changes_to_members_only`、`LocalInfoHistoryTest::test_admin_can_revert_a_change_and_the_revert_is_recorded` | 成功（GitHub Actions）。画面も確認済み（開発環境） | 2026-10-23 |
 | エラーページ | 何が起きたかと次にすることをふつうの言葉で（#120） | 自動テスト | `ErrorPageTest::test_not_found_page_is_in_plain_japanese` | 成功（GitHub Actions） | 2026-10-23 |
