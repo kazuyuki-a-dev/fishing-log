@@ -1,5 +1,7 @@
 # FishingLog（釣果記録・釣り場情報共有アプリ）
 
+[![テスト](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml)
+
 釣行を記録していくと、「どの潮・時間帯・釣り方なら、何回行って何回釣れたか」が貯まっていき、次にどこへ行くかを決める材料になる Web アプリです。
 月に1〜3回ほど釣りに行く人が、自分の記録とみんなの公開記録から「釣れる条件」を見つけることを目指しています。
 
@@ -259,6 +261,9 @@ sail artisan test
 ```
 
 - 351 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
+- **GitHub Actions で自動で流しています**（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）。push のたびに、GitHub のサーバーで MySQL 8.4・PHP 8.5 を用意して、全部のテストを流します。手元に PHP や Docker がなくても、結果を確かめられます
+  - 結果の見方：GitHub の [Actions → テスト](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で実行を1つ開くと、Summary に「全部・成功・失敗・エラー」の件数、「テストを流す」の行に1件ずつの結果（ログ）が出ます。結果のファイル（JUnit 形式）も、同じ画面の Artifacts からダウンロードできます
+  - いちばん上のバッジが緑（passing）なら、main のテストはすべて成功しています。PR の画面でも「Checks」に結果が出ます
 - テストでは外の API に本当にはつながない（天気は偽の返事を使う）
 
 ## データが増えたときの確かめ
