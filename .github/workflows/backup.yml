@@ -12,6 +12,9 @@ on:
     - cron: '7 19 * * *'
   # Actions の画面から、手で動かすこともできる
   workflow_dispatch:
+  # 確かめのあいだだけ：このブランチに push したら動かす（main に入れる前に消す）
+  push:
+    branches: [feature/204-backup]
 
 permissions:
   contents: read
