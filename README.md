@@ -385,7 +385,9 @@ sail artisan app:measure-pages test@example.com /spots/1 /trips "/trips?scope=pu
 
 ## バックアップ
 
-データベースと写真のバックアップは `scripts/backup.sh`、戻すときは `scripts/restore.sh` を使います。詳しくは [`docs/backup.md`](docs/backup.md) を見てください。
+- **公開環境**：GitHub Actions（[`.github/workflows/backup.yml`](.github/workflows/backup.yml)）で毎日 日本時間の朝4時に、データベース（Aiven）を書き出して Cloudflare R2 の非公開のバケットに置き（30日分）、写真も写します。**毎回、取ったバックアップを空の MySQL に戻してみて、テーブルと件数を確かめます**（戻せなければ失敗にして、メールで知らせる）。結果は [Actions → バックアップ](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/backup.yml) の Summary で見られます
+- **開発環境**：`scripts/backup.sh` で取り、`scripts/restore.sh` で戻します
+- 本番に戻す手順・設定・失敗したときの見方は [`docs/backup.md`](docs/backup.md) にあります
 
 ## 開発の記録
 
