@@ -58,6 +58,7 @@
                     <li>地図は <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" class="underline text-sea">OpenStreetMap</a> の地図の画像を、見る人のブラウザから読み込みます。</li>
                     <li>文字の形（フォント）を Google Fonts から読み込みます。</li>
                     <li>インターネットに公開している環境では、アプリを <a href="https://render.com/" target="_blank" rel="noopener" class="underline text-sea">Render</a>、データベースを <a href="https://aiven.io/" target="_blank" rel="noopener" class="underline text-sea">Aiven</a>、写真を <a href="https://www.cloudflare.com/developer-platform/products/r2/" target="_blank" rel="noopener" class="underline text-sea">Cloudflare R2</a> に置いています。登録された情報は、これらのサービスのサーバーに保存されます。</li>
+                    <li>パスワード再設定のメールは、メール送信サービス <a href="https://www.brevo.com/" target="_blank" rel="noopener" class="underline text-sea">Brevo</a> を通して送ります。送るために、再設定を頼んだ人のメールアドレスとメールの本文を Brevo に渡します。ほかの目的（宣伝のメールなど）には使いません。</li>
                 </ul>
             </section>
 
@@ -85,7 +86,7 @@
                 </ul>
             </section>
 
-            <p class="text-xs text-sand text-right">2026年10月15日（2026年10月23日 改定：現地の情報の変更の履歴）</p>
+            <p class="text-xs text-sand text-right">2026年10月15日（2026年10月23日 改定：現地の情報の変更の履歴、パスワード再設定のメールの送信）</p>
         </div>
     </div>
 </x-app-layout>
