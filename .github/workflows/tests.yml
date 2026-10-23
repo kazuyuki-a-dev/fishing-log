@@ -1,0 +1,102 @@
+# テストを自動で流す（#196）
+# push のたびに（どのブランチでも。Dependabot のブランチも含む）、GitHub のサーバーで全部のテストを流す。
+# 結果は、GitHub の「Actions」の画面と、PR の画面の「Checks」に出る。成功・失敗の件数は、実行の画面の Summary に書く。
+name: テスト
+
+on:
+  push:
+  # Actions の画面から、手で動かすこともできる
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    # テスト用のデータベース。開発（Sail）・公開環境と同じ MySQL 8.4
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: testing
+          MYSQL_USER: sail
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # PHP 8.5 と、アプリに要る部品（写真の gd・exif、MySQL の pdo_mysql、zip）
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: gd, exif, pdo_mysql, zip
+          coverage: none
+
+      - name: PHP の版を表示する
+        run: php -v
+
+      - name: PHP の部品を入れる
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # 画面の部品（CSS・JavaScript）を作る。画面のテストで、作ったファイルの一覧を読むため
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: 画面の部品を作る
+        run: |
+          npm ci
+          npm run build
+
+      - name: 設定ファイルを用意する
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: テストを流す
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USERNAME: sail
+          DB_PASSWORD: password
+        run: php artisan test --log-junit junit.xml
+
+      # 成功・失敗の件数を、実行の画面の Summary に書く（失敗したときも書く）
+      - name: 結果の件数を書く
+        if: always()
+        run: |
+          if [ ! -f junit.xml ]; then echo "テストの結果のファイルがありません（テストの前で止まりました）" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET
+          root = ET.parse("junit.xml").getroot()
+          suite = root if root.tag == "testsuite" else root.find("testsuite")
+          total = int(suite.get("tests", 0))
+          failures = int(suite.get("failures", 0))
+          errors = int(suite.get("errors", 0))
+          skipped = int(suite.get("skipped", 0))
+          passed = total - failures - errors - skipped
+          print("## テストの結果\n")
+          print("| 全部 | 成功 | 失敗 | エラー | とばした | 時間 |")
+          print("|---|---|---|---|---|---|")
+          print(f"| {total} | {passed} | {failures} | {errors} | {skipped} | {float(suite.get('time', 0)):.1f} 秒 |")
+          PY
+
+      # 結果のファイル（JUnit 形式）を、実行の画面からダウンロードできるように残す（90日）
+      - name: 結果のファイルを残す
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: junit.xml
+          if-no-files-found: ignore
