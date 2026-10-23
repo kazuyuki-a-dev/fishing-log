@@ -8,6 +8,7 @@
 - 主役は **釣行プランナー**（行く日と県を選ぶと、過去の記録から釣り場を提案）と **釣り場カルテ**（その釣り場で、選んだ日の条件のときにどうだったか）
 - 定義書は [`docs/spec.md`](docs/spec.md)、定義書と違うことをしたときの判断と理由は [`docs/decisions.md`](docs/decisions.md) にすべて記録しています
 - 定義書の要件ごとの状態（完了・一部対応など）・受け入れの条件・確かめ方・結果は [`docs/requirements.md`](docs/requirements.md) の対応表にまとめています
+- 公開環境の動かし方（点検・報告への対応・鍵の管理・障害のとき）は [`docs/operations.md`](docs/operations.md)、本番として使うときに変えることは [`docs/release-plan.md`](docs/release-plan.md) にあります
 
 ## お試し環境
 
@@ -382,6 +383,11 @@ sail artisan app:add-load-test-trips 30000
 # ページの表示時間・メモリ・SQL の数を測る（それぞれ3回開いて、真ん中の値）
 sail artisan app:measure-pages test@example.com /spots/1 /trips "/trips?scope=public"
 ```
+
+## 運用と本番リリース計画
+
+- **運用の手順書**（[`docs/operations.md`](docs/operations.md)）：管理者（開発者1人）が、毎月の初めに点検のチェックリスト（バックアップ・テストのメール・死活監視・鍵の期限など）を見る。報告は **3日以内** に確かめ、個人情報や立入禁止の場所の案内などの急ぎのものはすぐ非表示にする。鍵は1年に1回作り直す。障害のときに見る順番と直し方も書いている
+- **本番リリース計画**（[`docs/release-plan.md`](docs/release-plan.md)）：今のお試し環境で割り切っていること（無料のプラン・ダミーのデータ・無料のアドレスからのメールなど）と、本番で使うなら何をどう変えるか（必須・推奨・あとで）、移る日の手順と戻し方
 
 ## バックアップ
 
