@@ -37,6 +37,23 @@ class PasswordResetMailTest extends TestCase
         });
     }
 
+    public function test_shows_a_message_instead_of_an_error_when_mail_cannot_be_sent(): void
+    {
+        // メール送信サービスにつながらない（公開環境で 587 番が止められていたときと同じ）
+        User::factory()->create(['email' => 'angler@example.com']);
+        Notification::shouldReceive('send')->andThrow(new \Symfony\Component\Mailer\Exception\TransportException('Connection could not be established'));
+        \Illuminate\Support\Facades\Log::shouldReceive('error')->once()->withArgs(fn($message) => $message === 'パスワード再設定のメールを送れませんでした');
+
+        $this->from('/forgot-password')->post('/forgot-password', ['email' => 'angler@example.com'])
+            ->assertRedirect('/forgot-password')
+            ->assertSessionHasErrors(['email' => '今はメールを送れませんでした。時間をおいて、もう一度お試しください。']);
+    }
+
+    public function test_smtp_gives_up_after_ten_seconds_by_default(): void
+    {
+        $this->assertSame(10, config('mail.mailers.smtp.timeout'));
+    }
+
     public function test_unknown_address_does_not_send_mail(): void
     {
         Notification::fake();
