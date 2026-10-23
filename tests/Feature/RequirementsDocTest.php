@@ -15,10 +15,10 @@ class RequirementsDocTest extends TestCase
         return file_get_contents(base_path('docs/requirements.md'));
     }
 
-    /** 表の行の「| 番号 | 要件 | 状態 |」から、番号 => 状態 を取り出す */
+    /** 一覧の表の行「| [番号](#…) | 要件 | 状態 |」から、番号 => 状態 を取り出す */
     private function statuses(string $prefix): array
     {
-        preg_match_all('/^\| (' . $prefix . '-?\d{2}) \| [^|]+ \| ([^|]+?) \|/mu', $this->doc(), $matches, PREG_SET_ORDER);
+        preg_match_all('/^\| \[(' . $prefix . '-?\d{2})\]\(#[a-z0-9-]+\) \| [^|]+ \| ([^|]+?) \|/mu', $this->doc(), $matches, PREG_SET_ORDER);
 
         return collect($matches)->mapWithKeys(fn($m) => [$m[1] => trim($m[2])])->all();
     }
@@ -47,18 +47,36 @@ class RequirementsDocTest extends TestCase
 
     public function test_every_row_has_a_method_result_and_date(): void
     {
-        // 欄：番号 | 要件 | 状態 | 受け入れの条件 | 確認方法 | テスト・手順 | 結果 | 確認日 | 備考
-        preg_match_all('/^\| ((?:FN-|NF-|PG)\d{2}) \|(.*)\|$/mu', $this->doc(), $rows, PREG_SET_ORDER);
+        // 一覧の表の欄：番号 | 要件 | 状態 | 確認方法 | 結果 | 確認日
+        preg_match_all('/^\| \[((?:FN-|NF-|PG)\d{2})\]\(#([a-z0-9-]+)\) \|(.*)\|$/mu', $this->doc(), $rows, PREG_SET_ORDER);
         $this->assertCount(50, $rows, 'FN 18・NF 7・PG 25 の行がない');
 
-        foreach ($rows as [, $number, $rest]) {
+        foreach ($rows as [, $number, $anchor, $rest]) {
             $cells = array_map('trim', explode('|', $rest));
-            $this->assertCount(8, $cells, "{$number} の欄の数");
-            [, , , $method, $procedure, $result, $date] = $cells;
+            $this->assertCount(5, $cells, "{$number} の欄の数");
+            [, , $method, $result, $date] = $cells;
+            $this->assertSame(strtolower($number), $anchor, "{$number} のリンク先");
             $this->assertContains($method, ['自動テスト', '画面', '自動テスト＋画面', '手作業'], "{$number} の確認方法");
-            $this->assertNotSame('', $procedure, "{$number} のテスト・手順が空");
             $this->assertNotSame('', $result, "{$number} の結果が空");
             $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $date, "{$number} の確認日");
+        }
+    }
+
+    public function test_every_requirement_has_a_detail_section(): void
+    {
+        // 一覧の番号ごとに、詳しい内容（受け入れの条件・テスト・手順・結果）がある
+        $sections = preg_split('/^### /m', $this->doc());
+        $details = collect($sections)->mapWithKeys(fn($section) => [strtok($section, "\n") => $section]);
+
+        foreach (['FN', 'NF', 'PG'] as $prefix) {
+            foreach (array_keys($this->statuses($prefix)) as $number) {
+                $this->assertTrue($details->has($number), "{$number} の詳しい内容がない");
+                $body = $details[$number];
+                $this->assertStringContainsString('受け入れの条件', $body, "{$number} に受け入れの条件がない");
+                $this->assertMatchesRegularExpression('/^1\. \S/m', $body, "{$number} の受け入れの条件が空");
+                $this->assertStringContainsString('テスト・手順', $body, "{$number} にテスト・手順がない");
+                $this->assertMatchesRegularExpression('/^結果：\S/m', $body, "{$number} に結果がない");
+            }
         }
     }
 
