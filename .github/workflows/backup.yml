@@ -89,14 +89,14 @@ jobs:
 
       - name: 戻せるかを試す（空の MySQL に戻して数える）
         run: |
-          gunzip -c work/db.sql.gz | docker run --rm -i --network host mysql:8.4 \
-            mysql --host=127.0.0.1 --port=3307 --user=root --password=restore restore_check
-          docker run --rm --network host mysql:8.4 \
-            mysql --host=127.0.0.1 --port=3307 --user=root --password=restore --batch --skip-column-names restore_check \
+          gunzip -c work/db.sql.gz | docker run --rm -i --network host -e MYSQL_PWD=restore mysql:8.4 \
+            mysql --host=127.0.0.1 --port=3307 --user=root restore_check
+          docker run --rm --network host -e MYSQL_PWD=restore mysql:8.4 \
+            mysql --host=127.0.0.1 --port=3307 --user=root --batch --skip-column-names restore_check \
               -e "SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'spots', COUNT(*) FROM spots UNION ALL SELECT 'trips', COUNT(*) FROM trips UNION ALL SELECT 'catches', COUNT(*) FROM catches" \
             > work/restored-counts.txt
-          docker run --rm --network host mysql:8.4 \
-            mysql --host=127.0.0.1 --port=3307 --user=root --password=restore --batch --skip-column-names restore_check \
+          docker run --rm --network host -e MYSQL_PWD=restore mysql:8.4 \
+            mysql --host=127.0.0.1 --port=3307 --user=root --batch --skip-column-names restore_check \
               -e "SHOW TABLES" > work/restored-tables.txt
           cat work/restored-counts.txt
           # アプリのテーブルが全部あること
@@ -132,6 +132,7 @@ jobs:
               paste work/source-counts.txt work/restored-counts.txt | awk '{ print "| " $1 " | " $2 " | " $4 " |" }'
             fi
             echo ""
-            [ -f work/db.sql.gz ] && echo "- データベースのファイル：db/fishinglog_$STAMP.sql.gz（$(du -h work/db.sql.gz | cut -f1)）"
-            [ -n "$PHOTOS_SRC" ] && echo "- 写真：元 $PHOTOS_SRC 枚、写し $PHOTOS_DST 枚"
+            # 途中で止まったときもこの手順は失敗にしない（if で書く。[ ] && だと、ないときに失敗の合図になる）
+            if [ -f work/db.sql.gz ]; then echo "- データベースのファイル：db/fishinglog_$STAMP.sql.gz（$(du -h work/db.sql.gz | cut -f1)）"; fi
+            if [ -n "$PHOTOS_SRC" ]; then echo "- 写真：元 $PHOTOS_SRC 枚、写し $PHOTOS_DST 枚"; fi
           } >> "$GITHUB_STEP_SUMMARY"
