@@ -94,7 +94,7 @@
 | FN-08 | 写真から自動で入力       | 写真の撮影日時と位置から、日時と近くの釣り場を候補に出す。潮は旧暦から計算し、天気は Open-Meteo から取得     |
 | FN-15 | 釣り方の記録             | 魚1匹ごとに、エサかルアーかと、その詳しい内容を記録                                                          |
 | FN-07 | 釣果ハイライト           | 登録した直後に「自分の最大サイズを更新！」「初めて釣った魚」「この釣り場で初めて釣れました！」などを知らせる |
-| FN-14 | 現地の情報               | 注意区分・駐車場・トイレ・コンビニまでの距離。登録の直後に、まだ空いている項目を1〜2問だけ聞く               |
+| FN-14 | 現地の情報               | 注意区分・駐車場・トイレ・コンビニまでの距離。登録の直後に、まだ空いている項目を1〜2問だけ聞く。変更の履歴（だれが・いつ・何を何に）を会員に見せ、管理者が前の値に戻せる |
 
 ### 行く前に決める（主役）
 
@@ -178,7 +178,7 @@
 
 ## データベース（ER 図）
 
-アプリで使うテーブルは7つです（users・spots・trips・catches・reports・notifications・password_reset_tokens）。ほかに、Laravel が最初から作るセッション・キャッシュ・ジョブ用のテーブルがあります。各テーブルの列の説明は、定義書（`docs/spec.md`）のテーブル一覧にあります。
+アプリで使うテーブルは8つです（users・spots・trips・catches・reports・notifications・password_reset_tokens・spot_local_info_changes）。spot_local_info_changes は現地の情報の変更の履歴で、spots と users にひもづきます（#200。下の ER 図には、まだ描いていません）。ほかに、Laravel が最初から作るセッション・キャッシュ・ジョブ用のテーブルがあります。各テーブルの列の説明は、定義書（`docs/spec.md`）のテーブル一覧にあります。
 
 <details>
 <summary>ER 図を開く</summary>
@@ -261,7 +261,7 @@ cp .env.example .env
 sail artisan test
 ```
 
-- 357 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
+- 367 件（公開範囲とアクセス制御を中心に、各機能の計算や入力チェックも）
 - **GitHub Actions で自動で流しています**（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）。push のたびに、GitHub のサーバーで MySQL 8.4・PHP 8.5 を用意して、全部のテストを流します。手元に PHP や Docker がなくても、結果を確かめられます
   - 結果の見方：GitHub の [Actions → テスト](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で実行を1つ開くと、Summary に「全部・成功・失敗・エラー」の件数、「テストを流す」の行に1件ずつの結果（ログ）が出ます。結果のファイル（JUnit 形式）も、同じ画面の Artifacts からダウンロードできます
   - いちばん上のバッジが緑（passing）なら、main のテストはすべて成功しています。PR の画面でも「Checks」に結果が出ます
