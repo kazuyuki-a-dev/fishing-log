@@ -80,6 +80,10 @@ class DeployTest extends TestCase
         $this->assertTrue(Hash::check(config('fishing.demo_password'), $demo->password));
         $this->assertSame(45, $demo->trips()->count());
 
+        // 管理者以外の釣り人は、みんなダミーの人（釣行が画面で「ダミー」と出る。#211）
+        $this->assertFalse($admin->is_sample);
+        $this->assertSame(0, User::where('email', '<>', 'admin@example.com')->where('is_sample', false)->count());
+
         // 開発用の test@ は作らない。ほかのダミーの釣り人も「password」ではログインできない
         $this->assertNull(User::where('email', 'test@example.com')->first());
         foreach (['minato@example.com', 'surf@example.com', 'iso@example.com', 'wanoku@example.com', 'angler1@example.com'] as $email) {
