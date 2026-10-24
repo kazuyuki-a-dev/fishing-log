@@ -17,8 +17,7 @@ class EmailVerificationNotificationController extends Controller
             return redirect()->intended(route('dashboard', absolute: false));
         }
 
-        $request->user()->sendEmailVerificationNotification();
-
-        return back()->with('status', 'verification-link-sent');
+        // つながらないときは、エラーの画面にせず案内を出す（#213）
+        return back()->with('status', $request->user()->sendEmailVerificationSafely() ? 'verification-link-sent' : 'verification-send-failed');
     }
 }

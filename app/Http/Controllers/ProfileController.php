@@ -35,11 +35,18 @@ class ProfileController extends Controller
 
         $request->user()->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
+        $emailChanged = $request->user()->isDirty('email');
+        if ($emailChanged) {
             $request->user()->email_verified_at = null;
         }
 
         $request->user()->save();
+
+        // メールアドレスを変えたら、新しいアドレスを確かめ直す。確かめるまでは確認の画面になる（#213）
+        if ($emailChanged) {
+            return Redirect::route('verification.notice')
+                ->with('status', $request->user()->sendEmailVerificationSafely() ? 'verification-link-sent' : 'verification-send-failed');
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

@@ -1,31 +1,38 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
-    </div>
+    {{-- メールアドレスの確認（#213）。確かめるまでは、ログインが必要なページはこの画面になる --}}
+    <div class="space-y-4 text-sm">
+        <h2 class="crayon-subheading">メールアドレスの確認</h2>
 
-    @if (session('status') == 'verification-link-sent')
-    <div class="mb-4 font-medium text-sm text-green-600">
-        {{ __('A new verification link has been sent to the email address you provided during registration.') }}
-    </div>
-    @endif
+        <p>
+            <b>{{ auth()->user()->email }}</b> に確認のメールを送りました。
+            メールの「メールアドレスの確認」ボタンを押すと、登録が終わり、釣行の記録などを使えるようになります。
+        </p>
 
-    <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
+        @if (session('status') == 'verification-link-sent')
+        <p class="crayon-note px-3 py-2">確認のメールを、もう一度送りました。</p>
+        @elseif (session('status') == 'verification-send-failed')
+        <p class="crayon-note px-3 py-2">今は確認のメールを送れませんでした。時間をおいて、下の「確認のメールをもう一度送る」を押してください。</p>
+        @endif
 
-            <div>
-                <x-primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-primary-button>
-            </div>
-        </form>
+        <div class="crayon-note px-3 py-2 space-y-1">
+            <p class="font-bold">メールが届かないとき</p>
+            <ul class="list-disc pl-5 space-y-1">
+                <li>迷惑メールのフォルダを見てください（送り主は FishingLog &lt;{{ config('mail.from.address') }}&gt;）</li>
+                <li>メールのリンクの有効期限は{{ config('auth.verification.expire', 60) }}分です。切れたら、もう一度送ってください</li>
+                <li>アドレスがまちがっているときは、<a href="{{ route('profile.edit') }}" class="underline text-sea">プロフィール</a>で直せます</li>
+            </ul>
+        </div>
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="underline text-sm text-sand hover:text-ink">ログアウト</button>
+            </form>
 
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sea-500">
-                {{ __('Log Out') }}
-            </button>
-        </form>
+            <form method="POST" action="{{ route('verification.send') }}">
+                @csrf
+                <button type="submit" class="crayon-button font-hand w-full sm:w-auto">確認のメールをもう一度送る</button>
+            </form>
+        </div>
     </div>
 </x-guest-layout>

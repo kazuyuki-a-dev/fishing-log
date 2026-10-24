@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 要件ごとの対応表 |
-| 版 | 1.6 |
+| 版 | 1.7 |
 | 作成日 | 2026-10-23 |
 | 最終更新日 | 2026-10-23 |
 | 作成者 | kazuyuki-a-dev |
@@ -25,6 +25,7 @@
 | 1.4 | 2026-10-23 | NF-04 の備考に運用の手順書を、FN-13・NF-07 の備考に本番リリース計画を書いた | #206 |
 | 1.5 | 2026-10-24 | FN-16・PG22・NF-01 に、ゲストもプランナーを使えることを書いた | #209 |
 | 1.6 | 2026-10-24 | FN-11・FN-16 に記録の内訳とダミーの回数を、FN-13・NF-07 にダミーの印を書いた | #211 |
+| 1.7 | 2026-10-24 | FN-05 に会員登録のメールの確認を足した | #213 |
 
 ## 確認した環境
 
@@ -33,7 +34,7 @@
 | 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、MySQL 8.4、Node 24）。push のたびに全部のテストを流す（`.github/workflows/tests.yml`） |
 | 画面 | 開発環境（Laravel Sail、Chrome）。スマホ幅は Chrome の開発者ツールで 360px |
 
-**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#40053848974](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/40053848974)（2026-10-24、387 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
+**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#40055523961](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/40055523961)（2026-10-24、394 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
 
 ## 見方
 
@@ -68,7 +69,7 @@
 | [FN-02](#fn-02) | シーズンヒートマップ | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-03](#fn-03) | 条件検索 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-04](#fn-04) | CSV 出力 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
-| [FN-05](#fn-05) | ユーザー認証とプロフィール | 完了 | 自動テスト＋画面 | 成功（GitHub Actions）。公開環境でも確認済み | 2026-10-23 |
+| [FN-05](#fn-05) | ユーザー認証とプロフィール | 完了 | 自動テスト＋画面 | 成功（GitHub Actions）。公開環境でも確認済み | 2026-10-24 |
 | [FN-06](#fn-06) | サマリー指標ダッシュボード | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-07](#fn-07) | 釣果ハイライト | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-08](#fn-08) | 写真の Exif・天候・潮の自動補完 | 完了 | 自動テスト＋画面 | 成功（GitHub Actions） | 2026-10-22 |
@@ -191,7 +192,7 @@
 
 **ユーザー認証とプロフィール**
 
-- 状態：完了　／　確認方法：自動テスト＋画面　／　確認日：2026-10-23
+- 状態：完了　／　確認方法：自動テスト＋画面　／　確認日：2026-10-24
 
 受け入れの条件
 
@@ -199,6 +200,7 @@
 2. 登録時にメインフィールドと規約への同意が必須
 3. パスワード再設定のメールが届く（日本語の件名と本文、60分で切れる再設定のリンク）
 4. メールを送れないときは、エラーの画面にせず、利用者に案内を出してログに残す
+5. 会員登録とメールアドレスの変更のときに確認のメールを送り、確かめるまではログインが必要なページを使えない（プロフィールとゲストも見られるページは開ける。#213）
 
 テスト・手順
 
@@ -213,12 +215,17 @@
 - `PasswordResetMailTest::test_reset_mail_is_in_japanese_with_the_reset_link`
 - `PasswordResetMailTest::test_shows_a_message_instead_of_an_error_when_mail_cannot_be_sent`
 - `PasswordResetMailTest::test_unknown_address_does_not_send_mail`
+- `EmailVerificationRequiredTest::test_registration_sends_a_japanese_verification_mail`
+- `EmailVerificationRequiredTest::test_unverified_member_cannot_use_member_pages`
+- `EmailVerificationRequiredTest::test_unverified_member_can_still_see_public_pages_and_profile`
+- `EmailVerificationRequiredTest::test_registration_still_succeeds_when_mail_cannot_be_sent`
 - 画面（開発環境）：再設定を頼むと、Mailpit（http://localhost:8025）にメールが届く
+- 画面（開発環境）：会員登録 → 確認の画面 → 記録の一覧を開くと確認の画面に戻る → Mailpit に「【FishingLog】メールアドレスの確認のお願い」が届く → ボタンを押すとダッシュボードが使える（2026-10-24）
 - 画面（公開環境）：普段のメールアドレスで会員登録 → ログアウト → 「パスワードを忘れた方」から再設定を頼む → 受信箱に届く → メールのボタンから新しいパスワードを決める → 新しいパスワードでログインできる（確かめたあと、その会員は退会する）
 
 結果：成功（GitHub Actions）。公開環境でも確認済み（2026-10-23、通常の受信箱に届き、再設定と新しいパスワードでのログインができた）
 
-備考：公開環境は Brevo の SMTP（ポート 2525。Render の無料のプランは 587 番が止められているため）で送る。送り主はアプリ専用の Gmail で、自分のドメインではないので迷惑メールに入ることがある（本格的に使うときは自分のドメインに切りかえる）。開発環境は Mailpit で受け止める（#202）
+備考：公開環境は Brevo の SMTP（ポート 2525。Render の無料のプランは 587 番が止められているため）で送る。送り主はアプリ専用の Gmail で、自分のドメインではないので迷惑メールに入ることがある（本格的に使うときは自分のドメインに切りかえる）。開発環境は Mailpit で受け止める（#202）。会員登録のメールの確認は、打ちまちがいや他人のアドレスでの登録を防ぐために足した（定義書にない。#213）
 
 ### FN-06
 
@@ -716,7 +723,7 @@
 
 結果：成功（GitHub Actions）
 
-備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（387件）
+備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（394件）
 
 ### NF-07
 
