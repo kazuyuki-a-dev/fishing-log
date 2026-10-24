@@ -135,7 +135,7 @@ cp .env.example .env
 
 ブラウザで http://localhost を開きます。開発用のログイン（`test@example.com` ／ `password` など）・入るデータ・気をつけること（`sail down -v` を使わない、など）は [`docs/development.md`](docs/development.md) にあります。
 
-**テスト**：`./vendor/bin/sail artisan test`（406 件。公開範囲とアクセス制御を中心に、計算や入力チェックも）。push のたびに GitHub Actions（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）でも全部のテストを流しています。いちばん上のバッジが緑なら main はすべて成功で、[Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) の Summary で件数を見られます。
+**テスト**：`./vendor/bin/sail artisan test`（407 件。公開範囲とアクセス制御を中心に、計算や入力チェックも）。push のたびに GitHub Actions（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）でも全部のテストを流しています。いちばん上のバッジが緑なら main はすべて成功で、[Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) の Summary で件数を見られます。
 
 ## 資料の一覧
 
