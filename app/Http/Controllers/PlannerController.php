@@ -21,10 +21,10 @@ class PlannerController extends Controller
         // 行く日（最初は今日）
         $date = $this->dateFromQuery($request->query('date'));
 
-        // 県（最初はメインフィールド）（FN-17）
+        // 県（最初はメインフィールド。ゲストはメインフィールドがないので、選んでもらう）（FN-17・#209）
         $prefecture = $request->query('prefecture');
         if ($prefecture !== 'all' && ! in_array($prefecture, config('prefectures'), true)) {
-            $prefecture = $user->home_prefecture;
+            $prefecture = $user?->home_prefecture;
         }
 
         // 時間帯（選ばれていなければ「指定なし」）
@@ -32,10 +32,22 @@ class PlannerController extends Controller
             ? $request->query('time_of_day')
             : null;
 
-        // 集計に使う記録：all = 自分＋みんなの公開実績、mine = 自分の実績だけ（PG22）
-        $scope = $request->query('scope') === 'mine' ? 'mine' : 'all';
+        // 集計に使う記録：all = 自分＋みんなの公開実績、mine = 自分の実績だけ（PG22）。ゲストはみんなの公開実績だけ（#209）
+        $scope = $user && $request->query('scope') === 'mine' ? 'mine' : 'all';
 
         $tide = $tides->tideFor($date);
+
+        // ゲストが県をまだ選んでいなければ、釣り場は並べずに県を選んでもらう
+        if ($prefecture === null) {
+            return view('planner.index', [
+                'date' => $date,
+                'tide' => $tide,
+                'prefecture' => null,
+                'timeOfDay' => $timeOfDay,
+                'scope' => $scope,
+                'plans' => collect(),
+            ]);
+        }
 
         // 並べる釣り場：見てよい釣り場のうち、選んだ県のもの
         $spots = Spot::query()

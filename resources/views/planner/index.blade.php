@@ -17,7 +17,7 @@
                     <div>
                         <label for="prefecture" class="block text-xs text-sand">県</label>
                         <x-prefecture-select id="prefecture" name="prefecture" class="mt-1 border-gray-300 text-ink"
-                            :selected="$prefecture" :with-all="true" onchange="this.form.submit()" />
+                            :selected="$prefecture" :with-all="true" :placeholder="$prefecture === null" onchange="this.form.submit()" />
                     </div>
                     <div>
                         <label for="time_of_day" class="block text-xs text-sand">時間帯</label>
@@ -25,6 +25,8 @@
                             :options="config('fishing.times_of_day')" :selected="$timeOfDay"
                             placeholder="指定なし" onchange="this.form.submit()" />
                     </div>
+                    {{-- 自分の記録で探すのはログインした人だけ。ゲストはみんなの公開記録で試す（#209） --}}
+                    @auth
                     <div>
                         <label for="scope" class="block text-xs text-sand">使う記録</label>
                         <x-option-select id="scope" name="scope" class="mt-1 border-gray-300 text-ink"
@@ -32,7 +34,15 @@
                             :labels="['all' => 'みんなの公開記録も使う', 'mine' => '自分の記録だけ']"
                             :selected="$scope" onchange="this.form.submit()" />
                     </div>
+                    @endauth
                 </form>
+
+                @guest
+                <p class="crayon-note px-3 py-2 text-sm">
+                    ログインしていないので、みんなの全体公開の記録だけで探しています。
+                    <a href="{{ route('register') }}" class="underline text-sea">会員登録</a>すると、自分の記録（非公開のものも）を使って、自分だけの傾向で探せます。
+                </p>
+                @endguest
 
                 <div>
                     <p class="text-sm text-sand">{{ $date->format('Y年n月j日') }}</p>
@@ -41,12 +51,22 @@
             </section>
 
             {{-- 釣り場の候補 --}}
-            @if ($plans->isEmpty())
+            @if ($prefecture === null)
+            {{-- ゲストはメインフィールドがないので、自分の県を選んでもらう（FN-17・#209） --}}
+            <div class="crayon-card p-6 text-center space-y-3">
+                <p>釣り場を探す都道府県を、上で選んでください。</p>
+                <div class="flex flex-wrap justify-center gap-4 text-sm">
+                    <a href="{{ route('planner', ['date' => $date->format('Y-m-d'), 'prefecture' => 'all']) }}" class="underline text-sea">全国を見る</a>
+                </div>
+            </div>
+            @elseif ($plans->isEmpty())
             <div class="crayon-card crayon-empty p-6 text-center space-y-3">
                 <p>まだこの県には釣り場がありません。</p>
                 <div class="flex justify-center gap-4 text-sm">
                     <a href="{{ route('planner', ['date' => $date->format('Y-m-d'), 'prefecture' => 'all']) }}" class="underline text-sea">全国を見る</a>
+                    @auth
                     <a href="{{ route('spots.create') }}" class="underline text-sea">最初に登録する</a>
+                    @endauth
                 </div>
             </div>
             @else
