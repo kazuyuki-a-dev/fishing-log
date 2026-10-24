@@ -37,8 +37,8 @@ class LocalInfoHistory
     public function record(Spot $spot, ?User $user, array $before, string $action, ?int $revertedChangeId = null): void
     {
         foreach (array_keys(self::FIELDS) as $field) {
-            $old = $this->normalize($before[$field] ?? null);
-            $new = $this->normalize($spot->getAttribute($field));
+            $old = self::normalize($before[$field] ?? null);
+            $new = self::normalize($spot->getAttribute($field));
             if ($old === $new) {
                 continue;
             }
@@ -82,9 +82,32 @@ class LocalInfoHistory
         return $field === 'convenience_distance_m' ? $value . ' m' : $value;
     }
 
-    /** 比べやすいように、空は null、それ以外は文字にそろえる（数値の 300 と文字の "300" を同じにする） */
-    private function normalize(mixed $value): ?string
+    /** メモのように長くなる項目（履歴の一覧では短くし、押すと全文を見せる。#223） */
+    public const LONG_FIELDS = ['parking_note', 'toilet_note', 'facility_note'];
+
+    /** 一覧で短くするときの文字数 */
+    public const SHORT_LENGTH = 30;
+
+    /** 一覧に出す短い形。長いメモは始めの数文字だけにする（#223） */
+    public static function short(string $field, ?string $value): string
     {
-        return $value === null || $value === '' ? null : (string) $value;
+        $text = self::display($field, $value);
+
+        if (! in_array($field, self::LONG_FIELDS, true)) {
+            return $text;
+        }
+        // 文字の数で切る（Str::limit は文字の幅で数え、日本語だと半分で切れるため）
+        $oneLine = str_replace("\n", ' ', $text);
+
+        return mb_strlen($oneLine) > self::SHORT_LENGTH ? mb_substr($oneLine, 0, self::SHORT_LENGTH) . '…' : $oneLine;
+    }
+
+    /**
+     * 比べやすいように、空は null、それ以外は文字にそろえる（数値の 300 と文字の "300" を同じにする）
+     * 改行は \n にそろえる。入力欄から保存すると \r\n になり、文が同じでも「変わった」と記録されていた（#223）
+     */
+    public static function normalize(mixed $value): ?string
+    {
+        return $value === null || $value === '' ? null : str_replace(["\r\n", "\r"], "\n", (string) $value);
     }
 }
