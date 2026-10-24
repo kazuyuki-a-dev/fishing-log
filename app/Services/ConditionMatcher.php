@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Trip;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -25,6 +26,19 @@ class ConditionMatcher
 
     /** どのレベルにも釣れた記録がないときの並び順（いちばん下） */
     public const NO_CATCH_RANK = 3;
+
+    /** 釣れた釣行かどうか（釣果が1匹でもある） */
+    private const CAUGHT_SQL = 'EXISTS (SELECT 1 FROM catches WHERE catches.trip_id = trips.id)';
+
+    /** ダミーの人の釣行かどうか（#211） */
+    private const SAMPLE_SQL = 'trips.user_id IN (SELECT id FROM users WHERE users.is_sample = 1)';
+
+    /** 記録の内訳で数える項目と、データベースでの書き方（#211） */
+    private const BREAKDOWN = [
+        'time_of_day' => 'trips.time_of_day',
+        'tide' => 'trips.tide',
+        'year' => 'YEAR(trips.went_at)',
+    ];
 
     /**
      * 選んだ日の「時期」に入る月（その月と前後1か月。12月なら 11・12・1月）
@@ -105,6 +119,8 @@ class ConditionMatcher
                 'test' => $level['test'],
                 'visits' => (clone $matched)->count(),
                 'caught' => (clone $matched)->has('catches')->count(),
+                // そのうちダミーの人の釣行（#211）
+                'samples' => (clone $matched)->whereIn('trips.user_id', User::where('is_sample', true)->select('id'))->count(),
             ];
         });
 
@@ -139,7 +155,7 @@ class ConditionMatcher
             $counts[$name] = $level['scope'](clone $trips)
                 ->reorder()
                 ->toBase()
-                ->selectRaw('trips.spot_id, COUNT(*) as visits, COUNT(CASE WHEN EXISTS (SELECT 1 FROM catches WHERE catches.trip_id = trips.id) THEN 1 END) as caught')
+                ->selectRaw('trips.spot_id, COUNT(*) as visits, COUNT(CASE WHEN ' . self::CAUGHT_SQL . ' THEN 1 END) as caught, COUNT(CASE WHEN ' . self::SAMPLE_SQL . ' THEN 1 END) as samples')
                 ->groupBy('trips.spot_id')
                 ->get()
                 ->keyBy('spot_id');
@@ -185,6 +201,7 @@ class ConditionMatcher
                 'test' => $level['test'],
                 'visits' => (int) data_get($counts[$name]->get($spotId), 'visits', 0),
                 'caught' => (int) data_get($counts[$name]->get($spotId), 'caught', 0),
+                'samples' => (int) data_get($counts[$name]->get($spotId), 'samples', 0),
             ]);
             $results[$spotId] = $this->choose($perLevel, $date, $tide, $timeOfDay,
                 fn(array $used, string $column) => $mostCommon[$spotId][$column] ?? '') + [
@@ -194,6 +211,100 @@ class ConditionMatcher
         }
 
         return $results;
+    }
+
+    /**
+     * 記録の内訳（#211）。数えた釣行が、時間帯・潮・年ごとに何回行って何回釣れたか
+     * 提案のもとになった記録が、どの条件に偏っているかを見せるため。データベースで数える
+     *
+     * @param  Builder  $matched  数えた釣行のクエリ（matchQuery() の matched）
+     * @return array<string, array<string, array{visits: int, caught: int}>>
+     */
+    public function breakdown(Builder $matched): array
+    {
+        $result = [];
+        foreach (self::BREAKDOWN as $key => $expression) {
+            $rows = $this->countBy($matched, $expression, false);
+            $result[$key] = $this->ordered($key, $rows->mapWithKeys(fn($row) => [$this->valueLabel($row->value) => $this->counts($row)])->all());
+        }
+
+        return $result;
+    }
+
+    /**
+     * 釣り場ごとの記録の内訳（プランナー用。#211）。釣り場ごとに使うレベルの釣行だけを数える
+     *
+     * @param  array<int, array>  $matches  matchBySpot() の結果
+     * @return array<int, array<string, array<string, array{visits: int, caught: int}>>>
+     */
+    public function breakdownBySpot(Builder $trips, array $matches, Carbon $date, string $tide, ?string $timeOfDay): array
+    {
+        $result = [];
+        foreach (array_keys(self::LABELS) as $level) {
+            $spotIds = array_keys(array_filter($matches, fn(array $match) => $match['level'] === $level && $match['visits'] > 0));
+            if ($spotIds === []) {
+                continue;
+            }
+            $matched = $this->matchedQuery($trips, $level, $date, $tide, $timeOfDay)->whereIn('trips.spot_id', $spotIds);
+            foreach (self::BREAKDOWN as $key => $expression) {
+                foreach ($this->countBy($matched, $expression, true) as $row) {
+                    $result[$row->spot_id][$key][$this->valueLabel($row->value)] = $this->counts($row);
+                }
+            }
+        }
+        foreach ($result as $spotId => $keys) {
+            foreach ($keys as $key => $values) {
+                $result[$spotId][$key] = $this->ordered($key, $values);
+            }
+        }
+
+        return $result;
+    }
+
+    /** 内訳の1項目を数える問い合わせ（釣り場ごとにも分けられる） */
+    private function countBy(Builder $matched, string $expression, bool $bySpot): Collection
+    {
+        $group = ($bySpot ? 'trips.spot_id, ' : '') . $expression;
+
+        return (clone $matched)
+            ->reorder()
+            ->toBase()
+            ->selectRaw(($bySpot ? 'trips.spot_id, ' : '') . "{$expression} as value, COUNT(*) as visits, COUNT(CASE WHEN " . self::CAUGHT_SQL . ' THEN 1 END) as caught')
+            ->groupByRaw($group)
+            ->get();
+    }
+
+    /** @return array{visits: int, caught: int} */
+    private function counts(object $row): array
+    {
+        return ['visits' => (int) $row->visits, 'caught' => (int) $row->caught];
+    }
+
+    private function valueLabel(mixed $value): string
+    {
+        return $value === null || $value === '' ? '不明' : (string) $value;
+    }
+
+    /**
+     * 決まった言葉の順（config/fishing.php）に並べる。年は古い順。一覧にない値（不明など）は後ろ
+     *
+     * @param  array<string, array{visits: int, caught: int}>  $values
+     */
+    private function ordered(string $key, array $values): array
+    {
+        $order = match ($key) {
+            'time_of_day' => config('fishing.times_of_day'),
+            'tide' => config('fishing.tides'),
+            default => [],
+        };
+        uksort($values, function (string $a, string $b) use ($order) {
+            $ia = array_search($a, $order, true);
+            $ib = array_search($b, $order, true);
+
+            return [$ia === false ? PHP_INT_MAX : $ia, $a] <=> [$ib === false ? PHP_INT_MAX : $ib, $b];
+        });
+
+        return $values;
     }
 
     /**

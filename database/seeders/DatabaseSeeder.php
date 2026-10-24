@@ -94,7 +94,8 @@ class DatabaseSeeder extends Seeder
 
         // 自分でログインして確かめるためのユーザー（パスワードは password）
         // 公開環境では、お試し用の専用アカウント（メール・パスワードは config/fishing.php。README に書く）
-        $me = User::factory()->create($public
+        // 管理者以外の釣り人は、みんなダミーの人（釣行が画面で「ダミー」と出る。#211）
+        $me = User::factory()->sample()->create($public
             ? [
                 'name' => 'お試しユーザー',
                 'email' => config('fishing.demo_email'),
@@ -112,7 +113,7 @@ class DatabaseSeeder extends Seeder
             ['name' => '港の釣り人', 'email' => 'minato@example.com'],
             ['name' => 'サーフ好き', 'email' => 'surf@example.com'],
             ['name' => '磯の常連', 'email' => 'iso@example.com'],
-        ])->map(fn(array $user) => User::factory()->create([...$user, 'home_prefecture' => '秋田県', ...($public ? $locked() : [])]));
+        ])->map(fn(array $user) => User::factory()->sample()->create([...$user, 'home_prefecture' => '秋田県', ...($public ? $locked() : [])]));
 
         // ---- 釣行（#160）。秋田県の3港：自分が45件、ほかの3人で残り ----
         $akitaPorts = $spots->filter(fn(array $row) => array_key_exists($row['data']['name'], self::AKITA_TRIPS) && $row['data']['prefecture'] === '秋田県');
@@ -126,7 +127,7 @@ class DatabaseSeeder extends Seeder
         $locals = [];
         foreach ($otherModelPorts as $row) {
             $prefecture = $row['data']['prefecture'];
-            $locals[$prefecture] ??= User::factory()->create([
+            $locals[$prefecture] ??= User::factory()->sample()->create([
                 'name' => "{$prefecture}の釣り人",
                 'email' => 'angler' . (count($locals) + 1) . '@example.com',
                 'home_prefecture' => $prefecture,
@@ -138,7 +139,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // ---- 神奈川県（県の切り替えを確かめるための人。神奈川にはモデル港がないので釣行はない） ----
-        User::factory()->create([
+        User::factory()->sample()->create([
             'name' => '湾奥アングラー',
             'email' => 'wanoku@example.com',
             'home_prefecture' => '神奈川県',

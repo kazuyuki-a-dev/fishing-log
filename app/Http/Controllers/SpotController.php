@@ -145,7 +145,7 @@ class SpotController extends Controller
 
         // 釣行の履歴（FN-09）。新しい順に10件ずつ（全部は出さない。#166）
         $trips = $visible()
-            ->with(['catches', 'user:id,name'])
+            ->with(['catches', 'user:id,name,is_sample'])
             ->orderByDesc('went_at')
             ->orderByDesc('id')
             ->paginate(10)
@@ -162,6 +162,11 @@ class SpotController extends Controller
             'stamps' => $match['stamps'],
             'visits' => $match['visits'],
             'caught' => $match['caught'],
+            // そのうちダミーの人の釣行と、記録の内訳（時間帯・潮ごと。#211）
+            'samples' => $match['samples'],
+            'breakdown' => $match['visits'] > 0 ? $matcher->breakdown($match['matched']) : [],
+            // 時間帯で絞ったレベルか（絞っていないときだけ「記録がない時間帯」を出す）
+            'timeFiltered' => $match['level'] === 'time' || ($match['level'] === 'exact' && $timeOfDay !== null),
             'methods' => $matchedCatches()->selectRaw('method, COUNT(*) as fish')->groupBy('method')->orderBy('method')->pluck('fish', 'method'),
             'species' => $matchedCatches()->selectRaw('fish_species, COUNT(*) as fish')->groupBy('fish_species')
                 ->orderByDesc('fish')->orderBy('fish_species')->limit(3)->pluck('fish', 'fish_species'),

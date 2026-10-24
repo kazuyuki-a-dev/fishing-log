@@ -146,6 +146,7 @@
                             <p class="font-bold">
                                 {{ $trip->went_at->format('Y/m/d') }}
                                 <span class="ml-2 text-sm font-normal">{{ $trip->time_of_day }}</span>
+                                <x-dummy-tag :trip="$trip" class="ml-2" />
                             </p>
                             <p class="text-sm text-sand">{{ $trip->spot->name }}（{{ $trip->spot->prefecture }}）・{{ $trip->tide }}</p>
                         </div>

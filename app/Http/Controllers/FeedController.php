@@ -44,7 +44,7 @@ class FeedController extends Controller
                 'catches',
                 fn($catch) => $catch->where('fish_species', $species)
             ))
-            ->with(['spot', 'user:id,name', 'catches'])
+            ->with(['spot', 'user:id,name,is_sample', 'catches'])
             ->latest('went_at')
             ->latest('id')
             ->paginate(20)

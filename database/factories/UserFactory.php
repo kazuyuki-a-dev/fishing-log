@@ -45,6 +45,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * ダミーの人にする（#211）。この人の釣行は画面で「ダミー」と出る
+     */
+    public function sample(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'is_sample' => true,
+        ]);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static

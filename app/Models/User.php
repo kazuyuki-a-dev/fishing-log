@@ -29,6 +29,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notify_enabled' => 'boolean',
+            'is_sample' => 'boolean',
         ];
     }
 

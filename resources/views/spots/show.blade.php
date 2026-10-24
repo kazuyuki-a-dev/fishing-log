@@ -92,7 +92,13 @@
                     @if ($judge['visits'] > 0)
                     {{-- どの条件で数えたかは、横のハンコで出す（#158） --}}
                     <div class="flex flex-wrap items-center justify-between gap-3">
-                        <p class="text-2xl font-bold">{{ $judge['visits'] }}回行って {{ $judge['caught'] }}回釣れた</p>
+                        <div>
+                            <p class="text-2xl font-bold">{{ $judge['visits'] }}回行って {{ $judge['caught'] }}回釣れた</p>
+                            {{-- そのうちダミーの釣行の回数（#211） --}}
+                            @if ($judge['samples'] > 0)
+                            <p class="text-sm text-sand">うちダミー {{ $judge['samples'] }}回</p>
+                            @endif
+                        </div>
                         <x-match-stamps :stamps="$judge['stamps']" />
                     </div>
                     <x-match-stamps-legend />
@@ -116,6 +122,9 @@
                         @endforeach
                     </p>
                     @endif
+                    {{-- 記録の内訳（#211）。数えた記録が、どの時間帯・潮に偏っているかを見る --}}
+                    @php($missingTimes = $judge['timeFiltered'] ? [] : array_values(array_diff(config('fishing.times_of_day'), array_keys($judge['breakdown']['time_of_day'] ?? []))))
+                    @include('spots.partials.breakdown-table', ['breakdown' => $judge['breakdown'], 'missingTimes' => $missingTimes])
                     @else
                     <p>この条件で釣れた記録はまだありません。</p>
                     @endif
@@ -191,6 +200,7 @@
                         <p class="font-bold">
                             {{ $trip->went_at->format('Y/m/d') }}
                             <span class="ml-2 text-sm font-normal">{{ $trip->time_of_day }}</span>
+                            <x-dummy-tag :trip="$trip" class="ml-2" />
                             @if ($judge['matchedIds']->contains($trip->id))
                             <x-match-level class="ml-2" :level="$judge['level']" :label="$judge['label']" />
                             @endif
