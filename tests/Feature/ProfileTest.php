@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\FishCatch;
 use App\Models\Trip;
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -26,6 +28,7 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
+        Notification::fake();
         $user = User::factory()->create();
 
         $response = $this
@@ -36,9 +39,12 @@ class ProfileTest extends TestCase
                 'email' => 'test@example.com',
             ]);
 
+        // メールアドレスを変えたので、新しいアドレスに確認のメールを送り、確認の画面へ（#213）
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/verify-email')
+            ->assertSessionHas('status', 'verification-link-sent');
+        Notification::assertSentTo($user, VerifyEmail::class);
 
         $user->refresh();
 
