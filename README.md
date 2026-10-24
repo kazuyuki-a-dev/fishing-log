@@ -46,7 +46,7 @@
 <th>釣果フィード</th>
 </tr>
 <tr>
-<td><img src="docs/images/screen-karte.png" alt="釣り場カルテ：付箋の釣行判断ビュー。うちダミーの回数と、記録の内訳の表" width="420"></td>
+<td><img src="docs/images/screen-karte.png" alt="釣り場カルテ：付箋の釣行判断ビュー。うちダミーの回数と、記録の内訳を見るボタン" width="420"></td>
 <td><img src="docs/images/screen-feed.png" alt="釣果フィード：みんなの公開釣果。ダミーの釣行に灰色の印" width="420"></td>
 </tr>
 <tr>
@@ -135,7 +135,7 @@ cp .env.example .env
 
 ブラウザで http://localhost を開きます。開発用のログイン（`test@example.com` ／ `password` など）・入るデータ・気をつけること（`sail down -v` を使わない、など）は [`docs/development.md`](docs/development.md) にあります。
 
-**テスト**：`./vendor/bin/sail artisan test`（399 件。公開範囲とアクセス制御を中心に、計算や入力チェックも）。push のたびに GitHub Actions（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）でも全部のテストを流しています。いちばん上のバッジが緑なら main はすべて成功で、[Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) の Summary で件数を見られます。
+**テスト**：`./vendor/bin/sail artisan test`（406 件。公開範囲とアクセス制御を中心に、計算や入力チェックも）。push のたびに GitHub Actions（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）でも全部のテストを流しています。いちばん上のバッジが緑なら main はすべて成功で、[Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) の Summary で件数を見られます。
 
 ## 資料の一覧
 
