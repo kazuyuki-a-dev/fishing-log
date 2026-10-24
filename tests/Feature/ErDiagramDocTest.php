@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
- * README の ER 図（Mermaid）が、実際のテーブルと合っているか（#200）
+ * ER 図（Mermaid）が、実際のテーブルと合っているか（#200。#221 で README から docs/database.md に移した）
  * テーブルを足して図を直し忘れたら、ここで気づけるようにする
  */
 class ErDiagramDocTest extends TestCase
@@ -18,11 +18,11 @@ class ErDiagramDocTest extends TestCase
     /** Laravel が最初から作る、アプリの設計には入れないテーブル */
     private const FRAMEWORK_TABLES = ['migrations', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs'];
 
-    /** README の ```mermaid の中身 */
+    /** docs/database.md の ```mermaid の中身 */
     private function diagram(): string
     {
-        $readme = file_get_contents(base_path('README.md'));
-        $this->assertSame(1, preg_match('/```mermaid\n(erDiagram\n.*?)```/s', $readme, $matches), 'README に ER 図（Mermaid）がない');
+        $readme = file_get_contents(base_path('docs/database.md'));
+        $this->assertSame(1, preg_match('/```mermaid\n(erDiagram\n.*?)```/s', $readme, $matches), 'docs/database.md に ER 図（Mermaid）がない');
 
         return $matches[1];
     }
@@ -45,7 +45,7 @@ class ErDiagramDocTest extends TestCase
 
         $entities = $this->entities();
         sort($entities);
-        $this->assertSame($tables, $entities, 'データベースのテーブルと README の ER 図の表が合わない');
+        $this->assertSame($tables, $entities, 'データベースのテーブルと docs/database.md の ER 図の表が合わない');
     }
 
     public function test_every_relationship_uses_tables_in_the_diagram(): void

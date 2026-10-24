@@ -110,14 +110,15 @@ class RequirementsDocTest extends TestCase
 
     public function test_readme_priorities_match_the_table(): void
     {
-        // README の「機能の優先順位と境界」の表の FN・NF が、対応表の優先度と同じ（#217）
+        // README の「機能と優先度」の表の FN・NF が、対応表の優先度と同じ（#217。#221 で表を1つにまとめた）
         $readme = file_get_contents(base_path('README.md'));
-        $section = str($readme)->after('## 機能の優先順位と境界')->before('## 主な機能')->toString();
+        $section = str($readme)->after('## 機能と優先度')->before('## 工夫したこと')->toString();
         $table = array_merge($this->rows('FN'), $this->rows('NF'));
         $listed = [];
         foreach (['主役', '必須', '補助'] as $priority) {
-            $this->assertSame(1, preg_match('/^\| ' . $priority . ' \|(.*)$/mu', $section, $line), "README に {$priority} の行がない");
-            preg_match_all('/(?:FN|NF)-\d{2}/', $line[1], $numbers);
+            preg_match_all('/^\| ' . $priority . ' \|(.*)$/mu', $section, $lines);
+            $this->assertNotEmpty($lines[1], "README に {$priority} の行がない");
+            preg_match_all('/(?:FN|NF)-\d{2}/', implode("\n", $lines[1]), $numbers);
             foreach (array_unique($numbers[0]) as $number) {
                 $this->assertSame($table[$number]['priority'], $priority, "{$number} の優先度が README と対応表で違う");
                 $listed[] = $number;
