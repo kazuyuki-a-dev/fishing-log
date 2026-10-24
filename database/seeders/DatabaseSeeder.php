@@ -66,6 +66,9 @@ class DatabaseSeeder extends Seeder
     // 港の注意のメモ（NF-04：釣り禁止の場所を、釣りができるように見せないため）
     private const PORT_NOTE = '港の中は立入禁止・釣り禁止の場所が多いです。釣りができる場所は、現地の表示や港の管理者の案内を確かめてください。';
 
+    // モデル港は、開いている日や時間も一緒に案内する（#223）
+    private const MODEL_PORT_NOTE = '港の中は立入禁止・釣り禁止の場所が多いので、釣りができる場所と開いている日や時間は、現地の表示や港の管理者の案内を確かめてください。';
+
     private const LAKE_NOTE = '釣りの決まり（遊漁券・期間・釣り方・リリースの決まりなど）は、漁協や県の案内を確かめてください。';
 
     public function run(): void
@@ -162,7 +165,8 @@ class DatabaseSeeder extends Seeder
             $note = $data['kind'] === '湖' ? self::LAKE_NOTE : self::PORT_NOTE;
             if ($data['model']) {
                 $place = $data['model_place'] ? "（釣りができる場所：{$data['model_place']}）" : '';
-                $note .= "\n国の「釣り文化振興モデル港」です{$place}。開いている日や時間は、港の管理者の案内を確かめてください。";
+                // 「港の管理者の案内」は1回だけにする（2回入っていてくどかった。#223）
+                $note = "国の「釣り文化振興モデル港」です{$place}。" . self::MODEL_PORT_NOTE;
             }
 
             $spot = Spot::forceCreate([
