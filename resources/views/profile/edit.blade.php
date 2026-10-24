@@ -6,7 +6,8 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        {{-- ほかの画面と同じく、カードを細くして真ん中に置く（中身が左に寄らないように。#215） --}}
+        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             {{-- お試し用アカウントは、変更と退会ができない（だれでもログインできるため。#136） --}}
             @if ($user->isDemo())
             <div class="crayon-note p-4 sm:p-6 text-sm space-y-1">
@@ -15,21 +16,15 @@
             </div>
             @else
             <div class="p-4 sm:p-8 crayon-card">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
+                @include('profile.partials.update-profile-information-form')
             </div>
 
             <div class="p-4 sm:p-8 crayon-card">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
+                @include('profile.partials.update-password-form')
             </div>
 
             <div class="p-4 sm:p-8 crayon-card">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
+                @include('profile.partials.delete-user-form')
             </div>
             @endif
         </div>
