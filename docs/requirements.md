@@ -38,7 +38,7 @@
 | 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、MySQL 8.4、Node 24）。push のたびに全部のテストを流す（`.github/workflows/tests.yml`） |
 | 画面 | 開発環境（Laravel Sail、Chrome）。スマホ幅は Chrome の開発者ツールで 360px |
 
-**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#40071692066](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/40071692066)（2026-10-24、407 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
+**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#40075875806](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/40075875806)（2026-10-24、408 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
 
 ## 見方
 
@@ -744,7 +744,7 @@
 
 結果：成功（GitHub Actions）
 
-備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（407件）
+備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（408件）
 
 ### NF-07
 
