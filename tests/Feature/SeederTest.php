@@ -52,6 +52,8 @@ class SeederTest extends TestCase
         $this->assertStringContainsString('立入禁止・釣り禁止', $akita->facility_note);
         $this->assertStringContainsString('釣り文化振興モデル港', $akita->facility_note);
         $this->assertStringContainsString('北防波堤', $akita->facility_note);
+        // 「港の管理者の案内」は1回だけ（2回入っていてくどかった。#223）
+        $this->assertSame(1, substr_count($akita->facility_note, '港の管理者の案内'));
         $this->assertStringContainsString('遊漁券', Spot::where('name', '中禅寺湖')->first()->facility_note);
     }
 

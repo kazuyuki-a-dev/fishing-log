@@ -104,8 +104,12 @@ class DummyTripTest extends TestCase
             ->assertOk()
             ->assertSee('2回行って 1回釣れた')
             ->assertSee('うちダミー 2回')
-            ->assertSee('記録の内訳')
-            ->assertSeeInOrder(['時間帯', '朝マズメ', '夜', '潮', '小潮'])
+            // プランナーと同じ形（押すと開く。時間帯・潮・年。#223）
+            ->assertSee('記録の内訳を見る')
+            ->assertSee('朝マズメ 1回（釣れた 1）')
+            ->assertSee('夜 1回（釣れた 0）')
+            ->assertSee('小潮 2回（釣れた 1）')
+            ->assertSee('2024年 2回（釣れた 1）')
             // 時間帯で絞っていないので、記録がない時間帯を書く
             ->assertSee('日中・夕マズメ・終日の記録はまだありません。')
             // カルテの履歴にも印（ダミーの人の2件だけ）
@@ -136,7 +140,9 @@ class DummyTripTest extends TestCase
             ->assertSee('朝マズメ 1回（釣れた 1）')
             ->assertSee('夜 1回（釣れた 1）')
             ->assertSee('小潮 2回（釣れた 2）')
-            ->assertSee('2024年 2回（釣れた 2）');
+            ->assertSee('2024年 2回（釣れた 2）')
+            // カルテと同じく、時間帯で絞っていないときは記録がない時間帯も書く（#223）
+            ->assertSee('日中・夕マズメ・終日の記録はまだありません。');
     }
 
     public function test_no_dummy_count_when_all_records_are_real(): void
