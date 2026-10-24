@@ -27,7 +27,8 @@ return [
         'icon' => 'moon',
         'link' => 'planner',
         'routes' => ['planner'],
-        'who' => 'auth',
+        // ゲストも試せる（#209）
+        'who' => 'guest',
         'tab' => '#FFC9A8',
         'paper' => '#FFF0E6',
         'line' => '#E0572B',

@@ -40,7 +40,6 @@ Route::middleware('auth')->group(function () {
     // 過去の釣行のまとめて登録の保存（PG15）
     Route::post('/trips/bulk', [TripController::class, 'storeBulk'])->name('trips.bulk-store');
     Route::resource('trips', TripController::class);
-    Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
 
     // 魚種ごとの自己ベスト（#170）
     Route::get('/bests', [BestController::class, 'index'])->name('bests.index');
@@ -67,6 +66,8 @@ Route::middleware('auth')->group(function () {
 // ゲストも見られる（NF-01・FN-13）。ログインが必要なルートより下に書く
 Route::resource('spots', SpotController::class)->only(['index', 'show']);
 Route::get('/feed', [FeedController::class, 'index'])->name('feed');
+// 釣行プランナー（PG22）。ゲストも、みんなの公開記録だけで試せる（#209）
+Route::get('/planner', [PlannerController::class, 'index'])->name('planner');
 Route::get('/terms', [StaticPageController::class, 'terms'])->name('terms');
 Route::get('/privacy', [StaticPageController::class, 'privacy'])->name('privacy');
 Route::get('/guide', [StaticPageController::class, 'guide'])->name('guide');
