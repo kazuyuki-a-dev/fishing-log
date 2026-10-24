@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 要件ごとの対応表 |
-| 版 | 1.5 |
+| 版 | 1.6 |
 | 作成日 | 2026-10-23 |
 | 最終更新日 | 2026-10-23 |
 | 作成者 | kazuyuki-a-dev |
@@ -24,6 +24,7 @@
 | 1.3 | 2026-10-23 | NF-03 を完了にした（公開環境の毎日の自動バックアップと、戻す試し） | #204 |
 | 1.4 | 2026-10-23 | NF-04 の備考に運用の手順書を、FN-13・NF-07 の備考に本番リリース計画を書いた | #206 |
 | 1.5 | 2026-10-24 | FN-16・PG22・NF-01 に、ゲストもプランナーを使えることを書いた | #209 |
+| 1.6 | 2026-10-24 | FN-11・FN-16 に記録の内訳とダミーの回数を、FN-13・NF-07 にダミーの印を書いた | #211 |
 
 ## 確認した環境
 
@@ -73,9 +74,9 @@
 | [FN-08](#fn-08) | 写真の Exif・天候・潮の自動補完 | 完了 | 自動テスト＋画面 | 成功（GitHub Actions） | 2026-10-22 |
 | [FN-09](#fn-09) | 釣り場カルテ | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-10](#fn-10) | 継続支援表示 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
-| [FN-11](#fn-11) | 釣行判断ビュー | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
+| [FN-11](#fn-11) | 釣行判断ビュー | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-24 |
 | [FN-12](#fn-12) | 公開範囲の3段階 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
-| [FN-13](#fn-13) | 公開釣果フィード | 一部対応 | 自動テスト | 一部成功 | 2026-10-23 |
+| [FN-13](#fn-13) | 公開釣果フィード | 一部対応 | 自動テスト | 一部成功 | 2026-10-24 |
 | [FN-14](#fn-14) | 釣り場の現地情報 | 完了 | 自動テスト＋画面 | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-15](#fn-15) | 釣り方（エサ／ルアー）の記録 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [FN-16](#fn-16) | 釣行プランナー（主役） | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-24 |
@@ -342,13 +343,14 @@
 
 **釣行判断ビュー**
 
-- 状態：完了　／　確認方法：自動テスト　／　確認日：2026-10-23
+- 状態：完了　／　確認方法：自動テスト　／　確認日：2026-10-24
 
 受け入れの条件
 
 1. 選んだ日の潮・天気・時間帯を出す
 2. その条件のときの過去の記録と一致を示す
 3. 次の大潮を出す
+4. 数えた記録の内訳（時間帯・潮ごとの行った回数・釣れた回数）と、そのうちダミーの回数を出す（#211）
 
 テスト・手順
 
@@ -357,10 +359,12 @@
 - `SpotJudgeTest::test_time_of_day_narrows_the_match`
 - `SpotJudgeTest::test_relaxes_to_season_and_time_when_exact_has_no_record`
 - `WeatherTest::test_karte_shows_forecast_and_caches_it`
+- `DummyTripTest::test_karte_shows_dummy_count_and_breakdown`
+- `DummyTripTest::test_breakdown_counts_only_visible_trips_in_order`
 
 結果：成功（GitHub Actions）
 
-備考：時期（前後1か月）をいつも条件に入れ、一致をハンコで見せる（#158）。天気予報は MET Norway（#146）
+備考：時期（前後1か月）をいつも条件に入れ、一致をハンコで見せる（#158）。天気予報は MET Norway（#146）。記録の内訳は表でいつも出し、時間帯で絞っていないときは記録がない時間帯も書く（#211）
 
 ### FN-12
 
@@ -391,7 +395,7 @@
 
 **公開釣果フィード**
 
-- 状態：一部対応　／　確認方法：自動テスト　／　確認日：2026-10-23
+- 状態：一部対応　／　確認方法：自動テスト　／　確認日：2026-10-24
 
 受け入れの条件
 
@@ -410,10 +414,11 @@
 - `FeedTest::test_guest_is_asked_to_choose_a_prefecture_first`
 - `FeedTest::test_species_filter_shows_only_trips_with_that_fish`
 - `FeedTest::test_empty_feed_shows_first_poster_button`
+- `DummyTripTest::test_only_trips_of_dummy_people_are_marked_in_the_feed`
 
 結果：一部成功（自動テストは成功。開発者自身の実際の釣行の登録は未達）
 
-備考：**足りないこと**：⑤ の開発者自身の実際の釣行は、まだ登録していない（お試し環境はダミーの釣行840件で空にならないようにしている）。本番に移るときに登録する（[`docs/release-plan.md`](release-plan.md) の項目 10）。ダミーと分かる印を画面に付ける予定（手順⑧）
+備考：**足りないこと**：⑤ の開発者自身の実際の釣行は、まだ登録していない（お試し環境はダミーの釣行840件で空にならないようにしている）。本番に移るときに登録する（[`docs/release-plan.md`](release-plan.md) の項目 10）。ダミーの釣行には、フィードなどで「ダミー」の印を付けた（#211）
 
 ### FN-14
 
@@ -478,6 +483,7 @@
 4. 注意区分の警告
 5. 条件を少しずつゆるめ、どの一致かを示す
 6. ゲストも使える。数えるのはみんなの全体公開の記録だけで、県は選んでもらう（#209。定義書と違う）
+7. 数えた記録の内訳（時間帯・潮・年）と、そのうちダミーの回数を出す（内訳は押すと開く。#211）
 
 テスト・手順
 
@@ -489,6 +495,7 @@
 - `ConditionMatcherTest::test_match_by_spot_chooses_the_level_for_each_spot`
 - `PlannerTest::test_guest_is_asked_to_choose_a_prefecture_first`
 - `PlannerTest::test_guest_uses_only_public_trips`
+- `DummyTripTest::test_planner_shows_dummy_count_and_breakdown`
 
 結果：成功（GitHub Actions）
 
@@ -555,7 +562,7 @@
 | [NF-04](#nf-04) | 公開情報の運用 | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [NF-05](#nf-05) | 規約とプライバシーポリシー | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
 | [NF-06](#nf-06) | テスト方針（7つの自動チェック） | 完了 | 自動テスト | 成功（GitHub Actions） | 2026-10-23 |
-| [NF-07](#nf-07) | 初期データ（シーダー） | 一部対応 | 自動テスト | 一部成功 | 2026-10-23 |
+| [NF-07](#nf-07) | 初期データ（シーダー） | 一部対応 | 自動テスト | 一部成功 | 2026-10-24 |
 
 ### NF-01
 
@@ -709,13 +716,13 @@
 
 結果：成功（GitHub Actions）
 
-備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（379件）
+備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（387件）
 
 ### NF-07
 
 **初期データ（シーダー）**
 
-- 状態：一部対応　／　確認方法：自動テスト　／　確認日：2026-10-23
+- 状態：一部対応　／　確認方法：自動テスト　／　確認日：2026-10-24
 
 受け入れの条件
 
@@ -733,10 +740,11 @@
 - `SeederTest::test_some_trips_are_bozu`
 - `SeederTest::test_catches_follow_the_season`
 - `SeederTest::test_tide_matches_the_date`
+- `DeployTest::test_production_seeder_does_not_use_the_readme_password`
 
 結果：一部成功（自動テストは成功。開発者自身の実際の釣行の登録は未達）
 
-備考：釣り場は全国の実在の港131・湖7、釣行は840件で季節あり（#106・#160）。**足りないこと**：⑤ の開発者自身の実際の釣行はまだ（FN-13 と同じ。本番に移るときに登録する。[`docs/release-plan.md`](release-plan.md) の項目 10）
+備考：釣り場は全国の実在の港131・湖7、釣行は840件で季節あり（#106・#160）。管理者以外の釣り人はダミーの人（`users.is_sample`）で、その釣行は画面で「ダミー」と出る（#211）。**足りないこと**：⑤ の開発者自身の実際の釣行はまだ（FN-13 と同じ。本番に移るときに登録する。[`docs/release-plan.md`](release-plan.md) の項目 10）
 
 ## 画面（PG）
 
