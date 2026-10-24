@@ -56,7 +56,7 @@ class DashboardController extends Controller
         // 公開釣果の新着（住んでいる県）
         $feedTrips = Trip::forFeed()
             ->whereHas('spot', fn($spot) => $spot->where('prefecture', $user->home_prefecture))
-            ->with(['spot', 'user:id,name', 'catches'])
+            ->with(['spot', 'user:id,name,is_sample', 'catches'])
             ->latest('went_at')
             ->latest('id')
             ->take(5)

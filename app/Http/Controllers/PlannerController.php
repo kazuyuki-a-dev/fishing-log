@@ -64,12 +64,15 @@ class PlannerController extends Controller
         // 釣り場ごとに、条件に合う釣行をデータベースで数える。釣れた記録がなければ、条件を少しずつゆるめる（FN-16）
         $matches = $matcher->matchBySpot($trips, $spots->pluck('id')->all(), $date, $tide, $timeOfDay);
         $details = $this->details($matcher, $trips, $matches, $date, $tide, $timeOfDay);
+        // 記録の内訳（時間帯・潮・年ごと）。「記録の内訳を見る」を押すと開く（#211）
+        $breakdowns = $matcher->breakdownBySpot($trips, $matches, $date, $tide, $timeOfDay);
 
         $plans = $spots->map(fn(Spot $spot) => $matches[$spot->id] + [
             'spot' => $spot,
             'methods' => $details[$spot->id]['methods'] ?? collect(),
             'species' => $details[$spot->id]['species'] ?? collect(),
             'maxSize' => $details[$spot->id]['maxSize'] ?? null,
+            'breakdown' => $breakdowns[$spot->id] ?? [],
         ])
             // 一致のレベルが先（ぴったり → 時期と時間帯 → 時期だけ → 記録なし）。同じレベルなら釣れた回数 → 行った回数の多い順
             ->sortBy([['rank', 'asc'], ['caught', 'desc'], ['visits', 'desc']])

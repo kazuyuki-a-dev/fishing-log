@@ -45,7 +45,7 @@ class TripController extends Controller
 
         // 釣行を新しい順に（PG10）
         $trips = (clone $query)
-            ->with(['spot', 'user:id,name', 'catches'])
+            ->with(['spot', 'user:id,name,is_sample', 'catches'])
             ->orderByDesc('went_at')
             ->orderByDesc('id')
             ->paginate(20)
@@ -182,7 +182,7 @@ class TripController extends Controller
         // 見てよい釣行か（本人か、全体公開・釣り場だけ隠すの釣行）
         Gate::authorize('view', $trip);
 
-        $trip->load(['spot', 'catches', 'user:id,name']);
+        $trip->load(['spot', 'catches', 'user:id,name,is_sample']);
         $isOwner = $trip->user_id === $request->user()->id;
 
         return view('trips.show', [

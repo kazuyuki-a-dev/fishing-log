@@ -94,6 +94,10 @@
                         @if ($plan['visits'] > 0)
                         {{-- どの条件で数えたかは、右のハンコで出す（#158） --}}
                         <p class="text-lg font-bold">{{ $plan['visits'] }}回行って {{ $plan['caught'] }}回釣れた</p>
+                        {{-- そのうちダミーの釣行の回数（#211） --}}
+                        @if ($plan['samples'] > 0)
+                        <p class="text-xs text-sand">うちダミー {{ $plan['samples'] }}回</p>
+                        @endif
                         {{-- 条件をゆるめたときも、ぴったりの条件の結果（坊主の記録）を隠さない --}}
                         @if ($plan['level'] !== 'exact' && $plan['exact']['visits'] > 0)
                         <p class="text-xs text-sand">
@@ -119,6 +123,22 @@
                             最大 {{ $plan['maxSize'] }} cm
                             @endif
                         </p>
+                        @endif
+                        {{-- 記録の内訳（#211）。一覧を長くしないよう、押すと開く --}}
+                        @if ($plan['breakdown'] !== [])
+                        <details class="text-sm">
+                            <summary class="w-fit cursor-pointer font-hand text-sea underline">記録の内訳を見る</summary>
+                            <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                                @foreach (['time_of_day' => '時間帯', 'tide' => '潮', 'year' => '年'] as $key => $title)
+                                <dt class="text-sand">{{ $title }}</dt>
+                                <dd>
+                                    @foreach ($plan['breakdown'][$key] ?? [] as $value => $count)
+                                    {{ $value }}{{ $key === 'year' ? '年' : '' }} {{ $count['visits'] }}回（釣れた {{ $count['caught'] }}）{{ ! $loop->last ? '・' : '' }}
+                                    @endforeach
+                                </dd>
+                                @endforeach
+                            </dl>
+                        </details>
                         @endif
                         @else
                         <p class="text-sm text-sand">この条件で釣れた記録はまだありません。</p>

@@ -17,7 +17,7 @@ class HomeController extends Controller
         }
 
         $trips = Trip::forFeed()
-            ->with(['spot', 'user:id,name', 'catches'])
+            ->with(['spot', 'user:id,name,is_sample', 'catches'])
             ->latest('went_at')
             ->latest('id')
             ->take(5)

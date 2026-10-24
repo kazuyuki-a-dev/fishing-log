@@ -266,6 +266,11 @@
     }
 
     /* 一覧の中の小さな注意のしるし（#100）。赤いクレヨンの点線で囲む */
+    /* ダミーの釣行の印（#211）。灰色の地に黒い字。字にはクレヨンの効果をかけない */
+    .crayon-dummy-tag {
+        @apply inline-block rounded border-2 border-sand bg-[#ECE8DD] px-1.5 align-middle text-xs font-bold leading-5 text-ink;
+    }
+
     .crayon-caution-tag {
         @apply relative inline-block px-2 font-hand text-sm text-float-dark;
     }

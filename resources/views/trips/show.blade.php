@@ -3,11 +3,16 @@
         <h2 class="crayon-heading">
             {{ $trip->went_at->format('Y年n月j日') }}
             <span class="ml-2 text-base font-normal">{{ $trip->time_of_day }}</span>
+            <x-dummy-tag :trip="$trip" class="ml-2" />
         </h2>
     </x-slot>
 
     <div class="py-8">
         <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            {{-- ダミーの釣行は、本物ではないことを書いておく（#211） --}}
+            @if ($trip->user->is_sample)
+            <p class="crayon-note p-3 text-sm">この釣行はダミーです。お試し環境で機能を試せるように作った記録で、本物の釣行ではありません。</p>
+            @endif
             @if (session('status'))
             <p class="crayon-note p-3 text-sm">{{ session('status') }}</p>
             @endif
