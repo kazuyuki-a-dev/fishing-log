@@ -44,8 +44,8 @@
                     </div>
                 </div>
                 <div class="flex justify-end">
-                    <a href="{{ route('planner', ['prefecture' => '秋田県']) }}" class="crayon-button font-hand w-full sm:w-auto text-center">
-                        プランナーを試す（秋田県）
+                    <a href="{{ route('planner') }}" class="crayon-button font-hand w-full sm:w-auto text-center">
+                        プランナーを試す
                     </a>
                 </div>
             </section>

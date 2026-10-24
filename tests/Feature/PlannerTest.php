@@ -169,7 +169,7 @@ class PlannerTest extends TestCase
             ->assertOk()
             ->assertSee('小潮')
             ->assertSee('釣り場を探す都道府県を、上で選んでください。')
-            ->assertSee('記録の多い秋田県で試す')
+            ->assertSee('全国を見る')
             ->assertDontSee('大漁の堤防')
             ->assertDontSee('ぼちぼちの港');
     }

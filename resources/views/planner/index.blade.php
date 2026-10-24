@@ -52,11 +52,10 @@
 
             {{-- 釣り場の候補 --}}
             @if ($prefecture === null)
-            {{-- ゲストはメインフィールドがないので、県を選んでもらう（FN-17）。お試しのデータが多い秋田県ですぐ試せるようにする（#209） --}}
+            {{-- ゲストはメインフィールドがないので、自分の県を選んでもらう（FN-17・#209） --}}
             <div class="crayon-card p-6 text-center space-y-3">
                 <p>釣り場を探す都道府県を、上で選んでください。</p>
                 <div class="flex flex-wrap justify-center gap-4 text-sm">
-                    <a href="{{ route('planner', ['date' => $date->format('Y-m-d'), 'prefecture' => '秋田県']) }}" class="underline text-sea">記録の多い秋田県で試す</a>
                     <a href="{{ route('planner', ['date' => $date->format('Y-m-d'), 'prefecture' => 'all']) }}" class="underline text-sea">全国を見る</a>
                 </div>
             </div>
