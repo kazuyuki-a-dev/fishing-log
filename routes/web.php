@@ -22,11 +22,15 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-// ログインした人だけ
+// プロフィールは、メールアドレスを確かめる前でも開ける（アドレスの打ちまちがいを直したり、退会したりできるように。#213）
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// ログインして、メールアドレスを確かめた人だけ（#213）
+Route::middleware(['auth', 'verified'])->group(function () {
 
     // /spots/nearby と /spots/create は、カルテ（/spots/{spot}）より先に書く
     Route::get('/spots/nearby', [SpotController::class, 'nearby'])->name('spots.nearby');
