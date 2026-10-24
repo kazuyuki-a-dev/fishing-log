@@ -191,4 +191,49 @@ class LocalInfoHistoryTest extends TestCase
             ->assertSee('退会したユーザー')
             ->assertDontSee('直した人');
     }
+
+    public function test_line_break_difference_is_not_recorded(): void
+    {
+        // 入力欄から保存すると改行が \r\n になる。文が同じなら「変わった」と記録しない（#223）
+        $this->spot->forceFill(['facility_note' => "1行目\n2行目"])->save();
+
+        $this->editAs($this->editor, ['caution_type' => 'なし', 'convenience_distance_m' => 500, 'facility_note' => "1行目\r\n2行目"]);
+
+        $this->assertSame(0, SpotLocalInfoChange::where('field', 'facility_note')->count());
+    }
+
+    public function test_long_note_is_shortened_in_the_list_and_full_text_can_be_opened(): void
+    {
+        $long = str_repeat('港の中は立入禁止の場所が多いです。', 4);
+        $this->editAs($this->editor, ['caution_type' => 'なし', 'convenience_distance_m' => 500, 'facility_note' => $long]);
+
+        $html = $this->actingAs($this->owner)->get("/spots/{$this->spot->id}/history")->assertOk()->getContent();
+
+        // 一覧では始めの30文字に「…」。押すと前と後の全文（#223）
+        $this->assertStringContainsString('現地のメモ</span>：未入力 → ' . e(mb_substr($long, 0, 30)) . '…', $html);
+        $this->assertStringContainsString('全文を見る', $html);
+        $this->assertSame(1, substr_count($html, e($long)));
+    }
+
+    public function test_short_values_do_not_have_the_full_text_toggle(): void
+    {
+        $this->editAs($this->editor, ['caution_type' => 'なし', 'convenience_distance_m' => 500, 'parking_type' => '公式駐車場']);
+
+        $this->actingAs($this->owner)->get("/spots/{$this->spot->id}/history")
+            ->assertOk()
+            ->assertSee('駐車場</span>：未入力 → 公式駐車場', false)
+            ->assertDontSee('全文を見る');
+    }
+
+    public function test_line_break_only_changes_are_deleted_by_the_migration(): void
+    {
+        // 前に記録されてしまった「改行だけの違い」は消し、本当の変更は残す（#223）
+        $lineBreakOnly = SpotLocalInfoChange::create(['spot_id' => $this->spot->id, 'user_id' => $this->editor->id, 'field' => 'facility_note', 'old_value' => "1行目\n2行目", 'new_value' => "1行目\r\n2行目", 'action' => 'edit']);
+        $real = SpotLocalInfoChange::create(['spot_id' => $this->spot->id, 'user_id' => $this->editor->id, 'field' => 'facility_note', 'old_value' => "1行目\n2行目", 'new_value' => "1行目\r\n3行目", 'action' => 'edit']);
+
+        (require database_path('migrations/2026_10_24_130000_delete_line_break_only_local_info_changes.php'))->up();
+
+        $this->assertNull($lineBreakOnly->fresh());
+        $this->assertNotNull($real->fresh());
+    }
 }

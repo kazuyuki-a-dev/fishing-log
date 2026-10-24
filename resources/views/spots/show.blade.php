@@ -122,9 +122,8 @@
                         @endforeach
                     </p>
                     @endif
-                    {{-- 記録の内訳（#211）。数えた記録が、どの時間帯・潮に偏っているかを見る --}}
-                    @php($missingTimes = $judge['timeFiltered'] ? [] : array_values(array_diff(config('fishing.times_of_day'), array_keys($judge['breakdown']['time_of_day'] ?? []))))
-                    @include('spots.partials.breakdown-table', ['breakdown' => $judge['breakdown'], 'missingTimes' => $missingTimes])
+                    {{-- 記録の内訳（#211）。プランナーと同じ部品で、押すと開く（#223） --}}
+                    <x-record-breakdown :breakdown="$judge['breakdown']" :time-filtered="$judge['timeFiltered']" />
                     @else
                     <p>この条件で釣れた記録はまだありません。</p>
                     @endif
