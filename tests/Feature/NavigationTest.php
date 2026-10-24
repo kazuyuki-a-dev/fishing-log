@@ -51,7 +51,8 @@ class NavigationTest extends TestCase
     {
         $menu = $this->mobileMenu($this->get('/feed')->assertOk()->getContent());
 
-        $this->assertLinksInOrder($menu, ['spots.index', 'feed', 'tools.converter', 'guide']);
+        // プランナーもゲストに見せる（#209）
+        $this->assertLinksInOrder($menu, ['planner', 'spots.index', 'feed', 'tools.converter', 'guide']);
         $this->assertStringNotContainsString('href="' . route('dashboard') . '"', $menu);
         $this->assertStringNotContainsString('href="' . route('notifications.index') . '"', $menu);
     }

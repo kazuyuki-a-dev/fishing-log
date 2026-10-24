@@ -22,6 +22,15 @@ class HomeTest extends TestCase
             ->assertSee(route('privacy'));
     }
 
+    public function test_guest_sees_what_can_be_tried_before_signing_up(): void
+    {
+        // 登録の前に試せることと、登録すると使えることを分けて出し、プランナーへ直接行ける（#209）
+        $this->get('/')
+            ->assertOk()
+            ->assertSeeInOrder(['会員登録（無料）', '登録しなくても試せること', '登録すると使えること', 'プランナーを試す（秋田県）'])
+            ->assertSee(e(route('planner', ['prefecture' => '秋田県'])), false);
+    }
+
     public function test_member_is_redirected_to_dashboard(): void
     {
         $this->actingAs(User::factory()->create())

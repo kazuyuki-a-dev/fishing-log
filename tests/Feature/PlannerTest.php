@@ -32,7 +32,8 @@ class PlannerTest extends TestCase
         // 釣り場B：自分が2回（1回は坊主）＋ほかの人の全体公開が2回（釣れた）＋ほかの人の「釣り場だけ隠す」が1回（数えてはいけない）
         $spotB = Spot::factory()->create(['name' => 'ぼちぼちの港', 'prefecture' => '秋田県', 'visibility' => 'public', 'caution_type' => null]);
         $this->caughtTrip($this->me, $spotB, '2024-01-17 06:00');
-        Trip::factory()->create(['user_id' => $this->me->id, 'spot_id' => $spotB->id, 'went_at' => '2024-01-18 06:00']);
+        // 公開範囲はファクトリーだとランダムなので、非公開に決める（ゲストのテストで数がぶれないように。#209）
+        Trip::factory()->create(['user_id' => $this->me->id, 'spot_id' => $spotB->id, 'went_at' => '2024-01-18 06:00', 'visibility' => 'private']);
         $this->caughtTrip($other, $spotB, '2024-01-17 06:00', 'public');
         $this->caughtTrip($other, $spotB, '2024-01-18 06:00', 'public');
         $this->caughtTrip($other, $spotB, '2024-01-19 06:00', 'spot_hidden');
@@ -159,5 +160,46 @@ class PlannerTest extends TestCase
         $this->actingAs($this->me)->get('/planner?date=2024-01-19')
             ->assertSeeInOrder(['ぼちぼちの港', '大漁の堤防', '記録なしの浜'])
             ->assertSee('この条件で釣れた記録はまだありません');
+    }
+
+    public function test_guest_is_asked_to_choose_a_prefecture_first(): void
+    {
+        // ゲストはメインフィールドがないので、最初は県を選んでもらう（FN-17・#209）
+        $this->get('/planner?date=2024-01-19')
+            ->assertOk()
+            ->assertSee('小潮')
+            ->assertSee('釣り場を探す都道府県を、上で選んでください。')
+            ->assertSee('記録の多い秋田県で試す')
+            ->assertDontSee('大漁の堤防')
+            ->assertDontSee('ぼちぼちの港');
+    }
+
+    public function test_guest_uses_only_public_trips(): void
+    {
+        // ゲストに数えるのはみんなの全体公開だけ：Bは公開の2回だけ。自分の非公開・釣り場だけ隠すは数えない。Aは公開の記録がない（#209）
+        $this->get('/planner?date=2024-01-19&prefecture=' . urlencode('秋田県'))
+            ->assertOk()
+            ->assertSeeInOrder(['ぼちぼちの港', '大漁の堤防'])
+            ->assertSee('2回行って 2回釣れた')
+            ->assertDontSee('4回行って')
+            ->assertDontSee('他人の秘密')
+            ->assertSee('この条件で釣れた記録はまだありません。');
+    }
+
+    public function test_guest_cannot_use_mine_scope(): void
+    {
+        // ゲストには「自分の記録だけ」を出さず、URL で scope=mine にしても公開の記録で数える（#209）
+        $this->get('/planner?date=2024-01-19&prefecture=' . urlencode('秋田県') . '&scope=mine')
+            ->assertOk()
+            ->assertDontSee('自分の記録だけ')
+            ->assertSee('みんなの全体公開の記録だけで探しています')
+            ->assertSee('2回行って 2回釣れた');
+    }
+
+    public function test_member_does_not_see_the_guest_note(): void
+    {
+        $this->actingAs($this->me)->get('/planner?date=2024-01-19')
+            ->assertSee('自分の記録だけ')
+            ->assertDontSee('みんなの全体公開の記録だけで探しています');
     }
 }
