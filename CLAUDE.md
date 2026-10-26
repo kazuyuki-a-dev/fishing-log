@@ -1,146 +1,119 @@
 # FishingLog（釣果記録・釣り場情報共有アプリ）
 
-個人開発のアプリ。定義書は `docs/spec.md`（元は Excel「フィッシングログ.xlsx」）。
-定義書と違うことをしたときの判断と理由は `docs/decisions.md` にすべて記録してある。作業の前に両方を読むこと。
-要件ごとの状態・受け入れの条件・確かめ方・結果は `docs/requirements.md`（#198）。**機能を変えたり要件の状態が変わったら、この対応表も直す**（`RequirementsDocTest` が、定義書の番号がそろっているか・表のテストの名前が本当にあるか・まとめの件数が合っているかを確かめる）。
+釣行を記録すると「どの潮・時間帯・釣り方なら何回行って何回釣れたか」が貯まり、次の行き先を決める材料になる Web アプリ。主役は釣行プランナー（FN-16）と釣り場カルテの釣行判断ビュー（FN-11）。
 
-## ユーザーについて（いちばん大事）
+## 資料（作業の前に読む）
 
-- 開発の初心者。**日本語で、やさしい言葉で**説明する。専門用語を使うときは一言で意味を添える
-- 「1つずつ解説しながら、定義書に沿って作りたい」。コードを書いたら、**何を・なぜ**そうしたかを短く説明する。人に説明するときに自分で説明できるようになることが目的
-- 定義書と違いが出るときは、**勝手に決めずに選択肢と理由を出して、ユーザーに決めてもらう**。決めたら `docs/decisions.md` に書く
-- 開発の過程は、すべてログが残るようにする（Issue・PR・コミット・decisions.md）
-- コミット（`git add .` → `git commit`）のタイミングは任されている。切りのいいところで行い、**毎回「ここでコミットします」と伝える**
-- Issue と PR は、ユーザーが **GitHub のブラウザ画面で** 作る。Claude は、Issue はタイトルと本文、**PR は本文だけ**を出す（PR のタイトルは GitHub の自動入力を使う）。gh コマンドで作りたい場合は、ユーザーに確認してから
+- 定義書：`docs/spec.md`（元は Excel「フィッシングログ.xlsx」）
+- 定義書と違うこと・書いていないことを決めたときの判断と理由：`docs/decisions.md`
+- 要件ごとの優先度・状態・確かめ方・結果：`docs/requirements.md`
+- ER 図 `docs/database.md`、開発環境の手引き `docs/development.md`、運用 `docs/operations.md`、本番リリース計画 `docs/release-plan.md`、バックアップ `docs/backup.md`
+- これまでの経緯は Git の記録・PR・`docs/decisions.md` にある（ここには書かない）
 
-## 開発の流れ（毎回この順番）
+## よく使うコマンド
 
-1. Issue のタイトルと本文を出す → ユーザーがブラウザで作り、**画面で番号を確かめる**（Issue と PR は同じ番号の列を使うので、番号は予想しない）
-2. `git switch -c feature/<番号>-<短い英語の名前>`（`#` や `<>` は付けない）
-3. 作る → テスト（`sail artisan test`）→ 画面で確かめてもらう
-4. コミット。メッセージは日本語で、最後に `(#番号)`。種類を付ける：`feat:` 機能 / `fix:` 直し / `test:` テスト / `docs:` 記録 / `chore:` その他
-   - 順番は「機能のコミット → テストのコミット → 記録（decisions.md）のコミット」
-5. `docs/decisions.md` の表に追記（列：日付 | 項目 | 定義書 | 決定 | 理由）
-6. **push の前に `git status`**（コミットし忘れを防ぐ。#61 でテストと記録を入れ忘れたことがある）→ `git push -u origin <ブランチ名>`
-7. PR の本文だけを出す（変更内容／定義書との違い／確認したこと／`Closes #番号`）。**Blade の `@js` `@php` などは本文の中で ` で囲む**（`@名前` は GitHub のメンションになる）
-8. ユーザーが「Create a merge commit」でマージしてブランチを削除 → `git switch main && git pull && git branch -d <ブランチ名>` → `git status` で `working tree clean`
+- コマンドは Sail を通す：`./vendor/bin/sail artisan test`（テスト）、`./vendor/bin/sail npm run build`（画面の部品を作る）
+- 止めるときは `sail stop`。**`sail down -v` は使わない**（データベースが消える）
+- `sail artisan migrate:fresh --seed` は今のデータを全部消す。**打つ前に `scripts/backup.sh`** を勧め、ユーザーに確認する
+- ダミーの入れ直し：`sail exec -u sail -e DEMO_RESEED_TOKEN=好きな文字 laravel.test php artisan app:reset-demo-if-requested`（**`-u sail` を忘れると root で動き、写真のフォルダに書き込めなくなる**）
+- 管理者にする：`sail artisan app:make-admin メールアドレス`
 
-### Dependabot の PR が来たとき（#186）
+## 作業の流れ
 
-- `.github/dependabot.yml` で、毎週月曜 9 時に新しい版を確かめ、PR を自動で作る（Docker は細かい番号の修正だけ、composer・npm・GitHub Actions は大きな版を知らせず、種類ごとに1つの PR にまとめる）。**Tailwind CSS 4 には上げない**（書き方が大きく変わり見た目がくずれる。上げるなら別の Issue で相談）。GitHub の「Dependabot alerts」（弱点の知らせ）も ON
-- **まず PR の Checks（GitHub Actions のテスト、#196）が成功しているかを見る**。画面の見た目や写真の読み取りに関わる部品（vite・Tailwind・exifreader・heic-to など）や PHP の箱の更新は、手元でも確かめる：`gh pr checkout <PR番号>` → composer なら `sail composer install`、npm なら `sail npm install && sail npm run build`、Docker の PHP なら `sail build --no-cache && sail up -d` → `sail artisan test` → 画面を少し開く（写真は Exif 入りのテスト用の写真で）
-- Dependabot の PR は Issue がなく、タイトルとコミットは英語のまま。記録として decisions.md に1行書く必要はない（セキュリティ修正などで判断したときだけ書く）
-- マージすると Render が自動で公開し直すので、Render の Events で Live になったかを見る
+1. Issue を作る（ユーザーの依頼で `gh issue create`）。番号は作ったあとに確かめる（予想しない）
+2. `git switch -c feature/<番号>-<短い英語の名前>`
+3. 作る → `sail artisan test` → 画面で確かめてもらう（新しい画面部品はスマホ幅 360px でも見る）
+4. コミットは「機能（`feat:`／`fix:`）→ テスト（`test:`）→ 記録（`docs:`）」の順。メッセージは日本語で、最後に `(#番号)`。コミットするときは「ここでコミットします」と伝える
+5. **push の前に `git status`**（コミットし忘れを防ぐ）→ push → `gh run list --branch <ブランチ名>` で GitHub Actions のテストの結果を見る
+6. PR を作る（本文：変更内容／定義書との違い／確認したこと／`Closes #番号`。Blade の `@js` などは ` で囲む）
+7. マージはユーザーの指示があってから（「Create a merge commit」）。そのあと `git switch main && git pull && git branch -d <ブランチ名>`、`git status` で clean、Issue が閉じたかを `gh issue view` で確かめる
+
+### 機能や画面を変えたら、あわせて直すもの
+
+- `docs/requirements.md`（状態・テストの名前・確認日。`RequirementsDocTest` が食い違いを見張る）と、README の「機能と優先度」・テストの件数
+- 定義書と違う判断をしたら、選択肢と理由をユーザーに出して決めてもらい、`docs/decisions.md` に1行足す（列：日付｜項目｜定義書｜決定｜理由。**前の行の終わりに改行を入れる**。`DecisionsDocTest` が列の数を見張る）
+- 使い方のページ `resources/views/static/guide.blade.php`、利用規約・プライバシーポリシー（公開範囲・写真・外部サービス・退会が今の機能と合っているか）
+- テーブルを足したら `docs/database.md` の ER 図（`ErDiagramDocTest`）
+- ページを足したら `config/sections.php` の routes（ナビの付箋）
+- 見た目を大きく変えたら README の画面の画像（`docs/images/screen-*.png`。scratchpad の `shoot.mjs`（Node 24 の WebSocket で chrome-headless-shell を動かす）で撮る。なければ作り直す。足りないライブラリ libnspr4・libnss3・libasound は `apt-get download` で scratchpad に取り出し、`LD_LIBRARY_PATH` で使う。システムには入れない）
+- README は入口だけ。詳しいことは README に足さず、docs/ の資料に書いてリンクする
+- Issue・PR・コミット・記録・README には「スクール」「レビュー」「提出」「FB」の言葉を書かない
+
+### Dependabot の PR
+
+- 毎週月曜に PR が来る。まず Checks（GitHub Actions のテスト）を見る。画面や写真の読み取りに関わる部品（vite・Tailwind・exifreader・heic-to）や PHP の箱は、手元でも `gh pr checkout` → install／build → テスト → 画面で確かめる
+- **Tailwind CSS 4 には上げない**（見た目がくずれる）
+- Issue はなく、decisions.md にも書かなくてよい（セキュリティで判断したときだけ書く）。マージすると Render が公開し直す
 
 ## 環境
 
-- WSL2（Ubuntu）＋ Docker ＋ Laravel Sail。PHP 8.5（公開環境は `Dockerfile` で `php:8.5.12-apache` と版まで書き切っている。**PHP のセキュリティ修正が出たら、この版を上げ、開発環境も `sail build --no-cache` で作り直す**。#184）/ Laravel 13 / MySQL 8.4
-- Breeze（Blade 版）＋ Alpine.js ＋ Tailwind CSS v3 ＋ Vite
-- コマンドは `sail` を通す（例：`sail artisan test`、`sail npm run build`）
-- `.env` は `APP_URL=http://localhost`（`:8000` にすると写真が表示されない）。`.env` はコミットしない
-- 外部サービス：地図は Leaflet ＋ OpenStreetMap（帰属表示が必要）、天気予報（カルテ）は MET Norway（キー不要。User-Agent でアプリ名と連絡先を名乗る・帰属表示が必要、#146）、釣行の日時の天候は Open-Meteo（キー不要）
-- メール：会員登録・メールアドレスの変更のときの確認のメール（#213）と、パスワード再設定のメールを送る。公開環境は **Brevo の SMTP（`smtp-relay.brevo.com`、ポート 2525。Render の無料のプランは 587 番が止められている）**、送り主はアプリ専用の `fishinglog.dev@gmail.com`。設定は Render の環境変数にだけある。SMTP キーは 2027-10-23 と、90日使わないと切れる。開発環境は Mailpit（http://localhost:8025）で受け止める。つながらないときは10秒であきらめ、案内を出す（`PasswordResetLinkController`。#202）
-- 写真：Intervention Image v4（GD）で描き直して Exif を消す。ブラウザ側は ExifReader（撮影日時・位置の読み取り）と heic-to（HEIC→JPEG）。どちらも必要なときだけ動的 import
+- WSL2＋Docker＋Laravel Sail／PHP 8.5（公開環境の `Dockerfile` は `php:8.5.12-apache` と版まで書く。PHP のセキュリティ修正が出たら上げ、開発環境も `sail build --no-cache`）／Laravel 13／MySQL 8.4／Breeze（Blade）＋Alpine.js＋Tailwind CSS v3＋Vite
+- `.env` は `APP_URL=http://localhost`（`:8000` にすると写真が出ない）。`.env` はコミットしない
+- 外部サービス：地図 Leaflet＋OpenStreetMap（帰属表示）、カルテの天気予報 MET Norway（User-Agent で名乗る・帰属表示）、釣行の天候 Open-Meteo
+- メール：会員登録の確認とパスワード再設定。公開環境は Brevo の SMTP（**ポート 2525**。Render の無料のプランは 587 番が止められている）、開発環境は Mailpit（http://localhost:8025）
+- 写真：Intervention Image（GD）で描き直して Exif を消す。ブラウザでは ExifReader・heic-to を必要なときだけ読み込む
 
-## 絶対にしないこと・気をつけること
+## やってはいけないこと・気をつけること
 
-- **`sail down -v` は使わない**（データベースが消える）。止めるときは `sail stop`
-- `sail artisan migrate:fresh --seed` は今のデータを全部消す。**打つ前に `scripts/backup.sh`** を勧め、ユーザーに確認する
-- テスト用のメールアドレスは `example.com`
-- `config/prefectures.php`（47都道府県の名前の一覧）は書き換えない。県の中心座標は `config/prefecture_centers.php`
-- Blade の `@js()` の中に長い式を書かない。`@php` で変数にしてから渡す（入れ子のかっこで JavaScript の文法エラーになったことがある）
-- Alpine の `x-for` の中身は、1つの要素にまとめる
-- ルートは上から順に当てはめられる。同じ URL の古い定義が残っていないか気をつける（`/spots/nearby` が 404 になったことがある）
-- テストで県が関係するときは、ファクトリーが自動で作る人（釣り場の登録者など）の県がランダムなことに気をつける（#152）
-- テストでは外の API に本当につながない（`tests/TestCase.php` で `Http::preventStrayRequests()`。天気は `Http::fake`）
-- **テストは GitHub Actions でも push のたびに流れる**（`.github/workflows/tests.yml`。MySQL 8.4・PHP 8.5。#196）。push したら `gh run list --branch <ブランチ名>` で結果を見て、PR の本文に件数を書く
-- VS Code（Intelephense）の赤線は勘違いのことが多い（`assertExists` など）。`Storage::fake` は `/** @var \Illuminate\Filesystem\FilesystemAdapter $disk */` を付けると消える
-- 見本コードを出すときは「（…今のまま）」のような省略を入れない。ユーザーがそのまま貼ってしまうことがある
-- ボタンの位置：フォームの決定ボタンは右寄せ（`justify-end`）。説明の文と並ぶ大きなボタンは `w-full sm:w-auto`。アカウント削除だけは左のまま
-- 新しい画面部品は、スマホ幅（360px）でも見えるか確かめる（ナビの `hidden sm:flex` の中だけに置いて、スマホでベルマークが消えたことがある）
-- 説明のコメントは Blade コメント `{{-- --}}` で書く。HTML コメント `<!-- -->` は画面のソースに出るので、テストの `assertDontSee` に引っかかることがある
-- **集計は全部を読み込まず、データベースで数える**（COUNT・GROUP BY・サブクエリ）。一覧は全部出さずページ単位にする（#166。3万件でカルテが10秒・300MB かかっていた）
-- 写真が 403 になるときは、まずファイルがあるかを見る（`storage/app/public/catches`）。`restore.sh` で DB と写真の時点がずれると、DB にだけ写真が残る
+- `config/prefectures.php`（47都道府県）は書き換えない。県の中心座標は `config/prefecture_centers.php`
+- Blade の `@js()` の中に長い式を書かない（`@php` で変数にしてから渡す）
+- Alpine の `x-for` の中身は1つの要素にまとめる
+- ルートは上から順に当てはめられる。`/spots/nearby` のような固定の URL は `/spots/{spot}` より上に書く
+- 説明のコメントは Blade コメント `{{-- --}}`（HTML コメントは画面に出て、テストの `assertDontSee` に引っかかる）
+- 「✔」などの記号の字は使わない（Windows で絵文字になる）。CSS の線で描く
+- **集計は全部を読み込まず、データベースで数える**。一覧はページ単位にする（3万件でカルテが10秒・300MB かかったことがある）
+- テスト：メールアドレスは `example.com`。外の API に本当につながない（`Http::preventStrayRequests()`、天気は `Http::fake`）。ファクトリーの県や公開範囲はランダムなので、結果に関わるときは値を決める。写真のフォルダは `Storage::fake('public')`（`tests/TestCase.php`）
+- Leaflet のように JavaScript が付けるクラスの CSS は、`@layer` の外に書く（`@layer components` の中だと Tailwind が捨てる。`BuiltCssTest` が見張る）
+- 写真が 403 のときは、まずファイルがあるかを見る（`storage/app/public/catches`）
+- 画像の URL は `FishCatch::photoUrl()` か `Storage::disk(PhotoStorer::disk())->url()`（`asset('storage')` を決め打ちしない）
+- ボタン：フォームの決定は右寄せ（`justify-end`）、説明と並ぶ大きなボタンは `w-full sm:w-auto`、アカウント削除だけ左
+- 見本コードを出すときは「（…今のまま）」のような省略を入れない
+- VS Code（Intelephense）の赤線は勘違いのことが多い
+- 秘密の値（APP_KEY・DB・AWS・Brevo・ADMIN_PASSWORD など）は Render の環境変数と GitHub の Secrets にだけ入れる。会話・Git に出さない
 
-## 公開範囲とプライバシー（このアプリの肝。どの機能でも必ず守る）
+## 公開範囲とプライバシー（どの機能でも必ず守る）
 
-- 釣行の公開範囲は3段階：`public`（全体公開）／`spot_hidden`（釣り場だけ隠す）／`private`（非公開、初期値）
+- 釣行の公開範囲は `public`（全体公開）／`spot_hidden`（釣り場だけ隠す）／`private`（非公開、初期値）
 - **閉じているほうを優先**：釣り場が非公開なら、釣行が `public` でも `spot_hidden` として扱う（`Trip::effectiveVisibility()`）
 - 「釣り場だけ隠す」の釣り場名・位置は**サーバー側で取り除いてから**画面に渡す
-- 公開する釣り場の位置は、緯度経度を小数第2位で**切り捨て**（約1km四方）。正確な位置は登録した本人だけ（`Spot::locationFor()`）
-- 選べる・提案する釣り場は「公開の釣り場」と「自分の釣り場」だけ（スコープ `visibleTo`）
-- 写真の Exif は、保存時に必ず消す（`App\Services\PhotoStorer`）
-- 画面以外からデータが出る場所（お知らせ・CSV・API の JSON）でも、同じチェックを必ずする（NF-01）
-- お知らせには釣行・釣り場の**番号だけ**を保存し、表示するたびに `NotificationPresenter` でその時点の公開範囲をチェックして文章を作る（一覧もベルの件数も、ここ1か所を通す）
+- 公開する位置は緯度経度を小数第2位で**切り捨て**（約1km四方）。正確な位置は登録した本人だけ（`Spot::locationFor()`）
+- 選べる・提案する釣り場は「公開の釣り場」と「自分の釣り場」だけ（スコープ `visibleTo`）。釣行は `visibleWithSpotTo`
+- 写真の Exif は保存時に必ず消す（`PhotoStorer`）
+- 画面以外の出口（お知らせ・CSV・JSON）でも同じチェックをする
+- お知らせは番号だけ保存し、表示のたびに `NotificationPresenter` で公開範囲を確かめて文章を作る
+- ダミーの人（`users.is_sample`）の釣行には「ダミー」の印。本番に移るときはこの人たちを消す
+
+## 見た目の決まり（クレヨンのメモ帳風）
+
+- 部品：カード `crayon-card`、見出し `crayon-heading`／`crayon-subheading`、ボタン `crayon-button`（2番目は `crayon-button-secondary`）、案内 `crayon-note`、注意 `crayon-caution`、付箋 `crayon-sticky`、点線の表 `crayon-ledger`、ハンコ `crayon-stamp`
+- クレヨンの効果は飾り（::before／::after）にだけかける。文字・数字・表の線にはかけない。字の後ろにクレヨンのまだらを置かない
+- ボタンはうすいオレンジの塗り＋濃いオレンジのふち、字は黒。オレンジの地に白い字は使わない
+- 本文と数字は BIZ UDPゴシック、見出し・ボタン・入力欄は手書きの字（Yomogi、`font-hand`）
+- アイコンは `<x-icon name="…" />`（Tabler Icons）。クレヨンのざらつきはかけない。大きくするときは `!h-16 !w-16` のように `!` を付ける
+- ナビの付箋のページと色は `config/sections.php` の1か所。幅 1280px より狭いときはアイコンを消して名前だけ（アイコンだけにはしない）
+- エラーページは番号を出さない（`resources/views/errors/`）
 
 ## 主なファイル
 
-- ルート：`routes/web.php`（ログインが必要なグループ → ゲストも見られる `spots` の index/show・`/feed`・`/planner`（#209）・`/terms`・`/privacy`・`/guide`・`/tools/converter`）
-- 単位変換：`/tools/converter`（`StaticPageController@converter`、だれでも）。数字は **`config/units.php` の1か所**（重さ・長さの係数、ナイロン・フロロの [号, lb] の表、PE・エステルの係数の初期値と範囲）。計算は `resources/js/app.js` の `unitConverter`（ブラウザの中だけ。係数は localStorage）。号と強さは「大体の値」と書く
-- 使い方のページ：`resources/views/static/guide.blade.php`（`StaticPageController@guide`）。**画面やボタンの名前を変えたら、使い方のページと README の「お試し環境」「機能と優先度」も直す**
-- コントローラ：`TripController`（store・storeBulk・update・`withConditions()` で潮と天候。写真を保存するトランザクションは `transactionWithPhotos()` を通し、失敗したら新しい写真を消す。#164）、`SpotController`（show に判断ビュー・`nearby()`・`updateLocalInfo()`）、`DashboardController`（サマリー指標・継続カウンタと気づきカード）、`HomeController`、プランナー、`NotificationController`（お知らせ一覧。開いたら全部既読）、`ReportController`（報告を受け取る）、`Admin\ReportController`（管理画面：一覧・状態の変更・非表示）、`AnalysisController`（ヒートマップ）
-- サービス：`app/Services/` の `TideCalculator`（旧暦から潮）、`WeatherService`（釣行の天候は Open-Meteo、90日より前は archive API。カルテの予報は MET Norway で、場所ごとに1時間キャッシュ）、`CatchHighlighter`（登録直後のハイライト）、`PhotoStorer`、`NewPostNotifier`（お知らせを送る。更新では、更新前が非公開のときだけ）、`NotificationPresenter`（お知らせの文章づくりと公開範囲のチェック）、`TripSearch`（釣行一覧の条件検索。条件の読み取り・絞り込み・まとめ。CSV でも同じものを使う）、`TripCsvExporter`（CSV の行。位置と写真は入れない、式の対策）、`ConditionMatcher`（時期（行く日の月と前後1か月）をいつも条件に入れ、ぴったり（時期＋時間帯＋潮）→ 時期と時間帯 → 時期だけ と条件をゆるめる。ハンコの中身 `stamps` も返す。プランナーとカルテの判断ビューで共通。#158。条件の決まりは `levels()` の1か所で、どれもデータベースで数える。1つの釣り場（カルテ）は `matchQuery()`、釣り場ごと（プランナー）は `matchBySpot()`。#166・#168）、`SeasonHeatmap`（月×魚種の匹数と回数。`build()` はヒートマップ、`forQuery()` はカルテ（どちらもデータベースで数える。#166）。マスの決まりは `rows()` の1か所）、`KeepRecording`（継続カウンタと気づきカード。データベースで数える。行った回数が5回未満の気づきは「かもしれません」＋参考程度。#172）、`PersonalBests`（魚種ごとの自己ベスト。長さが最大、同じなら先に釣ったほう。ROW_NUMBER で数える。#170）、`LocalInfoHistory`（現地の情報の変更の履歴。`snapshot()` で保存前の値を取り、`record()` で変わった項目だけ `spot_local_info_changes` に残す。`revert()` は管理者が前の値に戻す。記録するのは現地の情報7項目だけで、基本の情報・位置・本人のメモは記録しない。#200）
-- お知らせ：`app/Notifications/` の `NewTripNotification`（`trip_ids`）・`NewSpotNotification`（`spot_id`）。ベルは `resources/views/components/notification-bell.blade.php`（PC とスマホの両方で使う）
-- 一致のハンコ：`resources/views/components/match-stamps.blade.php`（時期・時間帯・潮。同じならオレンジ、違えば青で釣れたときに多かった値。#158）と色の説明 `match-stamps-legend`。文字のバッジ `match-level` はカルテの履歴の行だけで使う
-- 月×魚種の表：`resources/views/components/season-table.blade.php`（ヒートマップとカルテの両方で使う。`highlight-month` で月に印）
-- 入力チェック：`app/Http/Requests/` の `TripRequest`・`BulkTripRequest`・`SpotRequest`・`ReportRequest`（エラーは `report` の袋）
-- コマンド：`app/Console/Commands/MakeAdmin.php`（`app:make-admin`）、`AddLoadTestTrips.php`・`MeasurePages.php`（`app:add-load-test-trips`・`app:measure-pages`。負荷の確かめ用で開発環境だけ。#166）、`ResetDemoIfRequested.php`（`app:reset-demo-if-requested`。環境変数 `DEMO_RESEED_TOKEN` が前回と違うときだけ、写真と表の中身を消してシーダーで入れ直す。公開環境の起動のたびに動く。開発環境でも `sail exec -u sail -e DEMO_RESEED_TOKEN=好きな文字 laravel.test php artisan app:reset-demo-if-requested` で使える。**`-u sail` を忘れると root で動き、写真のフォルダに書き込めなくなる**（#176 で起きた）。#160）、`AttachSamplePhotos.php`（`app:attach-sample-photos`。自作の魚のイラスト `database/seeders/data/sample-photos/` を付ける。①全体公開の釣果10件まで（`catches/sample-` の写真があれば何もしない。#148）②お試し用アカウントの自己ベストのうちアイナメ以外（アイナメは写真なしの例。#176）。シーダーの最後と公開環境の起動のたびに動く）
-- 決まった言葉の一覧：`config/fishing.php`（魚種20種・時間帯・潮・天候・釣り方・公開範囲など）
-- JavaScript：`resources/js/app.js`（`spotMapInput`・`spotMapView`・`catchRows`・`bulkRows`・`unitConverter`・`spotPicker`（県と釣り場の選択。絞り込み・釣行の記録と編集で共通。`spotsInPrefecture`・`spotLabel` はまとめて登録も使う）、`resources/js/photo-hints.js`
-- シーダー：`database/seeders/DatabaseSeeder.php`。釣り場は**実在の港131・湖7**（`database/seeders/data/real_spots.php`、登録者は管理者・公開・全部「注意あり」。位置は Wikidata（CC0）にあるものだけで、34か所は位置なし。岐阜県は0か所）。釣行840件（過去3年分）は**ダミー**で、全国の釣り文化振興モデル港21か所（秋田港120件、ほかは30件ずつ）と、秋田県の船川港・能代港（60件ずつ）に付ける（#160）。魚ごとに釣れやすい月と時間帯がある（`HARBOR_FISH`）。ユーザーは秋田4人・神奈川1人（釣行なし）・ほかの県のモデル港の地元の釣り人12人（`angler1〜12@`）・管理者。`fake()->seed(2026)` で毎回同じ。**国土数値情報の位置は非商用のみなので使わない**
-- 運用：`docs/operations.md`（毎月の初めの点検は GitHub の Issue に結果を残す。報告は3日以内。鍵は毎年10月に作り直す）。本番リリース計画：`docs/release-plan.md`（お試し環境の制約と、本番で変えること。費用は Notion だけに書く）（#206）
-- バックアップ：開発環境は `scripts/backup.sh`・`scripts/restore.sh`（`/backups` は Git に入れない）。**公開環境は GitHub Actions の `.github/workflows/backup.yml` が毎日 4:07 に**、Aiven のデータベースと写真を R2 の非公開のバケット `fishinglog-backups` に写し、空の MySQL に戻して件数を確かめる（接続の情報は GitHub の Secrets の `BACKUP_*`。Aiven のパスワードを作り直したら `BACKUP_DB_PASSWORD` も入れかえる）。戻す手順は `docs/backup.md`（#204）
-- 公開（#136）：`Dockerfile`（PHP 8.5＋Apache、node で画面の部品を作る）・`docker/start.sh`（PORT・Aiven の SSL 証明書 `DB_SSL_CA_CONTENT`・config:cache・`migrate --isolated`・`app:seed-if-empty`。お試しデータの準備はロック `demo-data`・`sample-photos` で同時に走らない。#172）・`.dockerignore`。**開発は今までどおり Sail**。公開環境の秘密の値（APP_KEY・DB・AWS・ADMIN_PASSWORD）は Render の環境変数にだけ入れ、Git には入れない
+- ルート：`routes/web.php`（ログインして確かめた会員だけ → `['auth', 'verified']`、プロフィールは `auth` だけ、ゲストも見られる：トップ・釣り場・フィード・プランナー・単位変換・使い方・規約）
+- 条件の照合：`ConditionMatcher`（時期（前後1か月）をいつも入れ、ぴったり → 時期と時間帯 → 時期だけ。決まりは `levels()` の1か所。カルテは `matchQuery()`、プランナーは `matchBySpot()`。うちダミーの回数 `samples`、記録の内訳 `breakdown()`・`breakdownBySpot()`）
+- そのほかのサービス（`app/Services/`）：`TideCalculator`（潮）、`WeatherService`（天気）、`PhotoStorer`（写真）、`NewPostNotifier`・`NotificationPresenter`（お知らせ）、`TripSearch`・`TripCsvExporter`（絞り込みと CSV）、`SeasonHeatmap`（月×魚種）、`KeepRecording`（継続と気づき）、`PersonalBests`（自己ベスト）、`LocalInfoHistory`（現地の情報の変更の履歴。改行は `normalize()` でそろえる）、`CatchHighlighter`（登録直後のハイライト）
+- 部品：`match-stamps`（一致のハンコ）、`record-breakdown`（記録の内訳）、`season-table`（月×魚種の表）、`dummy-tag`（ダミーの印）、`notification-bell`（ベル）
+- 決まった言葉：`config/fishing.php`（魚種・時間帯・潮・天候・釣り方・公開範囲）、単位変換の数字は `config/units.php`
+- JavaScript：`resources/js/app.js`（地図・釣果の行・まとめて登録・単位変換・県と釣り場の選択 `spotPicker`）、`resources/js/photo-hints.js`
+- シーダー：`database/seeders/DatabaseSeeder.php`（実在の港131・湖7、ダミーの釣行840件、`fake()->seed(2026)` で毎回同じ）。**国土数値情報の位置は非商用のみなので使わない**
+
+## 公開環境と運用
+
+- お試し環境：https://fishing-log-hasx.onrender.com（Render 無料＋Aiven の MySQL＋Cloudflare R2）。**main に push すると自動で公開し直す**。起動のたびに `docker/start.sh` がマイグレーションとお試しデータの準備をする
+- **開かないときは、まず Aiven の `fishinglog-db` が Powered off になっていないか見る**（Power on で戻る）
+- 死活監視は UptimeRobot（5分おき）、予備に GitHub Actions の keep-alive
+- バックアップ：GitHub Actions（`.github/workflows/backup.yml`）が毎日 4:07 に DB と写真を R2 の `fishinglog-backups` に写し、空の MySQL に戻して件数を確かめる。戻し方は `docs/backup.md`
+- 毎月の初めに点検する（`docs/operations.md`。結果は GitHub の Issue に残す）。報告は3日以内に確かめる。鍵は毎年10月に作り直す
+- 本番として使うときは `docs/release-plan.md` のとおりに移る（費用は Notion にだけ書く）
 
 ## 開発用のログイン
 
-- `test@example.com` / `password`（秋田、釣行45件）
-- 管理者：`admin@example.com`（東京都、釣行なし。今の開発用データベースにも足してある）
-- ほかに `minato@` `surf@` `iso@`（秋田）、`wanoku@`（神奈川、釣行なし）。すべて `@example.com`、パスワードは `password`
-- **公開環境（APP_ENV=production）は別**：お試し用 `demo@example.com` / `fishinglog-demo`（README に書く）。admin は秘密のパスワード、ほかのダミーはログインできない（#136）
-
-## 今どこまでできているか（2026-10-24）
-
-**フェーズ1・フェーズ2は完了。** フェーズ3は条件検索（FN-03、#86）・CSV 出力（FN-04、#88）・継続カウンタと気づきカード（FN-10、#90）が完了。報告と管理画面（NF-04、#92・#94）が完了。見た目も土台（#96）・カルテ（#98）・ダッシュボードとプランナー（#100）・残りの画面（#102）でひととおり完了。テストは 408 件すべて成功。README も書き直した（#104）。シーダーの釣り場を実在の港と湖にした（#106）。ナビをインデックス付箋にした（#108）。注意のしるしと1位のマーカーを直した（#110）。魚や釣り具のアイコンと落書きを入れた（#112）。README に画面の画像を入れた（#114）。使い方のページを作った（#116）。利用規約とプライバシーポリシーを書き直し、退会で写真も消すようにした（#118）。エラーページ・タブのアイコン・初期のテストの片付け（#120）。単位変換ツール（#122）。せまい画面の付箋とスマホのメニューの並び（#124）。README の画面の画像を撮り直し、単位変換を足した。README に「記録が少ないうちも使い続けられる工夫」の節を足した（#126）。定義書との総点検で見つけた抜けを直した：釣り場一覧の釣果数と並べ替え（`sort`＝name／last／catches、ログインした人だけ）、釣り場のメモはカルテで本人だけ（#128）。プランナーとカルテから旧暦の表示を消し、カルテの次の大潮を付箋の右のスタンプにした（#130）。README の画面の表の3段目の画像の並びを直した（#132）。README の手順でゼロから動くことを確かめた。README の文を直した（要らない記載を消し、ひらがなの言葉を漢字に。#134）。インターネットに公開する準備（#136）：写真の保存先を `config/fishing.php` の `photo_disk`（PHOTO_DISK）で切りかえ（公開環境は s3＝Cloudflare R2）、お試し用アカウント `demo@example.com`（`User::isDemo()`。プロフィール・パスワードの変更と退会はできない）、公開環境のシーダーは admin を秘密のパスワード（ADMIN_PASSWORD）・ほかのダミーはランダム、`Dockerfile` と `docker/start.sh`（Render 用。起動のたびに migrate と `app:seed-if-empty`）、trustProxies と https。公開先は Render（アプリ）＋ Aiven（MySQL）＋ Cloudflare R2（写真）。釣行の記録の絞り込みで、県を「自分」にも出し（最初はメインフィールド、一覧と CSV も県で絞る）、県を選ぶと釣り場の候補がその県だけに入れかわる（#138、`spotPicker`）。公開した（#140）：https://fishing-log-hasx.onrender.com（Render 無料・Singapore、DB は Aiven の無料 MySQL、写真は Cloudflare R2 のバケット fishinglog-photos）。README のいちばん上に「お試し環境」。写真は保存のときに visibility を付けない（R2 が受け付けない）。天気のサービスの失敗はログに残す。**Render は main に push すると自動で公開し直す**。環境変数は Render の Environment にだけある。釣行の記録・編集・まとめて登録でも、県を選んでから釣り場を選ぶ（#142。最初はメインフィールドか選んである釣り場の県、写真の「この釣り場を選ぶ」は `select-spot` の知らせで県も切りかえる）。公開環境では Open-Meteo に1日の上限で断られる（429。Render の外へ出る住所をほかのアプリと一緒に使うため）ので、カルテは「今は取得できません」と開き直す案内を出す（#144、`forecastFailed`）。2026-10-15 に確かめると朝 9 時すぎしか取れなかったので、カルテの天気予報だけ MET Norway に変えた（#146。今日から 8 日先まで、その日でいちばん悪い天気、場所ごとに 1 時間覚える）。釣行の天候の自動入力は Open-Meteo のまま（取れなければ空で保存）。お試し環境の釣果に、自作の魚のイラスト（「サンプル」のスタンプ入り）を付けた（#148）。テストでは写真のフォルダを `Storage::fake('public')` にしている（`tests/TestCase.php`）。釣行の編集画面の今の写真も、写真の保存先の URL から出すようにした（#150。写真の URL は `FishCatch::photoUrl()` か `Storage::disk(PhotoStorer::disk())->url()` を使い、`asset('storage')` を決め打ちしない）。`NotificationSendTest` の退会のテストがまれに失敗していたのは、釣り場のファクトリーがランダムな県の登録者を作り、秋田県になるとその人にもお知らせが届いていたため（#152。テストでは釣り場の `created_by` を決める）。Aiven の無料のデータベースは「使われていない」と止められる（2026-10-15 18:53 に止められ、Power on で戻した。Event log の時刻は UTC）。GitHub Actions（`.github/workflows/keep-alive.yml`）で3時間に1回お試し環境を開いている（#154。リポジトリに60日間変更がないと GitHub が止める）。死活監視 UptimeRobot（無料）で5分おきに `/spots` を確かめていて、お試し環境は止まらない（#162。止まったらユーザーにメールが届く。GitHub Actions は予備）。**お試し環境が開かないときは、まず Aiven の `fishinglog-db` が Powered off になっていないか見る**。README のお試し環境に付箋ごとに試せることの表（#156）。プランナーとカルテの条件を、時期を先に絞る形にし、一致した条件をハンコで見せる（#158）。ダミーの釣行を840件にして季節を付け、公開環境のお試しデータを入れ直せるようにした（#160。入れ直したあとは釣り場の番号が変わる）。受けた指摘をもとに、改善を6つの Issue に分けて進めた（#162〜。死活監視 → 写真の後始末 → カルテと一覧の集計を DB に → プランナーの集計を DB に → 自己ベスト → 気づきカードの言い方と起動時の処理）。保存に失敗したときに写真のファイルを消すようにした（#164）。カルテと釣行一覧の集計をデータベースで行い、カルテの履歴を10件ずつにした（#166）。プランナーの集計もデータベースで行うようにした（#168）。自己ベスト：ダッシュボードの最大サイズから釣果へ、上位3つと /bests（写真つき。`BestController`、付箋はダッシュボード）（#170）。気づきカードを記録の少なさで言い分け、起動時の処理が同時に走らないようにした（#172）。この6つの改善はこれで全部済み。最大サイズと自己ベストに王冠を付けた（#174。釣行詳細の自己ベストの釣果に「自己ベスト」の印）。お試し用アカウントの自己ベストに、アイナメ以外サンプルのイラストを付けた（#176）。README のテストの件数を直した（#178）。シーズンヒートマップのページでダッシュボードの付箋が手前に出るようにした（#180）。記録の言い方をそろえた（#182）。PHP の緊急のセキュリティ修正で 8.5.12 に上げた（#184）。Dependabot で新しい版を見張るようにした（#186）。2回目の指摘（完了の説明・テストの再現・運用の決めごと）を受けて、直す手順を Notion の「FishingLog 2回目の指摘と直す手順」にまとめ、1つずつ進めている。① テストを GitHub Actions で自動で流す（#196）。② 要件ごとの対応表 `docs/requirements.md`（#198）。③ 現地の情報の変更履歴（#200。会員はカルテと `/spots/{spot}/history` で見られ、管理者は `POST /admin/spot-changes/{change}/revert` で戻せる）。④ 公開環境からパスワード再設定のメールを送れるようにした（#202。Brevo・Mailpit）。⑤ 公開環境の毎日の自動バックアップと戻す試し（#204）。⑥ 運用の手順書と本番リリース計画（#206。初回の点検は #207）。⑦ ゲストも釣行プランナーを試せるようにした（#209。数えるのはみんなの全体公開の記録だけ、県は選んでもらう（特定の県に決め打ちしない）、「自分の記録だけ」は会員だけ。トップに「登録しなくても試せること／登録すると使えること」）。⑧ ダミーの釣行に印を付け、記録の内訳を出した（#211。`users.is_sample`＝ダミーの人、印は `<x-dummy-tag :trip>`、回数は `ConditionMatcher` の `samples`、内訳は `breakdown()`・`breakdownBySpot()`。カルテとプランナーで同じ部品 `<x-record-breakdown>`（「記録の内訳を見る」で開く。#223）。本番に移るときは `is_sample` の人を消す）。会員登録のときにメールアドレスを確かめるようにした（#213。`User` は `MustVerifyEmail`、ログインが必要なルートは `['auth', 'verified']`、プロフィールだけは `auth` のまま。送れないときは `sendEmailVerificationSafely()` で案内）。プロフィールのパスワードの変更を押すと開く形にし、カードを真ん中に置いた（#215）。⑨ 機能を主役・必須・補助・後回しに分けた（#217。README の「機能と優先度」と、対応表の「優先度」の列。**機能を足したら、どちらにも優先度を書く**。`RequirementsDocTest` が README との食い違いを確かめる）。⑩ 資料と画面の画像を見直した（#219。README の画像は scratchpad の `shoot.mjs`（Node 24 の WebSocket で chrome-headless-shell を動かす）で撮り直した。これで2回目の指摘の直しは全部済み）。README をコンパクトにし、詳しい内容を docs/ に分けた（#221）。モデル港のメモの同じ文を1回にし、変更の履歴は改行だけの違いを残さず長いメモを短く出す、記録の内訳をカルテとプランナーでそろえた（#223。`LocalInfoHistory::normalize()` が改行をそろえる）。スクロールすると地図がナビより手前に出ていたのを直した（#225）。決めたことの記録で1行につながっていた2つの記録を分け、表の形をテストで見張るようにした（#227。`DecisionsDocTest`。**decisions.md に行を足すときは、前の行の終わりに改行を入れる**）。定義書の Excel（初版と最終版を1つにした `フィッシングログ_最終版.xlsx`）をデスクトップに作った（GitHub を見られない人向け。元の `フィッシングログ.xlsx` は初版のまま）。最後の Issue は #227（PR と次の番号は画面で確かめる）。
-
-### フェーズ2でやったこと（決めたことは `docs/decisions.md`）
-
-- 県内新着のアプリ内通知（FN-18、#76）：番号だけ保存し、表示のたびに公開範囲をチェック
-- シーズンヒートマップ（FN-02、#80）：色は匹数・小さく回数、1匹から色、最初は「みんな」。FN-10 の「あと何件」は「釣行 N 件から作っています」に変えた
-- カルテの小さな表（PG07、#82）：履歴と同じ釣行（「釣り場だけ隠す」は数えない）、選んだ日付の月に印
-- 条件をゆるめて探す（FN-16、#84）：釣り場ごとに、釣れた記録がなければ ぴったり → 潮だけ → 月だけ。レベルが先に並ぶ。カルテの判断ビュー（FN-11）も同じ。#158 で「時期（前後1か月）をいつも入れ、ぴったり → 時期と時間帯 → 時期だけ」に変え、ハンコで見せる
-
-### フェーズ3の進み具合（順番はユーザーと決めた）
-
-- 済：① 条件検索（FN-03、#86）：釣行一覧（`/trips`）に絞り込み・「自分／みんな」・まとめ。県は両方で使い、最初はメインフィールド（#138）。**「みんな」で釣り場を指定したら「釣り場だけ隠す」は出さない**。魚種×釣り方は同じ1匹。条件は URL に残す
-- 済：② CSV 出力（FN-04、#88、`/trips/export`）：今の絞り込みのまま**自分のデータだけ**（URL で scope=public でも自分だけ）。魚1匹＝1行、BOM 付き、位置と写真は入れない。ルートは `/trips/{trip}` より上
-- 済：③ 継続カウンタと気づきカード（FN-10、#90、`KeepRecording`）：ダッシュボードのサマリー指標の下。自分の釣行の回数だけ（坊主も1回）。連続月数は今月が終わるまで途切れにしない。気づきは潮・時間帯・天候ごとに釣れた割合がいちばん高いもの（2回以上行った条件だけ、最大3枚、件数を出す）
-- ④ 報告と管理画面（NF-04）：2つの Issue に分けた
-  - 済：報告を送る（#92）：`users.role`（user／admin）、`reports` テーブル、カルテと釣行詳細のモーダル（`reports/partials/modal.blade.php`）、ポリシーの `report`（見えないものは 404、自分の投稿は 403）、未対応の重複は不可。管理者は `sail artisan app:make-admin メール` とシーダーの `admin@example.com`
-  - 済：管理画面（#94、`/admin/reports`、`Admin\ReportController`）：ミドルウェア `admin`（`EnsureAdmin`、管理者以外は 404）。最初は未対応だけ。投稿の中身は管理画面の中に出す（**メモは出さない**、釣り場名は出す）。**非表示は公開範囲を `private` に変える**（新しい列は足さない）＋その投稿への報告をまとめて対応完了。釣り場の updated_at は変えない
-- ⑤ 見た目：**クレヨンのメモ帳風**（見本 https://claude.ai/artifact/SJXjKegQq9FzjDHpsj9Br4 を見比べてユーザーが決めた）
-  - 済：土台（#96）：紙の背景 `crayon-paper`・カード `crayon-card`（::after にクレヨンの枠）・見出し `crayon-heading`（手書き＋クレヨンの下線）・`crayon-subheading`。SVG フィルターは `components/crayon-filters.blade.php`（レイアウトで1回読み込む）。手書きの字は Yomogi（`font-hand`）で、ナビ・ボタン・選ぶ部品・入力欄・ラベルにも当てた（`app.css` の `@layer base`、`<a>` のボタンは class に `font-hand`）。本文・カードの数字・注意の警告は BIZ UDPゴシックのまま。`sand` は #5B6B70
-  - 済：カルテ（#98、見本 https://claude.ai/artifact/SRU3JbH7hHtHiHK53BgCj5 の C「付箋と書き込み」）。共通クラス `crayon-sticky`（＋`-yellow` `-pink` `-blue`）・`crayon-caution`（＋`crayon-caution-icon`）・`crayon-button`・`crayon-check`・`crayon-underline`
-    - **ボタンはぬり絵風**（うすいオレンジ `float-light` のむらのない塗り＋濃いオレンジのクレヨンのふち、字は黒）。**字の後ろにクレヨンのまだら（crayon-fill）を置かない**（字が点にまぎれて読めない。何度も試してだめだった）
-    - **「✔」などの記号の字は使わない**（Windows で色付きの絵文字になる）。CSS の線で描く
-  - 済：ダッシュボードとプランナー（#100、見本 https://claude.ai/artifact/XHVi3DDLDE3vPTaHEqSYot の B「書き込みとスタンプ」）。共通クラス `crayon-ledger`（点線の表）・`crayon-stamp`（＋`crayon-stamp-empty`）・`crayon-marker`・`crayon-scrawl`・`crayon-caution-tag`。白い字のオレンジのボタンは全部 `crayon-button` に（`primary-button` の部品も）
-  - 済：残りの画面（#102）。今の部品でそろえた。共通クラス `crayon-button-secondary`（白い塗り＋青いふち）・`crayon-note`（水色のメモ。お知らせの帯・説明や案内の箱）。目立たせたいしるし（「ぴったり一致」・NEW・未対応）は `bg-crayon-pink text-ink`。見出しは全部 `crayon-heading` / `crayon-subheading`
-  - 済：ナビのインデックス付箋（#108、見本 https://claude.ai/artifact/FqBHm8jDi7QD4WhDQpMpoV の B）。ページと色は **`config/sections.php` の1か所**（付箋 tab・紙 paper・下線 line・だれに見せるか who）。`AppServiceProvider` が `$sections` と `$currentSection` をレイアウトとナビに渡し、レイアウトは本文の紙（`crayon-section-paper`）に `--section` などの CSS 変数を渡す。スマホは開いているページの付箋1枚だけ（ページは ≡ メニューから）。幅 1280px より せまいときは、アイコンを消して名前だけを小さめに出し、報告は「報告 N」（#124。**アイコンだけにはしない**：見慣れないと分からなかった）。入らない幅だけ2段に折り返す。スマホの ≡ メニューも `$sections` から同じ順・同じ色で出し、線の下にお知らせ・使い方（#124）。ナビは `sticky top-0 z-40`・白85%＋ぼかし。地図は `.leaflet-container { isolation: isolate }` でナビの上に出ないようにしている（**`@layer` の外に書く**。Leaflet が JavaScript で付けるクラスは Blade に出てこないので、`@layer components` の中だと Tailwind が捨てる。#225。`BuiltCssTest` が作った CSS に入っているかを確かめる）。**新しいページを足したら、`config/sections.php` の routes にも入れる**
-  - 済：魚・釣り具のアイコンと落書き（#112、見本 https://claude.ai/artifact/1RicrEYRyaeQ5DDxz77xfB の C）。アイコンは `<x-icon name="fish" />`（`components/icon.blade.php`。Tabler Icons（MIT）＋自作のエサ・ルアー。王冠は `<x-crown />`（金色の塗り。#174））。付箋のアイコンは `config/sections.php` の icon。落書きは `crayon-section-paper` の ::before / ::after（跳ねる魚と波線）と `crayon-empty`（「まだありません」の箱の釣り針）。**アイコンにはクレヨンのざらつきをかけない**（ベルで分かりにくかった）。ベルはふつうの線。アイコンを大きくするときは `!h-16 !w-16` のように `!` を付ける（部品がもともと `h-4 w-4` を付けていて、CSS の順で小さいほうが勝つ。#170）
-  - **新しい画面部品を作るとき**：カード `crayon-card`、ボタン `crayon-button`（2番目は `crayon-button-secondary`）、案内 `crayon-note`、注意 `crayon-caution`、付箋 `crayon-sticky`。オレンジの地に白い字は使わない（3.8 で足りない）
-- 済：README（#104）。ER 図は `docs/database.md` の Mermaid（文字で書く図。#200 で draw.io の画像から変え、#221 で README から移した）。**テーブルを足したら `docs/database.md` の ER 図も直す**（`ErDiagramDocTest` がテーブルと図の表が合うかを確かめる）。`.env.example` を Sail と MySQL の値にそろえた
-- エラーページ：`resources/views/errors/`（共通の形は `errors/layout.blade.php`。**番号は出さない**。データベースやログインの確認を使わない）。タブのアイコンは `public/favicon.svg`
-- 利用規約・プライバシーポリシー（`static/terms`・`static/privacy`）：**機能を変えたら、書いてあることと合っているか確かめる**（とくに公開範囲・写真・外部サービス・退会）
-- 済：README の画面の画像（#114・#126 で撮り直し、`docs/images/screen-*.png`。PC 1280×900 が5枚・スマホ 390×844 が2枚、画面の大きさのまま撮る）。**見た目を大きく変えたら撮り直す**（scratchpad の `shoot.mjs`：chrome-headless-shell を `--remote-debugging-port` で起動し、Node 24 の組み込みの WebSocket で操作してログイン→撮影。追加のインストールは要らない。scratchpad はセッションごとに消えるので、なければ作り直す）
-- **次はここから**：ユーザーと相談
-  - 見た目の確認：作業用の場所（scratchpad）に確認用の HTML を作り、Playwright の chrome-headless-shell で画像にして自分でも見る（足りないライブラリ libnspr4・libnss3・libasound は apt-get download で scratchpad に取り出し、LD_LIBRARY_PATH で使う。システムには入れない）
-
-### フェーズ3でやること
-
-- 条件検索（FN-03）・CSV 出力（FN-04、自分のデータだけ）・継続カウンタと気づきカード（FN-10）・不適切な投稿の報告と最小の管理画面（NF-04、`users.role`）
-- 最後に見た目。ユーザーは**オリジナリティを出したい** → クレヨンのメモ帳風に決めた。クレヨンの効果は飾り（::before / ::after）にだけかけ、文字・数字・表の線にはかけない。新しいカードは `crayon-card`、見出しは `crayon-heading` / `crayon-subheading` を使う。数字や注意の読みやすさと、素材の権利には気をつける
-
-### README
-
-- 書き直し済み（#104）。#221 で「入口」だけにした（何のアプリか・お試し環境・画面・機能と優先度・工夫・使った技術・動かし方・資料の一覧・開発の記録。166行）。**詳しいことは README に足さず、docs/ の資料に書いて「資料の一覧」からリンクする**（開発用のログインとデータ・負荷の確かめは `docs/development.md`、ER 図は `docs/database.md`、公開先と起動時の処理は `docs/operations.md`）。機能や画面を変えたら、README の「機能と優先度」とテストの件数も直す
-- 画面の画像は `docs/images/screen-*.png`（#114）。見た目を変えたら撮り直す
+- `test@example.com` / `password`（秋田、釣行45件）、管理者 `admin@example.com` / `password`
+- ほかに `minato@`・`surf@`・`iso@`（秋田）、`wanoku@`（神奈川）。すべて `@example.com`・`password`
+- 公開環境：お試し用 `demo@example.com` / `fishinglog-demo`。admin は秘密のパスワード、ほかのダミーはログインできない
