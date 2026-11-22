@@ -1,7 +1,7 @@
-# 公開環境のデータベースと写真を、毎日バックアップする（#204）
-# 1. Aiven の MySQL を書き出して圧縮し、Cloudflare R2 の非公開のバケットに置く（30日より古いものは R2 の決まりで自動で消す）
+# 公開環境のデータベースと写真を、毎日バックアップする（#204。#242 で MySQL から PostgreSQL に変えた）
+# 1. Aiven の PostgreSQL を書き出して圧縮し、Cloudflare R2 の非公開のバケットに置く（30日より古いものは R2 の決まりで自動で消す）
 # 2. 写真のバケットを、同じバックアップのバケットの photos/ に写す（写す側では消さないので、消した写真も残る）
-# 3. 取ったバックアップを、この中の別の MySQL に戻してみて、テーブルと件数を確かめる（戻せなければ失敗にする）
+# 3. 取ったバックアップを、この中の別の PostgreSQL に戻してみて、テーブルと件数を確かめる（戻せなければ失敗にする）
 # 失敗すると、GitHub からメールが届く。戻し方は docs/backup.md
 # 接続の情報は、リポジトリの Settings → Secrets and variables → Actions にだけ入れる
 name: バックアップ
@@ -26,28 +26,33 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
-    # 戻す試しに使う、空の MySQL（本番と同じ 8.4）
+    # 戻す試しに使う、空の PostgreSQL（開発・テストと同じ 18）
     services:
       restore:
-        image: mysql:8.4
+        image: postgres:18
         env:
-          MYSQL_ROOT_PASSWORD: restore
-          MYSQL_DATABASE: restore_check
+          POSTGRES_USER: restore
+          POSTGRES_PASSWORD: restore
+          POSTGRES_DB: restore_check
         ports:
-          - 3307:3306
+          - 5433:5432
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -prestore"
+          --health-cmd="pg_isready -U restore -d restore_check"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
 
     env:
-      DB_HOST: ${{ secrets.BACKUP_DB_HOST }}
-      DB_PORT: ${{ secrets.BACKUP_DB_PORT }}
-      DB_USER: ${{ secrets.BACKUP_DB_USERNAME }}
-      DB_NAME: ${{ secrets.BACKUP_DB_DATABASE }}
-      # パスワードは MYSQL_PWD で渡す（コマンドの文字に入れると、ほかから見えることがあるため）
-      MYSQL_PWD: ${{ secrets.BACKUP_DB_PASSWORD }}
+      # 本番の PostgreSQL への接続。psql・pg_dump は PG で始まる環境変数を読む
+      PGHOST: ${{ secrets.BACKUP_DB_HOST }}
+      PGPORT: ${{ secrets.BACKUP_DB_PORT }}
+      PGUSER: ${{ secrets.BACKUP_DB_USERNAME }}
+      PGDATABASE: ${{ secrets.BACKUP_DB_DATABASE }}
+      # パスワードは PGPASSWORD で渡す（コマンドの文字に入れると、ほかから見えることがあるため）
+      PGPASSWORD: ${{ secrets.BACKUP_DB_PASSWORD }}
+      # 暗号化した接続で、相手の証明書も確かめる（証明書のファイルは最初の手順で作る）
+      PGSSLMODE: verify-full
+      PGSSLROOTCERT: /work/ca.pem
       AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_R2_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_R2_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
@@ -67,37 +72,43 @@ jobs:
           printf '%s\n' "$DB_CA" > work/ca.pem
           echo "STAMP=$(TZ=Asia/Tokyo date +%Y-%m-%d_%H%M)" >> "$GITHUB_ENV"
 
-      # mysqldump は本番と同じ版（8.4）のものを使う
+      # pg_dump は、本番の PostgreSQL と同じかそれより新しい版でないと書き出せない。18 の箱を使う
+      # --no-owner --no-privileges：Aiven の持ち主や権限の命令を入れない（ほかの PostgreSQL にも戻せるように）
       - name: データベースを書き出す
         run: |
-          docker run --rm --network host -e MYSQL_PWD -v "$PWD/work:/work" mysql:8.4 \
-            mysqldump --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" \
-              --ssl-mode=VERIFY_CA --ssl-ca=/work/ca.pem \
-              --single-transaction --routines --triggers --set-gtid-purged=OFF --no-tablespaces \
-              "$DB_NAME" > work/db.sql
+          docker run --rm --network host -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD -e PGSSLMODE -e PGSSLROOTCERT \
+            -v "$PWD/work:/work" postgres:18 \
+            pg_dump --no-owner --no-privileges > work/db.sql
           gzip -9 work/db.sql
           ls -lh work/db.sql.gz
 
       - name: 本番の件数を数える（戻したものと比べるため）
         run: |
-          docker run --rm --network host -e MYSQL_PWD -v "$PWD/work:/work" mysql:8.4 \
-            mysql --host="$DB_HOST" --port="$DB_PORT" --user="$DB_USER" \
-              --ssl-mode=VERIFY_CA --ssl-ca=/work/ca.pem --batch --skip-column-names "$DB_NAME" \
-              -e "SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'spots', COUNT(*) FROM spots UNION ALL SELECT 'trips', COUNT(*) FROM trips UNION ALL SELECT 'catches', COUNT(*) FROM catches" \
+          docker run --rm --network host -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD -e PGSSLMODE -e PGSSLROOTCERT \
+            -v "$PWD/work:/work" postgres:18 \
+            psql -At -F ' ' -v ON_ERROR_STOP=1 \
+              -c "SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'spots', COUNT(*) FROM spots UNION ALL SELECT 'trips', COUNT(*) FROM trips UNION ALL SELECT 'catches', COUNT(*) FROM catches" \
             > work/source-counts.txt
           cat work/source-counts.txt
 
-      - name: 戻せるかを試す（空の MySQL に戻して数える）
+      # 戻す先は、この中の空の PostgreSQL（暗号化しない、ふつうの接続）
+      - name: 戻せるかを試す（空の PostgreSQL に戻して数える）
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5433
+          PGUSER: restore
+          PGDATABASE: restore_check
+          PGPASSWORD: restore
+          PGSSLMODE: disable
         run: |
-          gunzip -c work/db.sql.gz | docker run --rm -i --network host -e MYSQL_PWD=restore mysql:8.4 \
-            mysql --host=127.0.0.1 --port=3307 --user=root restore_check
-          docker run --rm --network host -e MYSQL_PWD=restore mysql:8.4 \
-            mysql --host=127.0.0.1 --port=3307 --user=root --batch --skip-column-names restore_check \
-              -e "SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'spots', COUNT(*) FROM spots UNION ALL SELECT 'trips', COUNT(*) FROM trips UNION ALL SELECT 'catches', COUNT(*) FROM catches" \
+          gunzip -c work/db.sql.gz | docker run --rm -i --network host -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD -e PGSSLMODE postgres:18 \
+            psql -q -v ON_ERROR_STOP=1 > /dev/null
+          docker run --rm --network host -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD -e PGSSLMODE postgres:18 \
+            psql -At -F ' ' -v ON_ERROR_STOP=1 \
+              -c "SELECT 'users', COUNT(*) FROM users UNION ALL SELECT 'spots', COUNT(*) FROM spots UNION ALL SELECT 'trips', COUNT(*) FROM trips UNION ALL SELECT 'catches', COUNT(*) FROM catches" \
             > work/restored-counts.txt
-          docker run --rm --network host -e MYSQL_PWD=restore mysql:8.4 \
-            mysql --host=127.0.0.1 --port=3307 --user=root --batch --skip-column-names restore_check \
-              -e "SHOW TABLES" > work/restored-tables.txt
+          docker run --rm --network host -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD -e PGSSLMODE postgres:18 \
+            psql -At -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public'" > work/restored-tables.txt
           cat work/restored-counts.txt
           # アプリのテーブルが全部あること
           for table in users spots trips catches reports notifications password_reset_tokens spot_local_info_changes migrations; do
