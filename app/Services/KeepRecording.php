@@ -44,11 +44,12 @@ class KeepRecording
     public function build(User $user, Carbon $today): array
     {
         // 月ごとの釣行の回数（例：'2026-10' => 3）
+        // 年と月を数で取り出して数え、'2026-10' の形は PHP で作る（DATE_FORMAT は MySQL にしかないため。#241）
         $months = $user->trips()->toBase()
-            ->selectRaw("DATE_FORMAT(went_at, '%Y-%m') as month, COUNT(*) as trip_count")
-            ->groupBy('month')
-            ->pluck('trip_count', 'month')
-            ->map(fn($count) => (int) $count);
+            ->selectRaw('EXTRACT(YEAR FROM went_at) as year, EXTRACT(MONTH FROM went_at) as month, COUNT(*) as trip_count')
+            ->groupByRaw('EXTRACT(YEAR FROM went_at), EXTRACT(MONTH FROM went_at)')
+            ->get()
+            ->mapWithKeys(fn($row) => [sprintf('%04d-%02d', $row->year, $row->month) => (int) $row->trip_count]);
 
         return [
             'counter' => $this->counter($months, $today),

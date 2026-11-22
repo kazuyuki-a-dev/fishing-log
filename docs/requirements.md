@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 要件ごとの対応表 |
-| 版 | 1.11 |
+| 版 | 1.12 |
 | 作成日 | 2026-10-23 |
 | 最終更新日 | 2026-10-23 |
 | 作成者 | kazuyuki-a-dev |
@@ -30,15 +30,16 @@
 | 1.9 | 2026-10-24 | 最後の見直し：PG18 にメールアドレスの確かめ直しとパスワードの変更の形を足し、自動テストで確かめる要件の確認日を最後の実行の日にそろえた | #219 |
 | 1.10 | 2026-10-24 | README の節の名前が「機能と優先度」に変わったので、参照を直した | #221 |
 | 1.11 | 2026-10-24 | FN-11 の記録の内訳をプランナーと同じ形にした。FN-14 に変更の履歴の直し（改行だけの違いは残さない・長いメモは短く出す）を書いた | #223 |
+| 1.12 | 2026-11-22 | 自動テストの環境を PostgreSQL 18 と MySQL 8.4 の両方にした（データベースの引っ越し）。テストの件数を 411 にした | #241 |
 
 ## 確認した環境
 
 | 確認方法 | 環境 |
 |---|---|
-| 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、MySQL 8.4、Node 24）。push のたびに全部のテストを流す（`.github/workflows/tests.yml`） |
+| 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、PostgreSQL 18 と MySQL 8.4（MySQL は 2026-12-21 まで）、Node 24）。push のたびに、両方のデータベースで全部のテストを流す（`.github/workflows/tests.yml`） |
 | 画面 | 開発環境（Laravel Sail、Chrome）。スマホ幅は Chrome の開発者ツールで 360px |
 
-**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#40075875806](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/40075875806)（2026-10-24、408 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
+**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#44982844894](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/44982844894)（2026-11-22、PostgreSQL と MySQL のそれぞれで 411 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
 
 ## 見方
 
@@ -744,7 +745,7 @@
 
 結果：成功（GitHub Actions）
 
-備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（408件）
+備考：テストは公開範囲とアクセス制御に絞らず、計算や入力チェックにも書いた（411件）
 
 ### NF-07
 

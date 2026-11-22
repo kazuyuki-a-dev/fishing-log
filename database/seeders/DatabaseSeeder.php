@@ -11,6 +11,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -148,6 +149,12 @@ class DatabaseSeeder extends Seeder
             'home_prefecture' => '神奈川県',
             ...($public ? $locked() : []),
         ]);
+
+        // PostgreSQL は、入れたばかりのデータの統計（行の数など）をまだ知らず、遅い探し方を選ぶことがある
+        // 次の問い合わせの前に統計を取らせる（#241）
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ANALYZE');
+        }
 
         // ---- 全体公開の釣果のいくつかに、サンプルの魚のイラストを付ける（#148） ----
         Artisan::call('app:attach-sample-photos');

@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
@@ -54,7 +55,10 @@ class SpotController extends Controller
                 ->withCount(['catches as my_catches_count' => fn($query) => $query->where('trips.user_id', $user->id)])
                 ->withMax(['trips as my_last_went_at' => fn($query) => $query->where('user_id', $user->id)], 'went_at'))
             // 並べ替え（PG06）。最後に行った日は新しい順（行ったことがない釣り場は後ろ）、釣果数は多い順。同じなら名前順
-            ->when($sort === 'last', fn($query) => $query->orderByDesc('my_last_went_at'))
+            // 行ったことがない釣り場（日付が空）は、PostgreSQL では新しい順の前に来てしまうので、後ろにすると書く（#241）
+            ->when($sort === 'last', fn($query) => DB::getDriverName() === 'pgsql'
+                ? $query->orderByRaw('my_last_went_at DESC NULLS LAST')
+                : $query->orderByDesc('my_last_went_at'))
             ->when($sort === 'catches', fn($query) => $query->orderByDesc('my_catches_count'))
             ->orderBy('name')
             ->get();

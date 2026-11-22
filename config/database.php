@@ -97,6 +97,8 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // 公開環境（Aiven）は verify-full で、相手の証明書も確かめる。CA の証明書のファイルは docker/start.sh が作る（#241）
+            'sslrootcert' => env('DB_SSLROOTCERT'),
         ],
 
         'sqlsrv' => [
