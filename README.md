@@ -102,7 +102,7 @@
 
 | 種類     | 使ったもの                                                                                                                                            |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| サーバー | PHP 8.5 / Laravel 13 / PostgreSQL 18（公開環境は 2026-12 に MySQL 8.4 から引っ越し）                                                                  |
+| サーバー | PHP 8.5 / Laravel 13 / PostgreSQL 18（公開環境は 2026-11 に MySQL 8.4 から引っ越し）                                                                  |
 | 画面     | Laravel Breeze（Blade）/ Alpine.js / Tailwind CSS v3 / Vite                                                                                           |
 | 開発環境 | WSL2（Ubuntu）＋ Docker ＋ Laravel Sail                                                                                                               |
 | 写真     | Intervention Image v4（保存するときに描き直して Exif を消す）、ExifReader（ブラウザで撮影日時と位置を読む）、heic-to（iPhone の HEIC を JPEG に変換） |

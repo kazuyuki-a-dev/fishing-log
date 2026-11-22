@@ -8,9 +8,9 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 運用の手順書 |
-| 版 | 1.2 |
+| 版 | 1.3 |
 | 作成日 | 2026-10-23 |
-| 最終更新日 | 2026-10-23 |
+| 最終更新日 | 2026-11-22 |
 | 作成者 | kazuyuki-a-dev |
 | 対象 | 公開環境 https://fishing-log-hasx.onrender.com と、そのまわりの外部サービス |
 
@@ -21,6 +21,7 @@
 | 1.0 | 2026-10-23 | 初版（初回の点検 #207 の結果をもとに、使用量の見る場所と Render の時間の注意を足した） | #206 |
 | 1.1 | 2026-10-24 | 会員登録の確認のメール（#213）を、メールが届かないときの手順と外部サービスの一覧に足した | #219 |
 | 1.2 | 2026-10-24 | README から、公開先の止まらないしくみと起動時の処理の説明を移した（「6. 外部サービスの一覧」） | #221 |
+| 1.3 | 2026-11-22 | 公開環境のデータベースを Aiven の MySQL（`fishinglog-db`）から PostgreSQL（`fishinglog-pg`）に変えた。「7. データベースの引っ越し」に、切りかえ・確かめ方・MySQL に戻す手順・片付けを書いた | #242 |
 
 ---
 
@@ -50,7 +51,7 @@
 | 8 | Dependabot の PR と、弱点の知らせ（alerts）が残っていない | GitHub の Pull requests と Security | CLAUDE.md の「Dependabot の PR が来たとき」の手順で対応 |
 | 9 | 管理画面の未対応の報告が0件（3日を過ぎたものがない） | お試し環境の管理画面 `/admin/reports` | 「3. 投稿と現地の情報の確認」 |
 | 10 | 鍵の期限が近くない（下の「4. 鍵と期限の管理」の表） | この手順書の表 | 期限の1か月前までに作り直す |
-| 11 | Render の無料の時間・Aiven・R2 の使用量が、無料の枠に収まっている | Render：ワークスペースの Billing（無料のインスタンス時間 月750時間）／Aiven：fishinglog-db の Overview（ディスク 1GB）／R2：R2 のトップ（保存量 10GB・Class A 月100万回・Class B 月1000万回） | 収まらなくなりそうなら [`docs/release-plan.md`](release-plan.md) を見て、プランを考える。**Render は1つのサービスを24時間動かすと月744時間で、750時間の枠にほぼいっぱい**。同じワークスペースで無料のサービスを増やさない |
+| 11 | Render の無料の時間・Aiven・R2 の使用量が、無料の枠に収まっている | Render：ワークスペースの Billing（無料のインスタンス時間 月750時間）／Aiven：fishinglog-pg の Overview（ディスクの使用量。プランが Free のままか）／R2：R2 のトップ（保存量 10GB・Class A 月100万回・Class B 月1000万回） | 収まらなくなりそうなら [`docs/release-plan.md`](release-plan.md) を見て、プランを考える。**Render は1つのサービスを24時間動かすと月744時間で、750時間の枠にほぼいっぱい**。同じワークスペースで無料のサービスを増やさない |
 
 ## 3. 投稿と現地の情報の確認
 
@@ -91,7 +92,7 @@
 | Brevo の SMTP キー | Brevo → SMTP & API → SMTP | Render の `MAIL_PASSWORD` | 2027-10-23。**90日使わないと切れる** | 新しいキーを作って Render に入れ、テストのメールが届いたら古いキーを消す |
 | R2 の鍵（アプリ用） | Cloudflare → R2 → API tokens | Render の `AWS_ACCESS_KEY_ID`・`AWS_SECRET_ACCESS_KEY` | 決めていない（自分で毎年作り直す） | 新しい鍵を作って Render に入れ、写真が表示・保存できたら古い鍵を消す |
 | R2 の鍵（バックアップ用 `fishinglog-backup`） | 同上 | GitHub の Secrets `BACKUP_R2_*` | 同上 | 新しい鍵を作って Secrets に入れ、Actions → バックアップ → Run workflow で成功したら古い鍵を消す |
-| Aiven のパスワード（`avnadmin`） | Aiven → fishinglog-db → Users → Reset credentials | Render の `DB_PASSWORD` と GitHub の Secrets `BACKUP_DB_PASSWORD` | 決めていない | 作り直すと古いパスワードはすぐ使えなくなるので、**Render と GitHub の両方をすぐに入れかえる**。お試し環境が開くこととバックアップの成功を確かめる |
+| Aiven のパスワード（`avnadmin`） | Aiven → fishinglog-pg → Users → Reset credentials | Render の `DB_PASSWORD` と GitHub の Secrets `BACKUP_DB_PASSWORD` | 決めていない | 作り直すと古いパスワードはすぐ使えなくなるので、**Render と GitHub の両方をすぐに入れかえる**。お試し環境が開くこととバックアップの成功を確かめる |
 | APP_KEY（アプリの暗号の鍵） | `php artisan key:generate --show` | Render の `APP_KEY` | なし | 作り直すとログインしている人が全員ログアウトされる。漏れたときだけ作り直す |
 | ADMIN_PASSWORD（管理者のパスワード） | 自分で決める | Render の `ADMIN_PASSWORD`（お試しデータを入れ直すとき） | なし | 管理者でログインして、プロフィールから変える |
 
@@ -104,7 +105,7 @@
 
 1. UptimeRobot から「Down」のメールが来ているか、Render の **Events** に失敗が出ていないかを見る
 2. Render の **Logs** を見る
-   - 「データベースの住所が見つからない（getaddrinfo … failed）」→ Aiven の `fishinglog-db` が **Powered off** になっていないか。なっていれば **Power on**（データは残る）
+   - 「データベースの住所が見つからない（getaddrinfo … failed）」→ Aiven の `fishinglog-pg` が **Powered off** になっていないか。なっていれば **Power on**（データは残る）
    - 「needs attention」・起動の失敗 → 直前の main への push が原因のことが多い。GitHub の main の最新のコミットと Actions のテストを見て、直すか `git revert` で戻して push する
 3. 直ったら、お試し環境を開いて、ログイン・カルテ・写真が表示されることを確かめる
 
@@ -134,7 +135,7 @@
 |---|---|---|---|
 | GitHub | プログラムの置き場所・テストとバックアップの自動実行（Actions）・Dependabot | 開発者 | 60日間リポジトリに変更がないと、定期の Actions が止まる |
 | Render | アプリを動かす（main に push すると自動で公開し直す） | 開発者 | 15分使われないと止まる（UptimeRobot で起こしている）。SMTP の 587 番は使えない |
-| Aiven | MySQL のデータベース | 開発者 | 使われていないと止められる（Powered off）。Event log の時刻は UTC |
+| Aiven | PostgreSQL のデータベース（`fishinglog-pg`。2026-11 に MySQL の `fishinglog-db` から引っ越し） | 開発者 | 使われていないと止められる（Powered off）。Event log の時刻は UTC |
 | Cloudflare R2 | 写真・バックアップの置き場所 | 開発者 | 10GB まで。消した写真を戻すしくみはない（バックアップで守る） |
 | Brevo | 会員登録・メールアドレスの変更のときの確認のメールと、パスワード再設定のメールを送る（SMTP） | 開発者 | 1日300通まで。送り主は無料の Gmail なので、迷惑メールに入ることがある |
 | Gmail（fishinglog.dev@gmail.com） | メールの送り主・Brevo の確認のメール | 開発者 | 2段階認証を入れておく |
@@ -146,3 +147,53 @@
 
 - 無料の枠は、しばらく使われないとアプリやデータベースが止まる。UptimeRobot で5分おきに `/spots` を開いて止まらないようにしている（止まったときは知らせが届く）。予備として、GitHub Actions でも3時間に1回開いている（`.github/workflows/keep-alive.yml`）。本番で使うときは、止まらない有料のプランにする（[`docs/release-plan.md`](release-plan.md) の項目 1・2）
 - 起動のたびに、マイグレーションとお試しデータの準備をしている（`docker/start.sh`）。複数のインスタンスで同時に起動しても重ならないように、マイグレーションは `--isolated`、お試しデータの準備はロック（`demo-data`・`sample-photos`）で1つずつ動かしている。規模を広げるときは、デプロイのときに1回だけ動く処理（Render の Pre-Deploy Command など）に分ける（[`docs/release-plan.md`](release-plan.md) の項目 6）
+
+## 7. データベースの引っ越し（2026-11、#242）
+
+Aiven の無料の MySQL（`fishinglog-db`）が 2026-12-21 に終わるため、同じ Aiven の無料の PostgreSQL（`fishinglog-pg`）に引っ越す。データはシーダーのものだけなので移さず、起動のときの仕組み（`migrate` と、空のときだけのシード `app:seed-if-empty`）で作り直す。アプリは #241 から MySQL と PostgreSQL の両方で動く。
+
+| 項目 | 内容 |
+|---|---|
+| 担当 | 開発者 |
+| 期限 | 2026-12-21（MySQL が消える日）より前 |
+| 切りかえ前の写し | Actions のバックアップ [#44987046266](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/44987046266)（2026-11-22 13:54、users 19・spots 138・trips 840・catches 1158）。R2 の `db/fishinglog_2026-11-22_1354.sql.gz` と、手元のパソコンの写し |
+
+### 切りかえの手順
+
+1. **Aiven で PostgreSQL を作る**：Create service → PostgreSQL → プランは **Free** → 名前は `fishinglog-pg`。作ったら Billing で費用が 0 のままかを見る
+2. **控える**：Render の今の環境変数（`DB_` で始まるものと `DB_SSL_CA_CONTENT`）を、戻すときのために手元の安全な場所に控える（Git・会話に書かない）
+3. **Render の環境変数を変える**（Environment）
+
+   | 名前 | 値 |
+   |---|---|
+   | `DB_CONNECTION` | `pgsql` |
+   | `DB_HOST`・`DB_PORT`・`DB_DATABASE`・`DB_USERNAME`・`DB_PASSWORD` | `fishinglog-pg` の Overview の Host・Port・Database name・User・Password |
+   | `DB_SSLMODE` | `verify-full`（暗号化し、相手の証明書も確かめる） |
+   | `DB_SSL_CA_CONTENT` | `fishinglog-pg` の CA certificate の中身 |
+
+   `DB_CHARSET`・`DB_COLLATION` があれば消す（MySQL の文字の設定。PostgreSQL では使えない）
+4. **GitHub の Secrets を変える**：`BACKUP_DB_HOST`・`BACKUP_DB_PORT`・`BACKUP_DB_USERNAME`・`BACKUP_DB_PASSWORD`・`BACKUP_DB_DATABASE`・`BACKUP_DB_CA` を `fishinglog-pg` の値にする
+5. **PR（#242）をマージ**する（バックアップの台本が PostgreSQL 用になる）。main への push で Render が公開し直し、起動のときに表を作ってシードする
+
+### 確かめ方
+
+1. Render の **Logs**：`migrate` が成功し、お試しデータを入れていて、エラーがない
+2. お試し環境：トップ・釣り場・カルテ・プランナー・フィードが開く。お試し用アカウントでログインできる。釣行を1件記録して写真を付け、そのあと消す
+3. **二重にならないか**：Render の Manual Deploy → **Restart service**。Logs が「データがあるので、お試しデータは入れません。」になり、件数が増えない
+4. Actions → バックアップ → **Run workflow**：成功し、Summary の件数が本番と戻したもので一致する（users 19・spots 138・trips 840。catches はシードした日で変わる）
+5. 次の日の朝 4:07 の自動のバックアップも成功している
+
+### MySQL に戻す手順（2026-12-21 まで）
+
+コードは両方で動くので、戻すのは設定だけでよい。PostgreSQL のあいだに登録されたものは MySQL に移らない。
+
+1. Render の環境変数を、控えておいた MySQL の値に戻す（`DB_CONNECTION=mysql`。`DB_SSLMODE` は消す）→ 公開し直される
+2. GitHub の Secrets `BACKUP_DB_*` を MySQL の値に戻し、#242 のバックアップの台本のコミットを `git revert` して push する
+3. 上の「確かめ方」の 1・2・4 を行う
+
+### 引っ越しのあとの片付け（2026-12-21 のあと。Issue を1つ作る）
+
+- GitHub Actions のテストの MySQL（`.github/workflows/tests.yml` の matrix）
+- 開発環境の `mysql` の箱（`compose.yaml`）と、公開環境の `pdo_mysql`（`Dockerfile`）
+- この節の「MySQL に戻す手順」と、Aiven の `fishinglog-db`（消えていることを確かめる）
+

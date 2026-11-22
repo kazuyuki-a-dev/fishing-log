@@ -47,7 +47,7 @@
 
 ## 環境
 
-- WSL2＋Docker＋Laravel Sail／PHP 8.5（公開環境の `Dockerfile` は `php:8.5.12-apache` と版まで書く。PHP のセキュリティ修正が出たら上げ、開発環境も `sail build --no-cache`）／Laravel 13／PostgreSQL 18（開発・テスト。12/21 まで MySQL 8.4 でもテストを流す。SQL は両方で動く書き方にする）／Breeze（Blade）＋Alpine.js＋Tailwind CSS v3＋Vite
+- WSL2＋Docker＋Laravel Sail／PHP 8.5（公開環境の `Dockerfile` は `php:8.5.12-apache` と版まで書く。PHP のセキュリティ修正が出たら上げ、開発環境も `sail build --no-cache`）／Laravel 13／PostgreSQL 18（開発・テスト・公開環境。12/21 まで MySQL 8.4 でもテストを流す。SQL は両方で動く書き方にする）／Breeze（Blade）＋Alpine.js＋Tailwind CSS v3＋Vite
 - `.env` は `APP_URL=http://localhost`（`:8000` にすると写真が出ない）。`.env` はコミットしない
 - 外部サービス：地図 Leaflet＋OpenStreetMap（帰属表示）、カルテの天気予報 MET Norway（User-Agent で名乗る・帰属表示）、釣行の天候 Open-Meteo
 - メール：会員登録の確認とパスワード再設定。公開環境は Brevo の SMTP（**ポート 2525**。Render の無料のプランは 587 番が止められている）、開発環境は Mailpit（http://localhost:8025）
@@ -105,10 +105,10 @@
 
 ## 公開環境と運用
 
-- お試し環境：https://fishing-log-hasx.onrender.com（Render 無料＋Aiven の MySQL＋Cloudflare R2）。**main に push すると自動で公開し直す**。起動のたびに `docker/start.sh` がマイグレーションとお試しデータの準備をする
-- **開かないときは、まず Aiven の `fishinglog-db` が Powered off になっていないか見る**（Power on で戻る）
+- お試し環境：https://fishing-log-hasx.onrender.com（Render 無料＋Aiven の PostgreSQL（`fishinglog-pg`）＋Cloudflare R2）。**main に push すると自動で公開し直す**。起動のたびに `docker/start.sh` がマイグレーションとお試しデータの準備をする
+- **開かないときは、まず Aiven の `fishinglog-pg` が Powered off になっていないか見る**（Power on で戻る）
 - 死活監視は UptimeRobot（5分おき）、予備に GitHub Actions の keep-alive
-- バックアップ：GitHub Actions（`.github/workflows/backup.yml`）が毎日 4:07 に DB と写真を R2 の `fishinglog-backups` に写し、空の MySQL に戻して件数を確かめる。戻し方は `docs/backup.md`
+- バックアップ：GitHub Actions（`.github/workflows/backup.yml`）が毎日 4:07 に DB と写真を R2 の `fishinglog-backups` に写し、空の PostgreSQL に戻して件数を確かめる。戻し方は `docs/backup.md`
 - 毎月の初めに点検する（`docs/operations.md`。結果は GitHub の Issue に残す）。報告は3日以内に確かめる。鍵は毎年10月に作り直す
 - 本番として使うときは `docs/release-plan.md` のとおりに移る（費用は Notion にだけ書く）
 
