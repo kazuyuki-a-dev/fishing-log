@@ -72,4 +72,16 @@ class StartupLockTest extends TestCase
         // 公開環境の起動の手順で、マイグレーションは同時に1つだけ動く
         $this->assertStringContainsString('php artisan migrate --force --isolated', file_get_contents(base_path('docker/start.sh')));
     }
+
+    public function test_cache_table_is_created_before_isolated_migrate(): void
+    {
+        // --isolated は cache_locks の表で鍵をかけるので、空のデータベースでは先に cache の表を作っておく（#242）
+        $script = file_get_contents(base_path('docker/start.sh'));
+        $cacheMigration = 'database/migrations/0001_01_01_000001_create_cache_table.php';
+
+        $this->assertFileExists(base_path($cacheMigration));
+        $cacheStep = strpos($script, 'php artisan migrate --force --path='.$cacheMigration);
+        $this->assertNotFalse($cacheStep, 'cache の表を先に作る手順がない');
+        $this->assertLessThan(strpos($script, 'php artisan migrate --force --isolated'), $cacheStep);
+    }
 }
