@@ -21,6 +21,10 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# 先に cache の表（cache・cache_locks）だけを作る。--isolated は cache_locks の表で鍵をかけるので、
+# 空のデータベースでは表がなくて失敗する（#242）。もう作ってあれば何もしない
+php artisan migrate --force --path=database/migrations/0001_01_01_000001_create_cache_table.php
+
 # データベースの表を作る・最新にする
 # --isolated：複数のインスタンスが同時に起動しても、マイグレーションは1つだけが動く（ほかは待たずに終わる。#172）
 php artisan migrate --force --isolated
