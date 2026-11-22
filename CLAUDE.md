@@ -47,7 +47,7 @@
 
 ## 環境
 
-- WSL2＋Docker＋Laravel Sail／PHP 8.5（公開環境の `Dockerfile` は `php:8.5.12-apache` と版まで書く。PHP のセキュリティ修正が出たら上げ、開発環境も `sail build --no-cache`）／Laravel 13／MySQL 8.4／Breeze（Blade）＋Alpine.js＋Tailwind CSS v3＋Vite
+- WSL2＋Docker＋Laravel Sail／PHP 8.5（公開環境の `Dockerfile` は `php:8.5.12-apache` と版まで書く。PHP のセキュリティ修正が出たら上げ、開発環境も `sail build --no-cache`）／Laravel 13／PostgreSQL 18（開発・テスト。12/21 まで MySQL 8.4 でもテストを流す。SQL は両方で動く書き方にする）／Breeze（Blade）＋Alpine.js＋Tailwind CSS v3＋Vite
 - `.env` は `APP_URL=http://localhost`（`:8000` にすると写真が出ない）。`.env` はコミットしない
 - 外部サービス：地図 Leaflet＋OpenStreetMap（帰属表示）、カルテの天気予報 MET Norway（User-Agent で名乗る・帰属表示）、釣行の天候 Open-Meteo
 - メール：会員登録の確認とパスワード再設定。公開環境は Brevo の SMTP（**ポート 2525**。Render の無料のプランは 587 番が止められている）、開発環境は Mailpit（http://localhost:8025）
