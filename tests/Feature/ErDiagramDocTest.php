@@ -38,8 +38,10 @@ class ErDiagramDocTest extends TestCase
     public function test_every_app_table_is_in_the_diagram(): void
     {
         // 同じ MySQL に開発用のデータベースもあるので、テスト用のデータベースの表だけを見る
+        // PostgreSQL は、データベースの中の public という置き場所（スキーマ）の表を見る（#241）
+        $schema = DB::getDriverName() === 'pgsql' ? 'public' : DB::connection()->getDatabaseName();
         $tables = collect(Schema::getTables())
-            ->where('schema', DB::connection()->getDatabaseName())
+            ->where('schema', $schema)
             ->pluck('name')->diff(self::FRAMEWORK_TABLES)->sort()->values()->all();
         $this->assertContains('spot_local_info_changes', $tables);
 
