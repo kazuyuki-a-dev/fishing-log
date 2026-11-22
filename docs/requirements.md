@@ -39,7 +39,7 @@
 | 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、PostgreSQL 18 と MySQL 8.4（MySQL は 2026-12-21 まで）、Node 24）。push のたびに、両方のデータベースで全部のテストを流す（`.github/workflows/tests.yml`） |
 | 画面 | 開発環境（Laravel Sail、Chrome）。スマホ幅は Chrome の開発者ツールで 360px |
 
-**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#40075875806](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/40075875806)（2026-10-24、408 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
+**結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#44982844894](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/44982844894)（2026-11-22、PostgreSQL と MySQL のそれぞれで 411 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。
 
 ## 見方
 
