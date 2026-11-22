@@ -27,7 +27,7 @@ class SeasonHeatmap
     {
         $counts = $this->query($user, $scope, $prefecture)
             // 釣果は1行が1匹なので、行の数が匹数。釣行は同じものを2回数えない（DISTINCT）
-            ->selectRaw('catches.fish_species as species, MONTH(trips.went_at) as month, COUNT(*) as fish_count, COUNT(DISTINCT trips.id) as trip_count')
+            ->selectRaw('catches.fish_species as species, EXTRACT(MONTH FROM trips.went_at) as month, COUNT(*) as fish_count, COUNT(DISTINCT trips.id) as trip_count')
             ->groupBy('species', 'month')
             ->get();
 
@@ -53,7 +53,7 @@ class SeasonHeatmap
             ->whereIn('catches.trip_id', (clone $trips)->reorder()->select('trips.id'));
 
         $counts = $base()
-            ->selectRaw('catches.fish_species as species, MONTH(trips.went_at) as month, COUNT(*) as fish_count, COUNT(DISTINCT trips.id) as trip_count')
+            ->selectRaw('catches.fish_species as species, EXTRACT(MONTH FROM trips.went_at) as month, COUNT(*) as fish_count, COUNT(DISTINCT trips.id) as trip_count')
             ->groupBy('species', 'month')
             ->get();
 

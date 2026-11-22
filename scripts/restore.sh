@@ -30,10 +30,11 @@ if [ "$answer" != "yes" ]; then
   exit 1
 fi
 
-# 1. データベースを戻す（バックアップの中に、表を作り直す命令も入っている）
-docker compose exec -T mysql sh -c \
-  'exec mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" 2>/dev/null' \
-  < "$db"
+# 1. データベースを戻す（バックアップの中に、表を消して作り直す命令も入っている。#241 で PostgreSQL にした）
+# 2026-11-22 より前のバックアップは MySQL の形なので、この台本では戻せない
+docker compose exec -T pgsql sh -c \
+  'exec psql -q -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+  < "$db" > /dev/null
 
 # 2. 写真を戻す（今の写真を消してから、バックアップの写真を広げる）
 rm -rf storage/app/public/catches

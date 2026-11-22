@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Report;
 use App\Services\NotificationPresenter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +26,16 @@ class AppServiceProvider extends ServiceProvider
     {
         // 公開環境では、リンクや写真の URL を https で作る（Render は https で受けて、中では http で渡してくるため。#136）
         URL::forceHttps($this->app->isProduction());
+
+        // URL の番号のところは数字だけにする。文字が来たらページがない（404）にする
+        // PostgreSQL は、番号の列を文字で探すとエラー（500）になるため（MySQL は見つからないだけだった。#241）
+        Route::patterns([
+            'spot' => '[0-9]+',
+            'trip' => '[0-9]+',
+            'report' => '[0-9]+',
+            'change' => '[0-9]+',
+            'id' => '[0-9]+',
+        ]);
 
         // どの画面のナビにも、ベルマークの未読件数を渡す（FN-18）
         View::composer('layouts.navigation', function ($view) {

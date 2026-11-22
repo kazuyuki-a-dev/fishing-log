@@ -22,9 +22,11 @@ services:
         networks:
             - sail
         depends_on:
+            - pgsql
             - mysql
             - mailpit
     mysql:
+        # 2026-12-21 まで、MySQL に戻すときの確かめ用に残す（#241）
         image: 'mysql:8.4'
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
@@ -49,6 +51,25 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+    pgsql:
+        # 開発とテストのデータベース（公開環境の Aiven と同じ PostgreSQL。#241）
+        image: 'postgres:18-alpine'
+        ports:
+            - '${FORWARD_PGSQL_PORT:-5432}:5432'
+        environment:
+            PGPASSWORD: '${DB_PASSWORD:-secret}'
+            POSTGRES_DB: '${DB_DATABASE}'
+            POSTGRES_USER: '${DB_USERNAME}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+        volumes:
+            - 'sail-pgsql:/var/lib/postgresql'
+            - './vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
+        networks:
+            - sail
+        healthcheck:
+            test: ["CMD", "pg_isready", "-q", "-d", "${DB_DATABASE}", "-U", "${DB_USERNAME}"]
+            retries: 3
+            timeout: 5s
     mailpit:
         # 開発用：届くはずのメールを受け止めて、http://localhost:8025 で見せる（本物には送らない。#202）
         image: 'axllent/mailpit:v1.31.6'
@@ -61,5 +82,7 @@ networks:
     sail:
         driver: bridge
 volumes:
+    sail-pgsql:
+        driver: local
     sail-mysql:
         driver: local

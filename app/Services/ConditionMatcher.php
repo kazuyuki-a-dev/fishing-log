@@ -31,13 +31,13 @@ class ConditionMatcher
     private const CAUGHT_SQL = 'EXISTS (SELECT 1 FROM catches WHERE catches.trip_id = trips.id)';
 
     /** ダミーの人の釣行かどうか（#211） */
-    private const SAMPLE_SQL = 'trips.user_id IN (SELECT id FROM users WHERE users.is_sample = 1)';
+    private const SAMPLE_SQL = 'trips.user_id IN (SELECT id FROM users WHERE users.is_sample = TRUE)';
 
-    /** 記録の内訳で数える項目と、データベースでの書き方（#211） */
+    /** 記録の内訳で数える項目と、データベースでの書き方（#211）。年は MySQL でも PostgreSQL でも動く EXTRACT で取る（#241） */
     private const BREAKDOWN = [
         'time_of_day' => 'trips.time_of_day',
         'tide' => 'trips.tide',
-        'year' => 'YEAR(trips.went_at)',
+        'year' => 'EXTRACT(YEAR FROM trips.went_at)',
     ];
 
     /**
@@ -72,7 +72,7 @@ class ConditionMatcher
         $season = self::seasonLabel($date);
         // 何年でもよい。月だけを見る
         $inSeason = fn(Trip $trip) => in_array($trip->went_at->month, $months, true);
-        $seasonScope = fn(Builder $query) => $query->whereRaw('MONTH(trips.went_at) IN (?, ?, ?)', $months);
+        $seasonScope = fn(Builder $query) => $query->whereRaw('EXTRACT(MONTH FROM trips.went_at) IN (?, ?, ?)', $months);
 
         $levels = [
             'exact' => [

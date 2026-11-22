@@ -23,7 +23,7 @@ class DashboardController extends Controller
         $summary = [
             'catchCount' => $myCatches()->count(),
             'speciesCount' => $myCatches()->distinct()->count('fish_species'),
-            'tripDays' => (int) $user->trips()->selectRaw('COUNT(DISTINCT DATE(went_at)) as days')->value('days'),
+            'tripDays' => (int) $user->trips()->selectRaw('COUNT(DISTINCT CAST(went_at AS DATE)) as days')->value('days'),
         ];
 
         // 魚種ごとの自己ベスト（#170）。ダッシュボードには大きい順に3つ。いちばん上が「自分の最大サイズ」

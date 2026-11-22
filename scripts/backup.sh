@@ -14,9 +14,10 @@ export WWWGROUP="${WWWGROUP:-$(id -g)}"
 stamp=$(date +%Y%m%d-%H%M%S)
 mkdir -p backups storage/app/public/catches
 
-# 1. データベース（mysql の入れ物の中で mysqldump を動かし、結果をファイルに書く）
-docker compose exec -T mysql sh -c \
-  'exec mysqldump --no-tablespaces --single-transaction -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" 2>/dev/null' \
+# 1. データベース（pgsql の入れ物の中で pg_dump を動かし、結果をファイルに書く。#241 で MySQL から変えた）
+# --clean --if-exists：戻すときに、今の表を消してから作り直す命令も入れる
+docker compose exec -T pgsql sh -c \
+  'exec pg_dump --clean --if-exists --no-owner -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   > "backups/db-${stamp}.sql"
 
 # 2. 写真（catches フォルダを1つのファイルに固める）

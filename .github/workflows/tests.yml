@@ -16,8 +16,33 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
-    # テスト用のデータベース。開発（Sail）・公開環境と同じ MySQL 8.4
+    # 同じテストを、PostgreSQL（開発・公開環境）と MySQL 8.4 の両方で流す（#241）
+    # MySQL は、2026-12-21 に Aiven の MySQL が終わるまで、戻せることを確かめるために残す
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - db: pgsql
+            port: 5432
+          - db: mysql
+            port: 3306
+    name: テスト（${{ matrix.db }}）
+
+    # テスト用のデータベース。両方を立て、使うほうを DB_CONNECTION で選ぶ
     services:
+      pgsql:
+        image: postgres:18
+        env:
+          POSTGRES_DB: testing
+          POSTGRES_USER: sail
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U sail -d testing"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
       mysql:
         image: mysql:8.4
         env:
@@ -36,11 +61,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # PHP 8.5 と、アプリに要る部品（写真の gd・exif、MySQL の pdo_mysql、zip）
+      # PHP 8.5 と、アプリに要る部品（写真の gd・exif、PostgreSQL の pdo_pgsql、MySQL の pdo_mysql、zip）
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: gd, exif, pdo_mysql, zip
+          extensions: gd, exif, pdo_pgsql, pdo_mysql, zip
           coverage: none
 
       - name: PHP の版を表示する
@@ -66,8 +91,9 @@ jobs:
 
       - name: テストを流す
         env:
+          DB_CONNECTION: ${{ matrix.db }}
           DB_HOST: 127.0.0.1
-          DB_PORT: 3306
+          DB_PORT: ${{ matrix.port }}
           DB_USERNAME: sail
           DB_PASSWORD: password
         run: php artisan test --log-junit junit.xml
@@ -86,7 +112,7 @@ jobs:
           errors = int(suite.get("errors", 0))
           skipped = int(suite.get("skipped", 0))
           passed = total - failures - errors - skipped
-          print("## テストの結果\n")
+          print("## テストの結果（${{ matrix.db }}）\n")
           print("| 全部 | 成功 | 失敗 | エラー | とばした | 時間 |")
           print("|---|---|---|---|---|---|")
           print(f"| {total} | {passed} | {failures} | {errors} | {skipped} | {float(suite.get('time', 0)):.1f} 秒 |")
@@ -97,6 +123,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.db }}
           path: junit.xml
           if-no-files-found: ignore

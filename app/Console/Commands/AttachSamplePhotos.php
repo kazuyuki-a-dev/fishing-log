@@ -74,12 +74,14 @@ class AttachSamplePhotos extends Command
         }
 
         // 全体公開の釣行（釣り場も公開）の、写真がない釣果。新しい順（フィードの上のほうに出るように）
+        // 釣行と釣り場は join でつなぐ（入れ子の whereHas は、PostgreSQL で統計がないときにとても遅くなった。#241）
         $catches = FishCatch::query()
+            ->join('trips', 'trips.id', '=', 'catches.trip_id')
+            ->join('spots', 'spots.id', '=', 'trips.spot_id')
             ->whereNull('catches.image_path')
             ->whereIn('catches.fish_species', array_keys(self::PHOTOS))
-            ->whereHas('trip', fn($trip) => $trip->where('visibility', 'public')
-                ->whereHas('spot', fn($spot) => $spot->where('visibility', 'public')))
-            ->join('trips', 'trips.id', '=', 'catches.trip_id')
+            ->where('trips.visibility', 'public')
+            ->where('spots.visibility', 'public')
             ->orderByDesc('trips.went_at')
             ->orderBy('catches.id')
             ->select('catches.*')
