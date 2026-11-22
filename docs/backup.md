@@ -5,11 +5,11 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog バックアップと戻し方 |
-| 版 | 2.1 |
+| 版 | 2.2 |
 | 作成日 | 2026-10-03 |
 | 最終更新日 | 2026-11-22 |
 | 作成者 | kazuyuki-a-dev |
-| 対象 | データベース（MySQL）と、アップロードした写真 |
+| 対象 | データベース（PostgreSQL）と、アップロードした写真 |
 
 ## 改訂履歴
 
@@ -18,6 +18,7 @@
 | 1.0 | 2026-10-03 | 初版（開発環境の手順） | #71 |
 | 2.0 | 2026-10-23 | 公開環境の毎日の自動バックアップ・戻す試し・本番に戻す手順を足した | #204 |
 | 2.1 | 2026-11-22 | 開発環境のデータベースを PostgreSQL にしたので、`scripts/backup.sh`・`restore.sh` を pg_dump・psql に変えた | #241 |
+| 2.2 | 2026-11-22 | 公開環境のデータベースを Aiven の PostgreSQL にしたので、毎日のバックアップと本番に戻す手順を pg_dump・psql に変えた | #242 |
 
 ## まとめ
 
@@ -37,11 +38,11 @@
 
 ### 何を・いつ・どこに
 
-- **データベース**：毎日 4:07 に、Aiven の MySQL を `mysqldump` で書き出して圧縮し、`fishinglog-backups` の `db/fishinglog_日付_時刻.sql.gz` に置きます
+- **データベース**：毎日 4:07 に、Aiven の PostgreSQL（`fishinglog-pg`）を `pg_dump` で書き出して圧縮し、`fishinglog-backups` の `db/fishinglog_日付_時刻.sql.gz` に置きます
   - 30日より古いものは、R2 の決まり（ライフサイクルのルール）で自動で消えます
 - **写真**：写真のバケット（`fishinglog-photos`）を、`fishinglog-backups` の `photos/` に写します
   - 写す側では消さないので、間違って消した写真も残ります（退会などで消した写真は、写しから手で消します。下の「退会した人の写真」）
-- **戻せるかの確かめ**：取ったバックアップを、Actions の中の空の MySQL に戻し、アプリのテーブルが全部あるかと、会員・釣り場・釣行・釣果の件数を数えます。会員か釣り場が0件、またはテーブルが足りないと失敗にします。写真は、写しの枚数が元より少ないと失敗にします
+- **戻せるかの確かめ**：取ったバックアップを、Actions の中の空の PostgreSQL に戻し、アプリのテーブルが全部あるかと、会員・釣り場・釣行・釣果の件数を数えます。会員か釣り場が0件、またはテーブルが足りないと失敗にします。写真は、写しの枚数が元より少ないと失敗にします
 - **結果**：GitHub の [Actions → バックアップ](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/backup.yml) の実行を開くと、Summary に「本番と戻したものの件数」「ファイルの大きさ」「写真の枚数」が出ます
 - **失敗したとき**：GitHub からメールが届きます（下の「失敗したとき」）
 
@@ -78,10 +79,13 @@
 1. **今の状態を残す**：GitHub の Actions → バックアップ → **Run workflow** で、今の状態のバックアップを取る（成功するまで待つ）
 2. **戻すファイルを決める**：Cloudflare の R2 → `fishinglog-backups` → `db/` から、戻したい日のファイルを選んでダウンロードする
 3. **アプリを止める**：Render の fishing-log → Settings → **Suspend Web Service**（戻している途中に書き込まれないように）
-4. **戻す**：手元のパソコン（WSL）で、Aiven の接続の情報を使って入れる。証明書は Aiven の画面から `ca.pem` としてダウンロードしておく
+4. **戻す**：手元のパソコン（WSL）で、Aiven の接続の情報を使って入れる。証明書は Aiven の画面から `ca.pem` としてダウンロードしておく。今の表を消してから（1行目）、バックアップを入れる（2行目）
 
-       gunzip -c fishinglog_日付_時刻.sql.gz | docker run --rm -i -e MYSQL_PWD='Aivenのパスワード' -v "$PWD:/work" mysql:8.4 \
-         mysql --host=Aivenのホスト --port=Aivenのポート --user=avnadmin --ssl-mode=VERIFY_CA --ssl-ca=/work/ca.pem Aivenのデータベース名
+       export PGHOST=Aivenのホスト PGPORT=Aivenのポート PGUSER=avnadmin PGDATABASE=Aivenのデータベース名 PGPASSWORD='Aivenのパスワード' PGSSLMODE=verify-full PGSSLROOTCERT=/work/ca.pem
+       docker run --rm -i -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD -e PGSSLMODE -e PGSSLROOTCERT -v "$PWD:/work" postgres:18 \
+         psql -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+       gunzip -c fishinglog_日付_時刻.sql.gz | docker run --rm -i -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD -e PGSSLMODE -e PGSSLROOTCERT -v "$PWD:/work" postgres:18 \
+         psql -q -v ON_ERROR_STOP=1
 
    - パスワードは、打ち終わったら端末の履歴（`history`）から消すか、`.env` のような Git に入れないファイルから読み込む
 5. **アプリを動かす**：Render の **Resume Web Service**
@@ -110,7 +114,7 @@
 
 1. GitHub から「Run failed: バックアップ」のメールが届く
 2. Actions → バックアップ → 失敗した実行を開き、赤い × の手順のログを見る
-   - 「データベースを書き出す」で失敗：Aiven が止まっていないか（Powered off なら Power on）、パスワードを作り直していないか
+   - 「データベースを書き出す」で失敗：Aiven の `fishinglog-pg` が止まっていないか（Powered off なら Power on）、パスワードを作り直していないか
    - 「戻せるかを試す」で失敗：バックアップの中身がおかしい。前の日のバックアップがあるか確かめ、原因が分かるまで本番を変える作業はしない
    - 「R2 に置く」「写真を写す」で失敗：バックアップ専用の鍵が切れていないか・消していないか
 3. 直したら、**Run workflow** で手で動かして、成功するのを確かめる

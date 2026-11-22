@@ -102,7 +102,7 @@
 
 | 種類     | 使ったもの                                                                                                                                            |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| サーバー | PHP 8.5 / Laravel 13 / PostgreSQL 18（公開環境は 2026-12 に MySQL 8.4 から引っ越し）                                                                  |
+| サーバー | PHP 8.5 / Laravel 13 / PostgreSQL 18（公開環境は 2026-11 に MySQL 8.4 から引っ越し）                                                                  |
 | 画面     | Laravel Breeze（Blade）/ Alpine.js / Tailwind CSS v3 / Vite                                                                                           |
 | 開発環境 | WSL2（Ubuntu）＋ Docker ＋ Laravel Sail                                                                                                               |
 | 写真     | Intervention Image v4（保存するときに描き直して Exif を消す）、ExifReader（ブラウザで撮影日時と位置を読む）、heic-to（iPhone の HEIC を JPEG に変換） |
@@ -135,7 +135,7 @@ cp .env.example .env
 
 ブラウザで http://localhost を開きます。開発用のログイン（`test@example.com` ／ `password` など）・入るデータ・気をつけること（`sail down -v` を使わない、など）は [`docs/development.md`](docs/development.md) にあります。
 
-**テスト**：`./vendor/bin/sail artisan test`（411 件。公開範囲とアクセス制御を中心に、計算や入力チェックも）。push のたびに GitHub Actions（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）でも全部のテストを流しています。いちばん上のバッジが緑なら main はすべて成功で、[Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) の Summary で件数を見られます。
+**テスト**：`./vendor/bin/sail artisan test`（412 件。公開範囲とアクセス制御を中心に、計算や入力チェックも）。push のたびに GitHub Actions（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）でも全部のテストを流しています。いちばん上のバッジが緑なら main はすべて成功で、[Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) の Summary で件数を見られます。
 
 ## 資料の一覧
 
