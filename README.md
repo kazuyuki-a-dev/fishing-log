@@ -14,6 +14,7 @@
 | --- | --- |
 | URL | https://fishing-log-hasx.onrender.com |
 | お試し用アカウント | メールアドレス `demo@example.com` ／ パスワード `fishinglog-demo` |
+| 最初の表示 | しばらく開かれていないと、無料のサーバーが眠っているため、1分ほどかかります |
 
 | 付箋 | 試してほしいこと |
 | --- | --- |

@@ -40,7 +40,7 @@
 
 | # | 項目 | 今（お試し環境） | 本番では | 変えること | 優先度 |
 |---|---|---|---|---|---|
-| 1 | アプリのサーバー | Render の無料のプラン。15分使われないと止まり、UptimeRobot で5分おきに開いて起こしている | 止まらない有料のプラン | Render のプランを上げる。UptimeRobot は「止まったら知らせる」役だけにする。起こすための GitHub Actions（keep-alive）は止める | 必須 |
+| 1 | アプリのサーバー | Render の無料のプラン。15分使われないと眠り、次に開いたときに1分ほどかかる（無料の時間は全サービスの合計で月750時間なので、一日中は起こさない。#249） | 止まらない有料のプラン | Render のプランを上げる。UptimeRobot の死活監視を戻す（5分おき）。起こすための GitHub Actions（keep-alive）は、データベースも有料にしたら止める | 必須 |
 | 2 | データベース | Aiven の無料のプラン（1GB、使われないと止められる、SLA なし） | 止められない有料のプラン | Aiven のプランを上げる（データはそのまま移せる）。バックアップの保持の期間を確かめる | 必須 |
 | 3 | ドメイン | `fishing-log-hasx.onrender.com`（Render の住所） | 自分のドメイン（例：`fishinglog.jp`） | ドメインを取り、Render に設定する（HTTPS は Render が用意する）。`APP_URL` を変える | 推奨 |
 | 4 | メールの送り主 | 無料の Gmail（`fishinglog.dev@gmail.com`）。迷惑メールに入りやすい | 自分のドメインのアドレス（例：`no-reply@fishinglog.jp`） | Brevo でドメインを認証し（DKIM・DMARC の設定）、`MAIL_FROM_ADDRESS` を変える | 必須 |

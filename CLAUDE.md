@@ -107,7 +107,7 @@
 
 - お試し環境：https://fishing-log-hasx.onrender.com（Render 無料＋Aiven の PostgreSQL（`fishinglog-pg`）＋Cloudflare R2）。**main に push すると自動で公開し直す**。起動のたびに `docker/start.sh` がマイグレーションとお試しデータの準備をする
 - **開かないときは、まず Aiven の `fishinglog-pg` が Powered off になっていないか見る**（Power on で戻る）
-- 死活監視は UptimeRobot（5分おき）、予備に GitHub Actions の keep-alive
+- 死活監視は GitHub Actions の keep-alive（3時間おき。失敗すると GitHub からメール）。UptimeRobot は止めている。**Render の無料の時間は全サービスの合計で月750時間**なので、一日中起こすしくみは付けない（眠っているときは最初の表示に1分ほどかかる。#249）
 - バックアップ：GitHub Actions（`.github/workflows/backup.yml`）が毎日 4:07 に DB と写真を R2 の `fishinglog-backups` に写し、空の PostgreSQL に戻して件数を確かめる。戻し方は `docs/backup.md`
 - 毎月の初めに点検する（`docs/operations.md`。結果は GitHub の Issue に残す）。報告は3日以内に確かめる。鍵は毎年10月に作り直す
 - 本番として使うときは `docs/release-plan.md` のとおりに移る（費用は Notion にだけ書く）

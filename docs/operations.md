@@ -8,9 +8,9 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 運用の手順書 |
-| 版 | 1.3 |
+| 版 | 1.4 |
 | 作成日 | 2026-10-23 |
-| 最終更新日 | 2026-11-22 |
+| 最終更新日 | 2026-11-27 |
 | 作成者 | kazuyuki-a-dev |
 | 対象 | 公開環境 https://fishing-log-hasx.onrender.com と、そのまわりの外部サービス |
 
@@ -22,6 +22,7 @@
 | 1.1 | 2026-10-24 | 会員登録の確認のメール（#213）を、メールが届かないときの手順と外部サービスの一覧に足した | #219 |
 | 1.2 | 2026-10-24 | README から、公開先の止まらないしくみと起動時の処理の説明を移した（「6. 外部サービスの一覧」） | #221 |
 | 1.3 | 2026-11-22 | 公開環境のデータベースを Aiven の MySQL（`fishinglog-db`）から PostgreSQL（`fishinglog-pg`）に変えた。「7. データベースの引っ越し」に、切りかえ・確かめ方・MySQL に戻す手順・片付けを書いた | #242 |
+| 1.4 | 2026-11-27 | Render の無料の時間（全サービスの合計で月750時間）に収めるため、UptimeRobot を止め、お試し環境が眠ることを受け入れた。死活監視を keep-alive の Actions に任せた | #249 |
 
 ---
 
@@ -46,12 +47,12 @@
 | 3 | R2 の `fishinglog-backups` の `db/` に、30日より古いファイルが残っていない | Cloudflare の R2 | ライフサイクルのルール `db-30days` を見直す |
 | 4 | 写しにだけ残っている写真（退会や削除で消した写真）を消す | 手元のパソコン（[`docs/backup.md`](backup.md) の「退会した人の写真」） | — |
 | 5 | テストのメールを1通送って届く（Brevo の SMTP キーは90日使わないと切れるため、毎月使って防ぐ） | お試し環境のログインの画面の「パスワードを忘れた方」に、自分の確認用の会員のアドレスを入れる | 「5. 障害のとき」の「メールが届かない」 |
-| 6 | 死活監視で、この1か月に止まった時間がない（あれば、原因をログで見る） | UptimeRobot のダッシュボード | 「5. 障害のとき」の「開かない」 |
+| 6 | 死活監視で、この1か月に開けなかった回がない（あれば、原因をログで見る） | GitHub の [Actions → お試し環境を開く](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/keep-alive.yml)（3時間おき。失敗は赤） | 「5. 障害のとき」の「開かない」 |
 | 7 | GitHub Actions のテストが main で成功している（README のバッジが緑） | GitHub の [Actions → テスト](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) | 失敗したテストを直す Issue を作る |
 | 8 | Dependabot の PR と、弱点の知らせ（alerts）が残っていない | GitHub の Pull requests と Security | CLAUDE.md の「Dependabot の PR が来たとき」の手順で対応 |
 | 9 | 管理画面の未対応の報告が0件（3日を過ぎたものがない） | お試し環境の管理画面 `/admin/reports` | 「3. 投稿と現地の情報の確認」 |
 | 10 | 鍵の期限が近くない（下の「4. 鍵と期限の管理」の表） | この手順書の表 | 期限の1か月前までに作り直す |
-| 11 | Render の無料の時間・Aiven・R2 の使用量が、無料の枠に収まっている | Render：ワークスペースの Billing（無料のインスタンス時間 月750時間）／Aiven：fishinglog-pg の Overview（ディスクの使用量。プランが Free のままか）／R2：R2 のトップ（保存量 10GB・Class A 月100万回・Class B 月1000万回） | 収まらなくなりそうなら [`docs/release-plan.md`](release-plan.md) を見て、プランを考える。**Render は1つのサービスを24時間動かすと月744時間で、750時間の枠にほぼいっぱい**。同じワークスペースで無料のサービスを増やさない |
+| 11 | Render の無料の時間・Aiven・R2 の使用量が、無料の枠に収まっている | Render：ワークスペースの Billing（無料のインスタンス時間 月750時間）／Aiven：fishinglog-pg の Overview（ディスクの使用量。プランが Free のままか）／R2：R2 のトップ（保存量 10GB・Class A 月100万回・Class B 月1000万回） | 収まらなくなりそうなら [`docs/release-plan.md`](release-plan.md) を見て、プランを考える。**750時間はワークスペースのすべてのサービスの合計**。1つのサービスを24時間動かすと月744時間で、枠にほぼいっぱいになるので、眠らせないしくみ（5分おきの死活監視など）は付けない（#249。task-manager のデモと同じワークスペース） |
 
 ## 3. 投稿と現地の情報の確認
 
@@ -103,7 +104,7 @@
 
 ### お試し環境が開かない
 
-1. UptimeRobot から「Down」のメールが来ているか、Render の **Events** に失敗が出ていないかを見る
+1. GitHub から「お試し環境を開く」の失敗のメールが来ているか、Render の **Events** に失敗が出ていないかを見る（眠っているときは、起き上がるのに1分ほどかかる。1分待っても開かないときに次へ）
 2. Render の **Logs** を見る
    - 「データベースの住所が見つからない（getaddrinfo … failed）」→ Aiven の `fishinglog-pg` が **Powered off** になっていないか。なっていれば **Power on**（データは残る）
    - 「needs attention」・起動の失敗 → 直前の main への push が原因のことが多い。GitHub の main の最新のコミットと Actions のテストを見て、直すか `git revert` で戻して push する
@@ -134,18 +135,18 @@
 | サービス | 何に使っているか | 入れる人 | 無料の枠の決まりで気をつけること |
 |---|---|---|---|
 | GitHub | プログラムの置き場所・テストとバックアップの自動実行（Actions）・Dependabot | 開発者 | 60日間リポジトリに変更がないと、定期の Actions が止まる |
-| Render | アプリを動かす（main に push すると自動で公開し直す） | 開発者 | 15分使われないと止まる（UptimeRobot で起こしている）。SMTP の 587 番は使えない |
+| Render | アプリを動かす（main に push すると自動で公開し直す） | 開発者 | 15分使われないと眠る（次に開いたとき、起き上がるのに1分ほどかかる）。無料の時間はワークスペースの合計で月750時間。SMTP の 587 番は使えない |
 | Aiven | PostgreSQL のデータベース（`fishinglog-pg`。2026-11 に MySQL の `fishinglog-db` から引っ越し） | 開発者 | 使われていないと止められる（Powered off）。Event log の時刻は UTC |
 | Cloudflare R2 | 写真・バックアップの置き場所 | 開発者 | 10GB まで。消した写真を戻すしくみはない（バックアップで守る） |
 | Brevo | 会員登録・メールアドレスの変更のときの確認のメールと、パスワード再設定のメールを送る（SMTP） | 開発者 | 1日300通まで。送り主は無料の Gmail なので、迷惑メールに入ることがある |
 | Gmail（fishinglog.dev@gmail.com） | メールの送り主・Brevo の確認のメール | 開発者 | 2段階認証を入れておく |
-| UptimeRobot | 死活監視（5分おきに `/spots` を開く） | 開発者 | — |
+| UptimeRobot | 2026-11-27 から止めている（Pause）。5分おきに開くと一日中起きていて、Render の無料の時間を超えるため（#249） | 開発者 | 本番で有料のプランにしたら、死活監視として戻す |
 | MET Norway・Open-Meteo | 天気予報・釣行の天候 | （登録なし） | Open-Meteo は1日の回数の上限で断られることがある（そのときは空のまま保存） |
 | OpenStreetMap | 地図の画像 | （登録なし） | 帰属表示を出す |
 
 ### 止まらないしくみと、起動時の処理
 
-- 無料の枠は、しばらく使われないとアプリやデータベースが止まる。UptimeRobot で5分おきに `/spots` を開いて止まらないようにしている（止まったときは知らせが届く）。予備として、GitHub Actions でも3時間に1回開いている（`.github/workflows/keep-alive.yml`）。本番で使うときは、止まらない有料のプランにする（[`docs/release-plan.md`](release-plan.md) の項目 1・2）
+- 無料の枠は、しばらく使われないとアプリやデータベースが止まる。アプリ（Render）は眠ることを受け入れ、次に開いた人が1分ほど待つ（#249。一日中起こしておくと、Render の無料の時間を超える）。データベース（Aiven）が止められないように、GitHub Actions で3時間に1回 `/spots` を開いている（`.github/workflows/keep-alive.yml`）。開けなかったときは Actions が失敗し、GitHub からメールが届くので、これを死活監視にしている（気づくまで最大3時間）。本番で使うときは、止まらない有料のプランにする（[`docs/release-plan.md`](release-plan.md) の項目 1・2）
 - 起動のたびに、マイグレーションとお試しデータの準備をしている（`docker/start.sh`）。複数のインスタンスで同時に起動しても重ならないように、マイグレーションは `--isolated`、お試しデータの準備はロック（`demo-data`・`sample-photos`）で1つずつ動かしている。規模を広げるときは、デプロイのときに1回だけ動く処理（Render の Pre-Deploy Command など）に分ける（[`docs/release-plan.md`](release-plan.md) の項目 6）
 
 ## 7. データベースの引っ越し（2026-11、#242）
