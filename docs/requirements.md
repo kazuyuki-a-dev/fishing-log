@@ -8,9 +8,9 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 要件ごとの対応表 |
-| 版 | 1.13 |
+| 版 | 1.14 |
 | 作成日 | 2026-10-23 |
-| 最終更新日 | 2026-10-23 |
+| 最終更新日 | 2026-11-27 |
 | 作成者 | kazuyuki-a-dev |
 | 対象 | 定義書 docs/spec.md の機能要件（FN）・非機能要件（NF）・画面（PG） |
 
@@ -32,12 +32,13 @@
 | 1.11 | 2026-10-24 | FN-11 の記録の内訳をプランナーと同じ形にした。FN-14 に変更の履歴の直し（改行だけの違いは残さない・長いメモは短く出す）を書いた | #223 |
 | 1.12 | 2026-11-22 | 自動テストの環境を PostgreSQL 18 と MySQL 8.4 の両方にした（データベースの引っ越し）。テストの件数を 411 にした | #241 |
 | 1.13 | 2026-11-22 | NF-03 の備考の backup.md の版を 2.2 にした（公開環境のバックアップを PostgreSQL 用にした） | #242 |
+| 1.14 | 2026-11-27 | 自動テストの環境から MySQL 8.4 を外した（引っ越しのあとの片付け）。テストの件数を 412 にした | #251 |
 
 ## 確認した環境
 
 | 確認方法 | 環境 |
 |---|---|
-| 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、PostgreSQL 18 と MySQL 8.4（MySQL は 2026-12-21 まで）、Node 24）。push のたびに、両方のデータベースで全部のテストを流す（`.github/workflows/tests.yml`） |
+| 自動テスト | GitHub Actions（ubuntu-24.04、PHP 8.5.12、PostgreSQL 18、Node 24）。push のたびに、全部のテストを流す（`.github/workflows/tests.yml`） |
 | 画面 | 開発環境（Laravel Sail、Chrome）。スマホ幅は Chrome の開発者ツールで 360px |
 
 **結果の根拠**：この版の自動テストの結果は、GitHub Actions の実行の記録 [#44982844894](https://github.com/kazuyuki-a-dev/fishing-log/actions/runs/44982844894)（2026-11-22、PostgreSQL と MySQL のそれぞれで 411 件成功・失敗 0）。最新の結果は README のいちばん上のバッジと [Actions の画面](https://github.com/kazuyuki-a-dev/fishing-log/actions/workflows/tests.yml) で見られます（実行の画面の Summary に、成功・失敗の件数の表）。

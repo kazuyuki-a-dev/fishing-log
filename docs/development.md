@@ -7,9 +7,9 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 開発環境の手引き |
-| 版 | 1.1 |
+| 版 | 1.2 |
 | 作成日 | 2026-10-24（README から移した） |
-| 最終更新日 | 2026-11-22 |
+| 最終更新日 | 2026-11-27 |
 | 作成者 | kazuyuki-a-dev |
 
 ## 改訂履歴
@@ -18,6 +18,7 @@
 |---|---|---|---|
 | 1.0 | 2026-10-24 | README の「開発用のログイン」「気をつけること」「データが増えたときの確かめ」をこの資料に移した | #221 |
 | 1.1 | 2026-11-22 | データベースを PostgreSQL にしたことと、MySQL でテストを流す方法を足した | #241 |
+| 1.2 | 2026-11-27 | MySQL の箱を片付けたので、MySQL でテストを流す方法を消した | #251 |
 
 ---
 
@@ -28,11 +29,7 @@
 - **`.env` の `APP_URL` は `http://localhost` のままにする**。`http://localhost:8000` にすると写真が表示されません
 - **`sail down -v` は使わない**。データベースが消えます。止めるときは `sail stop`
 - データベースは **PostgreSQL 18**（Sail の `pgsql`）。`.env` は `DB_CONNECTION=pgsql`・`DB_HOST=pgsql`・`DB_PORT=5432`。中を見るときは `sail psql`
-- 2026-12-21 までは MySQL 8.4（Sail の `mysql`）も残しています。MySQL でもテストが通るかは、次のように確かめます（GitHub Actions でも両方で流しています）
-
-      sail exec -e DB_CONNECTION=mysql -e DB_HOST=mysql -e DB_PORT=3306 laravel.test php artisan test
-
-- 集計の SQL は、MySQL にしかない関数（`MONTH()`・`YEAR()`・`DATE_FORMAT()` など）を使わず、両方で動く `EXTRACT(MONTH FROM …)`・`CAST(… AS DATE)` で書きます
+- 前は MySQL 8.4 も使っていました（2026-11 に PostgreSQL へ引っ越し、#251 で片付け）。集計の SQL は、MySQL にしかない関数（`MONTH()`・`YEAR()`・`DATE_FORMAT()` など）を使わず、`EXTRACT(MONTH FROM …)`・`CAST(… AS DATE)` で書きます
 - `sail artisan migrate:fresh --seed` は今のデータを全部消します。打つ前に `scripts/backup.sh` でバックアップを取ってください（戻し方は [`docs/backup.md`](backup.md)）
 - 開発環境で送ったメール（確認のメール・パスワード再設定）は本物には届かず、Mailpit（届くはずのメールを受け止めて見せる道具）が受け止めます。http://localhost:8025 で中身を見られます
 
