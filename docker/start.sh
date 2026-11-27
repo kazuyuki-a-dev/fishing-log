@@ -9,10 +9,9 @@ sed -ri "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
 # Aiven のデータベースは暗号化した接続（SSL）が必要。証明書の中身を環境変数から受け取って、ファイルにする
-# MySQL は MYSQL_ATTR_SSL_CA、PostgreSQL は DB_SSLROOTCERT で同じファイルを使う（#241）
+# PostgreSQL は DB_SSLROOTCERT でこのファイルを使う（#241。MySQL 用の MYSQL_ATTR_SSL_CA は #251 で片付けた）
 if [ -n "$DB_SSL_CA_CONTENT" ]; then
     printf '%s\n' "$DB_SSL_CA_CONTENT" > /var/www/html/storage/db-ca.pem
-    export MYSQL_ATTR_SSL_CA=/var/www/html/storage/db-ca.pem
     export DB_SSLROOTCERT=/var/www/html/storage/db-ca.pem
 fi
 

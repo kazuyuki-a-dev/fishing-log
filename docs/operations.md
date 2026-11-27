@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書名 | FishingLog 運用の手順書 |
-| 版 | 1.4 |
+| 版 | 1.5 |
 | 作成日 | 2026-10-23 |
 | 最終更新日 | 2026-11-27 |
 | 作成者 | kazuyuki-a-dev |
@@ -23,6 +23,7 @@
 | 1.2 | 2026-10-24 | README から、公開先の止まらないしくみと起動時の処理の説明を移した（「6. 外部サービスの一覧」） | #221 |
 | 1.3 | 2026-11-22 | 公開環境のデータベースを Aiven の MySQL（`fishinglog-db`）から PostgreSQL（`fishinglog-pg`）に変えた。「7. データベースの引っ越し」に、切りかえ・確かめ方・MySQL に戻す手順・片付けを書いた | #242 |
 | 1.4 | 2026-11-27 | Render の無料の時間（全サービスの合計で月750時間）に収めるため、UptimeRobot を止め、お試し環境が眠ることを受け入れた。死活監視を keep-alive の Actions に任せた | #249 |
+| 1.5 | 2026-11-27 | 引っ越しのあとの片付けを済ませた（MySQL のテスト・箱・部品と、MySQL に戻す手順をなくした）。確かめ方の users を 18 にした | #251 |
 
 ---
 
@@ -181,20 +182,20 @@ Aiven の無料の MySQL（`fishinglog-db`）が 2026-12-21 に終わるため�
 1. Render の **Logs**：`migrate` が成功し、お試しデータを入れていて、エラーがない
 2. お試し環境：トップ・釣り場・カルテ・プランナー・フィードが開く。お試し用アカウントでログインできる。釣行を1件記録して写真を付け、そのあと消す
 3. **二重にならないか**：Render の Manual Deploy → **Restart service**。Logs が「データがあるので、お試しデータは入れません。」になり、件数が増えない
-4. Actions → バックアップ → **Run workflow**：成功し、Summary の件数が本番と戻したもので一致する（users 19・spots 138・trips 840。catches はシードした日で変わる）
+4. Actions → バックアップ → **Run workflow**：成功し、Summary の件数が本番と戻したもので一致する（users 18・spots 138・trips 840。catches はシードした日で変わる。切りかえ前の MySQL の 19 は、お試しデータの18人と、開発者が試しに登録した1人）
 5. 次の日の朝 4:07 の自動のバックアップも成功している
 
-### MySQL に戻す手順（2026-12-21 まで）
+### 結果
 
-コードは両方で動くので、戻すのは設定だけでよい。PostgreSQL のあいだに登録されたものは MySQL に移らない。
+- 2026-11-22 に切りかえた。11-23〜11-27 の毎日のバックアップがすべて成功し、件数も一致した
+- MySQL に戻す手順は、片付けのときに消した（#251。もう戻さない）
 
-1. Render の環境変数を、控えておいた MySQL の値に戻す（`DB_CONNECTION=mysql`。`DB_SSLMODE` は消す）→ 公開し直される
-2. GitHub の Secrets `BACKUP_DB_*` を MySQL の値に戻し、#242 のバックアップの台本のコミットを `git revert` して push する
-3. 上の「確かめ方」の 1・2・4 を行う
+### 引っ越しのあとの片付け（2026-11-27 に済ませた。#251）
 
-### 引っ越しのあとの片付け（2026-12-21 のあと。Issue を1つ作る）
+予定は 2026-12-21 のあとだったが、バックアップが続けて成功し、お試し環境を使っている人もいないので早めた（`docs/decisions.md`）。
 
-- GitHub Actions のテストの MySQL（`.github/workflows/tests.yml` の matrix）
-- 開発環境の `mysql` の箱（`compose.yaml`）と、公開環境の `pdo_mysql`（`Dockerfile`）
-- この節の「MySQL に戻す手順」と、Aiven の `fishinglog-db`（消えていることを確かめる）
+- [x] GitHub Actions のテストの MySQL（`.github/workflows/tests.yml`）
+- [x] 開発環境の `mysql` の箱（`compose.yaml`）と、公開環境の `pdo_mysql`（`Dockerfile`）・MySQL の証明書の設定（`docker/start.sh`）
+- [x] この節の「MySQL に戻す手順」
+- [ ] 2026-12-21 のあと：Aiven の `fishinglog-db` が消えていることを確かめる。手元に控えた MySQL の接続の値も消す
 

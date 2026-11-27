@@ -11,11 +11,11 @@ RUN npm run build
 # 版は細かい番号まで書き切る。8.5 だけだと、前に作った箱が使い回されて古い版のまま動くことがあるため。
 # 8.5.12 は緊急のセキュリティ修正（CVE-2026-109618・CVE-2026-109619）の入った版。次の修正が出たら、ここを上げる（#184）
 FROM php:8.5.12-apache
-# 写真（GD・Exif）、PostgreSQL と MySQL（MySQL は 2026-12-21 まで戻せるように残す。#241）、そのほか Laravel に要る部品（opcache は PHP 8.5 から最初から入っている）
+# 写真（GD・Exif）、PostgreSQL（MySQL の部品は #251 で片付けた）、そのほか Laravel に要る部品（opcache は PHP 8.5 から最初から入っている）
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpng-dev libjpeg62-turbo-dev libwebp-dev libfreetype6-dev libzip-dev libpq-dev \
     && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
-    && docker-php-ext-install -j"$(nproc)" gd exif pdo_pgsql pdo_mysql zip \
+    && docker-php-ext-install -j"$(nproc)" gd exif pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/* \
     && a2enmod rewrite
 # 公開するのは public フォルダだけ

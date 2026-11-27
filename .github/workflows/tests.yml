@@ -16,19 +16,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
-    # 同じテストを、PostgreSQL（開発・公開環境）と MySQL 8.4 の両方で流す（#241）
-    # MySQL は、2026-12-21 に Aiven の MySQL が終わるまで、戻せることを確かめるために残す
+    # PostgreSQL（開発・公開環境と同じ）でテストを流す。MySQL 8.4 でも流していたが、引っ越しのあと片付けた（#241・#251）
+    # 表示の名前（テスト（pgsql））と結果のファイルの名前を変えないように、matrix の形は残す
     strategy:
       fail-fast: false
       matrix:
         include:
           - db: pgsql
             port: 5432
-          - db: mysql
-            port: 3306
     name: テスト（${{ matrix.db }}）
 
-    # テスト用のデータベース。両方を立て、使うほうを DB_CONNECTION で選ぶ
+    # テスト用のデータベース
     services:
       pgsql:
         image: postgres:18
@@ -43,29 +41,15 @@ jobs:
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_DATABASE: testing
-          MYSQL_USER: sail
-          MYSQL_PASSWORD: password
-          MYSQL_ROOT_PASSWORD: password
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
 
     steps:
       - uses: actions/checkout@v4
 
-      # PHP 8.5 と、アプリに要る部品（写真の gd・exif、PostgreSQL の pdo_pgsql、MySQL の pdo_mysql、zip）
+      # PHP 8.5 と、アプリに要る部品（写真の gd・exif、PostgreSQL の pdo_pgsql、zip）
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: gd, exif, pdo_pgsql, pdo_mysql, zip
+          extensions: gd, exif, pdo_pgsql, zip
           coverage: none
 
       - name: PHP の版を表示する
